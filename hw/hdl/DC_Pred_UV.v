@@ -143,63 +143,50 @@ reg [BIT_WIDTH - 1 : 0] temp2_u,temp2_v;
 
     always @ (posedge clk or negedge rst_n)begin
         if(~rst_n)begin
-            count <= 'b0;
-            temp1 <= 'b0;
-            temp2 <= 'b0;
-            done  <= 'b0;
+            count   <= 'b0;
+            temp1_u <= 'b0;
+            temp2_u <= 'b0;
+            temp1_v <= 'b0;
+            temp2_v <= 'b0;
+            done    <= 'b0;
         end
         else begin
             case(cstate)
                 IDLE:begin
-                    count <= 'b0;
-                    temp1 <= 'b0;
-                    temp2 <= 'b0;
-                    done  <= 'b0;
+                    count   <= 'b0;
+                    temp1_u <= 'b0;
+                    temp2_u <= 'b0;
+                    temp1_v <= 'b0;
+                    temp2_v <= 'b0;
+                    done    <= 'b0;
                 end
                 BOTH:begin
-                    count <= count + 1'b1;
-                    temp1 <= top_i[count] + left_i[count] + temp1;
+                    count   <= count + 1'b1;
+                    temp1_u <= top_u_i[count] + left_u_i[count] + temp1_u;
+                    temp1_v <= top_v_i[count] + left_v_i[count] + temp1_v;
                 end
                 TOP:begin
-                    count <= count + 1'b1;
-                    temp1 <= (top_i[count] << 1) + temp1;
+                    count   <= count + 1'b1;
+                    temp1_u <= top_u_i[count] + left_u_i[count] + temp1_u;
+                    temp1_v <= top_v_i[count] + left_v_i[count] + temp1_v;
                 end
                 LEFT:begin
-                    count <= count + 1'b1;
-                    temp1 <= (left_i[count] << 1) + temp1;
+                    count   <= count + 1'b1;
+                    temp1_u <= top_u_i[count] + left_u_i[count] + temp1_u;
+                    temp1_v <= top_v_i[count] + left_v_i[count] + temp1_v;
                 end
                 NONE:begin
-                    temp1 <= 'h80 << SHIFT;
+                    temp1_u <= 'h80 << SHIFT;
+                    temp1_v <= 'h80 << SHIFT;
                 end
                 DONE:begin
-                    temp2 <= (temp1 + BLOCK_SIZE) >> SHIFT;
+                    temp2_u <= (temp1_u + BLOCK_SIZE) >> SHIFT;
+                    temp2_v <= (temp1_v + BLOCK_SIZE) >> SHIFT;
                     done  <= 1'b1;
                 end
             endcase
         end
     end
-
-assign temp1_u = top_u[7  : 0 ] + left_u[7  : 0 ] +
-                 top_u[15 : 8 ] + left_u[15 : 8 ] +
-                 top_u[23 : 16] + left_u[23 : 16] +
-                 top_u[31 : 24] + left_u[31 : 24] +
-                 top_u[39 : 32] + left_u[39 : 32] +
-                 top_u[47 : 40] + left_u[47 : 40] +
-                 top_u[55 : 48] + left_u[55 : 48] +
-                 top_u[63 : 56] + left_u[63 : 56];
-
-assign temp2_u = (temp1_u + BLOCK_SIZE) >> SHIFT;
-
-assign temp1_v = top_v[7  : 0 ] + left_v[7  : 0 ] +
-                 top_v[15 : 8 ] + left_v[15 : 8 ] +
-                 top_v[23 : 16] + left_v[23 : 16] +
-                 top_v[31 : 24] + left_v[31 : 24] +
-                 top_v[39 : 32] + left_v[39 : 32] +
-                 top_v[47 : 40] + left_v[47 : 40] +
-                 top_v[55 : 48] + left_v[55 : 48] +
-                 top_v[63 : 56] + left_v[63 : 56];
-
-assign temp2_v = (temp1_v + BLOCK_SIZE) >> SHIFT;
 
 Fill_UV U_Fill (
  .value_u       (temp2_u    )
