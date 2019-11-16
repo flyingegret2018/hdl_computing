@@ -105,27 +105,23 @@ module DC_Pred_Y16#(
                             nstate = NONE;
                 else
                     nstate = IDLE;
-            INIT:
-                    nstate = CLEN;
-            CLEN:
-                if(data_error)
-                    nstate = IDLE;
+            BOTH:
+                if(count <= BLOCK_SIZE)
+                    nstate = BOTH;
                 else
-                    nstate = SEND;
-            SEND: 
-                if(data_error)
-                    nstate = IDLE;
-                else if(axi_ready)
-                    nstate = CHECK;
-                else
-                    nstate = SEND;
-            CHECK:
-                if(data_error)
-                    nstate = IDLE;
-                else if(all_burst_sent)
                     nstate = DONE;
-                else 
-                    nstate = CLEN;
+            TOP:
+                if(count <= BLOCK_SIZE)
+                    nstate = TOP;
+                else
+                    nstate = DONE;
+            LEFT: 
+                if(count <= BLOCK_SIZE)
+                    nstate = LEFT;
+                else
+                    nstate = DONE;
+            NONE:
+                nstate = DONE;
             DONE:
                 nstate = IDLE;
             default:
@@ -137,36 +133,39 @@ module DC_Pred_Y16#(
         if(~rst_n)begin
             count <= 'b0;
             temp1 <= 'b0;
+            temp2 <= 'b0;
+            done  <= 'b0;
         end
         else begin
             case(cstate)
                 IDLE:begin
                     count <= 'b0;
+                    temp1 <= 'b0;
+                    temp2 <= 'b0;
+                    done  <= 'b0;
                 end
                 BOTH:begin
                     count <= count + 1'b1;
-                    temp1 <= 
+                    temp1 <= top_i[count] + left_i[count] + temp1;
+                end
+                TOP:begin
+                    count <= count + 1'b1;
+                    temp1 <= (top_i[count] << 1) + temp1;
+                end
+                LEFT:begin
+                    count <= count + 1'b1;
+                    temp1 <= (left_i[count] << 1) + temp1;
+                end
+                NONE:begin
+                    temp1 <= 'h80 << SHIFT;
+                end
+                DONE:begin
+                    temp2 <= (temp1 + BLOCK_SIZE) >> SHIFT;
+                    done  <= 1'b1;
                 end
             endcase
         end
     end
-
-assign temp1 =   + left[7   : 0  ] +
-                 + left[15  : 8  ] +
-                 + left[23  : 16 ] +
-                 + left[31  : 24 ] +
-                 + left[39  : 32 ] +
-                 + left[47  : 40 ] +
-                 + left[55  : 48 ] +
-                 + left[63  : 56 ] +
-                 + left[71  : 64 ] +
-                 + left[79  : 72 ] +
-                 + left[87  : 80 ] +
-                 + left[95  : 88 ] +
-                 + left[103 : 96 ] +
-                 + left[111 : 104] +
-                 + left[119 : 112] +
-                 + left[127 : 120];
 
 assign temp2 = (temp1 + BLOCK_SIZE) >> SHIFT;
 
