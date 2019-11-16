@@ -9,7 +9,7 @@
 // Description    : 
 //-------------------------------------------------------------------
 // Create         : 2019-11-15 11:29
-// LastModified   :	2019-11-16 11:12
+// LastModified   :	2019-11-16 15:42
 // Version        : 1.0
 //-------------------------------------------------------------------
 
@@ -28,7 +28,7 @@ module DC_Pred_Y16#(
 ,input      [BLOCK_NUM - 1 : 0]                         y
 ,input      [BIT_WIDTH * BLOCK_SIZE - 1 : 0]            top
 ,input      [BIT_WIDTH * BLOCK_SIZE - 1 : 0]            left
-,output reg [BIT_WIDTH * BLOCK_SIZE * BLOCK_SIZE-1 : 0] dst
+,output     [BIT_WIDTH * BLOCK_SIZE * BLOCK_SIZE-1 : 0] dst
 ,output reg                                             done
 );
 
@@ -39,14 +39,14 @@ module DC_Pred_Y16#(
     parameter NONE    = 6'h10;
     parameter DONE    = 6'h20;
    
-    reg  [005:0] cstate;
-    reg  [005:0] nstate;
+    reg  [5:0] cstate;
+    reg  [5:0] nstate;
 
     wire[BIT_WIDTH - 1 : 0] top_i  [SHIFT - 2 : 0];
     wire[BIT_WIDTH - 1 : 0] left_i [SHIFT - 2 : 0];
     reg [BIT_WIDTH + SHIFT : 0] temp1;
     reg [BIT_WIDTH - 1 : 0] temp2;
-    reg [SHIFT : 0]count;
+    reg [SHIFT - 1 : 0]count;
 
     assign top_i [ 0] = top [7   : 0  ];
     assign top_i [ 1] = top [15  : 8  ];
@@ -166,8 +166,6 @@ module DC_Pred_Y16#(
             endcase
         end
     end
-
-assign temp2 = (temp1 + BLOCK_SIZE) >> SHIFT;
 
 Fill #(
  .BIT_WIDTH     (BIT_WIDTH  )
