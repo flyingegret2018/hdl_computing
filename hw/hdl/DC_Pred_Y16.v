@@ -106,17 +106,17 @@ module DC_Pred_Y16#(
                 else
                     nstate = IDLE;
             BOTH:
-                if(count < BLOCK_SIZE)
+                if(count < BLOCK_SIZE - 1)
                     nstate = BOTH;
                 else
                     nstate = DONE;
             TOP:
-                if(count < BLOCK_SIZE)
+                if(count < BLOCK_SIZE - 1)
                     nstate = TOP;
                 else
                     nstate = DONE;
             LEFT: 
-                if(count < BLOCK_SIZE)
+                if(count < BLOCK_SIZE - 1)
                     nstate = LEFT;
                 else
                     nstate = DONE;

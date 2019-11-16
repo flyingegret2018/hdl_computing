@@ -118,17 +118,17 @@ reg [BIT_WIDTH - 1 : 0] temp2_u,temp2_v;
                 else
                     nstate = IDLE;
             BOTH:
-                if(count < BLOCK_SIZE)
+                if(count < BLOCK_SIZE - 1)
                     nstate = BOTH;
                 else
                     nstate = DONE;
             TOP:
-                if(count < BLOCK_SIZE)
+                if(count < BLOCK_SIZE - 1)
                     nstate = TOP;
                 else
                     nstate = DONE;
             LEFT: 
-                if(count < BLOCK_SIZE)
+                if(count < BLOCK_SIZE - 1)
                     nstate = LEFT;
                 else
                     nstate = DONE;
@@ -167,13 +167,13 @@ reg [BIT_WIDTH - 1 : 0] temp2_u,temp2_v;
                 end
                 TOP:begin
                     count   <= count + 1'b1;
-                    temp1_u <= top_u_i[count] + left_u_i[count] + temp1_u;
-                    temp1_v <= top_v_i[count] + left_v_i[count] + temp1_v;
+                    temp1_u <= (top_u_i[count] << 1) + temp1_u;
+                    temp1_v <= (top_v_i[count] << 1) + temp1_v;
                 end
                 LEFT:begin
                     count   <= count + 1'b1;
-                    temp1_u <= top_u_i[count] + left_u_i[count] + temp1_u;
-                    temp1_v <= top_v_i[count] + left_v_i[count] + temp1_v;
+                    temp1_u <= (left_u_i[count] << 1) + temp1_u;
+                    temp1_v <= (left_v_i[count] << 1) + temp1_v;
                 end
                 NONE:begin
                     temp1_u <= 'h80 << SHIFT;
