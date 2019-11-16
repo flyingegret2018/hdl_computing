@@ -118,17 +118,17 @@ reg [BIT_WIDTH - 1 : 0] temp2_u,temp2_v;
                 else
                     nstate = IDLE;
             BOTH:
-                if(count <= BLOCK_SIZE)
+                if(count < BLOCK_SIZE)
                     nstate = BOTH;
                 else
                     nstate = DONE;
             TOP:
-                if(count <= BLOCK_SIZE)
+                if(count < BLOCK_SIZE)
                     nstate = TOP;
                 else
                     nstate = DONE;
             LEFT: 
-                if(count <= BLOCK_SIZE)
+                if(count < BLOCK_SIZE)
                     nstate = LEFT;
                 else
                     nstate = DONE;
