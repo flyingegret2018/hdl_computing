@@ -4,18 +4,18 @@
 // ProjectName    : 
 // Author         : zhaoxingchang
 // E-mail         : zxctja@163.com
-// FileName       :	DC_Pred_Y16.v
+// FileName       :	DC_Pred.v
 // ModelName      : 
 // Description    : 
 //-------------------------------------------------------------------
 // Create         : 2019-11-15 11:29
-// LastModified   :	2019-11-16 18:44
+// LastModified   :	2019-11-17 14:23
 // Version        : 1.0
 //-------------------------------------------------------------------
 
 `timescale 1ns/100ps
 
-module DC_Pred_Y16#(
+module DC_Pred#(
  parameter BIT_WIDTH    = 8
 ,parameter BLOCK_SIZE   = 16
 ,parameter BLOCK_NUM    = 10 //2^10

@@ -4,43 +4,43 @@
 // ProjectName    : 
 // Author         : zhaoxingchang
 // E-mail         : zxctja@163.com
-// FileName       :	DC4.v
+// FileName       :	HE4.v
 // ModelName      : 
 // Description    : 
 //-------------------------------------------------------------------
 // Create         : 2019-11-15 11:29
-// LastModified   :	2019-11-17 14:23
+// LastModified   :	2019-11-17 14:28
 // Version        : 1.0
 //-------------------------------------------------------------------
 
 `timescale 1ns/100ps
 
-module DC4#(
+module HE4#(
  parameter BIT_WIDTH    = 8
 ,parameter BLOCK_SIZE   = 4
-,parameter SHIFT        = 3
 )(
- input      [BIT_WIDTH * BLOCK_SIZE - 1 : 0]                top
+ input      [BIT_WIDTH - 1 : 0]                             top_left
 ,input      [BIT_WIDTH * BLOCK_SIZE - 1 : 0]                left
 ,output     [BIT_WIDTH * BLOCK_SIZE * BLOCK_SIZE - 1 : 0]   dst
 );
 
-reg [BIT_WIDTH + SHIFT : 0] temp1;
-reg [BIT_WIDTH - 1 : 0] temp2;
+wire [BIT_WIDTH - 1 : 0] vals [BLOCK_SIZE - 1 : 0];
 
-assign temp1 =  top[7  : 0 ] + left[7  : 0 ] +
-                top[15 : 8 ] + left[15 : 8 ] +
-                top[23 : 16] + left[23 : 16] +
-                top[31 : 24] + left[31 : 24];
+assgin vals[0] = (top_left    + (left[ 7: 0] << 1) + left[15: 8] + 2) >> 2;
+assgin vals[1] = (left[ 7: 0] + (left[15: 8] << 1) + left[23:16] + 2) >> 2;
+assgin vals[2] = (left[15: 8] + (left[23:16] << 1) + left[31:24] + 2) >> 2;
+assgin vals[3] = (left[23:16] + (left[31:24] << 1) + left[31:24] + 2) >> 2;
 
-assign temp2 = (temp1 + BLOCK_SIZE) >> SHIFT;
+genvar i,j;
 
-Fill #(
- .BIT_WIDTH     (BIT_WIDTH  )
-,.BLOCK_SIZE    (BLOCK_SIZE )
-) U_Fill (
- .value         (temp2   )
-,.dst           (dst     )
-);
+generate
+
+for(j = 0; j < BLOCK_SIZE; j = j + 1)begin
+    for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
+        assign dst[(j * BLOCK_SIZE + i) * BIT_WIDTH + 7 : (j * BLOCK_SIZE + i) * BIT_WIDTH] = vals[j];
+    end
+end
+
+endgenerate
 
 endmodule
