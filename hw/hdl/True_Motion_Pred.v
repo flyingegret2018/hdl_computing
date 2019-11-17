@@ -33,7 +33,8 @@ wire signed [BIT_WIDTH + 1 : 0] temp;
 
 for(j = 0; j < BLOCK_SIZE; j = j + 1)begin
     for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
-        assign temp = top[i *] + left[j] - top_left;
+        assign temp = top[i * BIT_WIDTH + 7 : i * BIT_WIDTH] + 
+            left[j * BIT_WIDTH + 7 : j * BIT_WIDTH] - top_left;
         assign dst[(j * BLOCK_SIZE + i) * BIT_WIDTH + 7 : (j * BLOCK_SIZE + i) * BIT_WIDTH] = 
             (temp > 'hff) ? 'hff : (temp < 'h0) ? 'h0 : temp;
     end

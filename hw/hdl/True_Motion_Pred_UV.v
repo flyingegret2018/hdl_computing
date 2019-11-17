@@ -38,9 +38,14 @@ wire signed [BIT_WIDTH + 1 : 0] temp_v;
 
 for(j = 0; j < BLOCK_SIZE; j = j + 1)begin
     for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
-        assign temp_u = top_u[i] + left_u[j] - top_left;
-        assign dst[(j * BLOCK_SIZE + i) * BIT_WIDTH + 7 : (j * BLOCK_SIZE + i) * BIT_WIDTH] = 
-            (temp > 'hff) ? 'hff : (temp < 'h0) ? 'h0 : temp;
+        assign temp_u = top_u[i * BIT_WIDTH + 7 : i * BIT_WIDTH] + 
+            left_u[j * BIT_WIDTH + 7 : j * BIT_WIDTH] - top_left_u;
+        assign temp_v = top_v[i * BIT_WIDTH + 7 : i * BIT_WIDTH] + 
+            left_v[j * BIT_WIDTH + 7 : j * BIT_WIDTH] - top_left_v;
+        assign dst[(j * UV_SIZE + i) * BIT_WIDTH + 7 : (j * UV_SIZE + i) * BIT_WIDTH] = 
+            (temp_u > 'hff) ? 'hff : (temp_u < 'h0) ? 'h0 : temp_u;
+        assign dst[(j * UV_SIZE + i + 8) * BIT_WIDTH + 7 : (j * UV_SIZE + i + 8) * BIT_WIDTH] = 
+            (temp_v > 'hff) ? 'hff : (temp_v < 'h0) ? 'h0 : temp_v;
     end
 end
 
