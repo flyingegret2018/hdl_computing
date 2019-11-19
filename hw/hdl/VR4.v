@@ -39,21 +39,21 @@ assgin vals[7] = (top_left    + (top [ 7: 0] << 1) + top [15: 8] + 2) >> 2;
 assgin vals[8] = (top [ 7: 0] + (top [15: 8] << 1) + top [23:16] + 2) >> 2;
 assgin vals[9] = (top [15: 8] + (top [23:16] << 1) + top [31:24] + 2) >> 2;
 
-assign dst [7  :0  ] = vals[0];
-assign dst [15 :8  ] = vals[1];
-assign dst [23 :16 ] = vals[2];
-assign dst [31 :24 ] = vals[3];
-assign dst [39 :32 ] = vals[6];
-assign dst [47 :40 ] = vals[7];
-assign dst [55 :48 ] = vals[8];
-assign dst [63 :56 ] = vals[9];
-assign dst [71 :64 ] = vals[5];
-assign dst [79 :72 ] = vals[0];
-assign dst [87 :80 ] = vals[1];
-assign dst [95 :88 ] = vals[2];
-assign dst [103:96 ] = vals[4];
-assign dst [111:104] = vals[6];
-assign dst [119:112] = vals[7];
-assign dst [127:120] = vals[8];
+assign dst [7  :0  ] = vals[0]; //00
+assign dst [15 :8  ] = vals[1]; //01
+assign dst [23 :16 ] = vals[2]; //02
+assign dst [31 :24 ] = vals[3]; //03
+assign dst [39 :32 ] = vals[6]; //04
+assign dst [47 :40 ] = vals[7]; //05
+assign dst [55 :48 ] = vals[8]; //06
+assign dst [63 :56 ] = vals[9]; //07
+assign dst [71 :64 ] = vals[5]; //08
+assign dst [79 :72 ] = vals[0]; //09
+assign dst [87 :80 ] = vals[1]; //10
+assign dst [95 :88 ] = vals[2]; //11
+assign dst [103:96 ] = vals[4]; //12
+assign dst [111:104] = vals[6]; //13
+assign dst [119:112] = vals[7]; //14
+assign dst [127:120] = vals[8]; //15
 
 endmodule
