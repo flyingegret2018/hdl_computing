@@ -4,33 +4,34 @@
 // ProjectName    : 
 // Author         : zhaoxingchang
 // E-mail         : zxctja@163.com
-// FileName       :	FTransform.v
+// FileName       :	ITransform.v
 // ModelName      : 
 // Description    : 
 //-------------------------------------------------------------------
 // Create         : 2019-11-15 11:29
-// LastModified   :	2019-11-19 10:46
+// LastModified   :	2019-11-20 16:48
 // Version        : 1.0
 //-------------------------------------------------------------------
 
 `timescale 1ns/100ps
 
-module FTransform#(
- parameter BLOCK_SIZE   = 4
+module ITransform#(
+ parameter BIT_WIDTH    = 8
+,parameter BLOCK_SIZE   = 4
 )(
- input                                              clk
-,input                                              rst_n
-,input                                              start
-,input      [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0]  src
-,input      [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0]  ref
-,output     [12 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0]  out
-,output reg                                         done
+ input                                                          clk
+,input                                                          rst_n
+,input                                                          start
+,input      [BIT_WIDTH * BLOCK_SIZE * BLOCK_SIZE - 1 : 0]       src
+,input      [BIT_WIDTH * BLOCK_SIZE * BLOCK_SIZE - 1 : 0]       ref
+,output     [(BIT_WIDTH + 4) * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] out
+,output reg                                                     done
 );
 
-reg        [ 7 : 0]src_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//8b
-reg        [ 7 : 0]ref_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//8b
-reg signed [13 : 0]tmp  [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//14b
-reg signed [11 : 0]out_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//12b
+reg signed [BIT_WIDTH + 5 : 0]tmp  [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//14b
+reg        [BIT_WIDTH - 1 : 0]src_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//8b
+reg        [BIT_WIDTH - 1 : 0]ref_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//8b
+reg signed [BIT_WIDTH + 3 : 0]out_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//12b
 
 reg shift;
 
