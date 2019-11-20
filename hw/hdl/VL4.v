@@ -15,7 +15,7 @@
 
 `timescale 1ns/100ps
 
-module LD4#(
+module VL4#(
  parameter BIT_WIDTH    = 8
 ,parameter BLOCK_SIZE   = 4
 )(
