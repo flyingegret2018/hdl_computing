@@ -24,39 +24,84 @@ module FTransform#(
 ,input                                                          start
 ,input      [BIT_WIDTH * BLOCK_SIZE * BLOCK_SIZE - 1 : 0]       src
 ,input      [BIT_WIDTH * BLOCK_SIZE * BLOCK_SIZE - 1 : 0]       ref
-,output     [BIT_WIDTH * BLOCK_SIZE * BLOCK_SIZE * 2 - 1 : 0]   out
+,output     [(BIT_WIDTH + 4) * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] out
 ,output reg                                                     done
 );
 
-wire [BIT_WIDTH - 1 : 0] vals [9 : 0];
+reg [BIT_WIDTH + 5 : 0]tmp[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+reg [BIT_WIDTH - 1 : 0]src_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+reg [BIT_WIDTH - 1 : 0]ref_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+reg [BIT_WIDTH + 3 : 0]out_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 
-assign vals[0] = (left[ 7: 0] + top_left    + 1) >> 1;
-assign vals[1] = (left[15: 8] + left[ 7: 0] + 1) >> 1;
-assign vals[2] = (left[23:16] + left[15: 8] + 1) >> 1;
-assign vals[3] = (left[31:24] + left[23:16] + 1) >> 1;
+reg shift;
 
-assgin vals[4] = (top [ 7: 0] + (top [15: 8] << 1) + top [23:16] + 2) >> 2;
-assgin vals[5] = (top_left    + (top [ 7: 0] << 1) + top [15: 8] + 2) >> 2;
-assgin vals[6] = (left[ 7: 0] + (top_left    << 1) + top [ 7: 0] + 2) >> 2;
-assgin vals[7] = (left[15: 8] + (left[ 7: 0] << 1) + top_left    + 2) >> 2;
-assgin vals[8] = (left[23:16] + (left[15: 8] << 1) + left[ 7: 0] + 2) >> 2;
-assgin vals[9] = (left[31:24] + (left[23:16] << 1) + left[15: 8] + 2) >> 2;
+always @ (posedge clk or negedge rst_n)begin
+    if(!rst_n)begin
+        done  <= 'b0;
+        shift <= 'b0;
+    end
+    else begin
+        shift <= start;
+        done  <= shift;
+    end
+end
 
-assign dst [7  :0  ] = vals[0]; //00
-assign dst [15 :8  ] = vals[6]; //01
-assign dst [23 :16 ] = vals[5]; //02
-assign dst [31 :24 ] = vals[4]; //03
-assign dst [39 :32 ] = vals[1]; //04
-assign dst [47 :40 ] = vals[7]; //05
-assign dst [55 :48 ] = vals[0]; //06
-assign dst [63 :56 ] = vals[6]; //07
-assign dst [71 :64 ] = vals[2]; //08
-assign dst [79 :72 ] = vals[8]; //09
-assign dst [87 :80 ] = vals[1]; //10
-assign dst [95 :88 ] = vals[7]; //11
-assign dst [103:96 ] = vals[3]; //12
-assign dst [111:104] = vals[9]; //13
-assign dst [119:112] = vals[2]; //14
-assign dst [127:120] = vals[8]; //15
+genvar i;
+
+generate
+
+for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
+    assign src_i[i] = src[BIT_WIDTH * (i + 1) - 1 : BIT_WIDTH * i];
+    assign ref_i[i] = ref[BIT_WIDTH * (i + 1) - 1 : BIT_WIDTH * i];
+    assign out[i] = out_i[(BIT_WIDTH + 4) * (i + 1) - 1 : (BIT_WIDTH + 4) * i];
+end
+
+for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
+    wire [BIT_WIDTH : 0] d0,d1,d2,d3;
+    assign d0 = src_i[BLOCK_SIZE * i + 0] - ref_i[BLOCK_SIZE * i + 0];
+    assign d1 = src_i[BLOCK_SIZE * i + 1] - ref_i[BLOCK_SIZE * i + 1];
+    assign d2 = src_i[BLOCK_SIZE * i + 2] - ref_i[BLOCK_SIZE * i + 2];
+    assign d3 = src_i[BLOCK_SIZE * i + 3] - ref_i[BLOCK_SIZE * i + 3];
+    wire [BIT_WIDTH + 1 : 0] a0,a1,a2,a3;
+    assign a0 = d0 + d3;
+    assign a1 = d1 + d2;
+    assign a2 = d1 - d2;
+    assign a3 = d0 - d3;
+    always @ (posedge clk or negedge rst_n)begin
+        if(!rst_n)begin
+            tmp[BLOCK_SIZE * i + 0] <= 'd0;
+            tmp[BLOCK_SIZE * i + 1] <= 'd0;
+            tmp[BLOCK_SIZE * i + 2] <= 'd0;
+            tmp[BLOCK_SIZE * i + 3] <= 'd0;
+        end
+        else begin
+            tmp[BLOCK_SIZE * i + 0] <= (a0 + a1) * 8;
+            tmp[BLOCK_SIZE * i + 1] <= (a2 * 'd2217 + a3 * 'd5352 + 'd1812) >> 9;
+            tmp[BLOCK_SIZE * i + 2] <= (a0 - a1) * 8;
+            tmp[BLOCK_SIZE * i + 3] <= (a3 * 'd2217 - a2 * 'd5352 + 'd937) >> 9;
+        end
+    end
+    wire [BIT_WIDTH + 6 : 0] b0,b1,b2,b3;
+    assign b0 = tmp[0 + i] + tmp[12 + i];
+    assign b1 = tmp[4 + i] + tmp[ 8 + i];
+    assign b2 = tmp[4 + i] - tmp[ 8 + i];
+    assign b3 = tmp[0 + i] - tmp[12 + i];
+    always @ (posedge clk or negedge rst_n)begin
+        if(!rst_n)begin
+            out_i[i +  0] <= 'd0;
+            out_i[i +  4] <= 'd0;
+            out_i[i +  8] <= 'd0;
+            out_i[i + 12] <= 'd0;
+        end
+        else begin
+            out_i[i +  0] <= (b0 + b1 + 7) >> 4;
+            out_i[i +  4] <= (b2 * 'd2217 + b3 * 'd5352 + 'd12000) >> 16 + (b3 != 0);
+            out_i[i +  8] <= (b0 - b1 + 7) >> 4;
+            out_i[i + 12] <= (b3 * 'd2217 - b2 * 'd5352 + 'd51000) >> 16;
+        end
+    end
+end
+
+endgenerate
 
 endmodule

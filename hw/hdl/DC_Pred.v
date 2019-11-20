@@ -48,39 +48,16 @@ module DC_Pred#(
     reg [BIT_WIDTH - 1 : 0] temp2;
     reg [SHIFT - 1 : 0]count;
 
-    assign top_i [ 0] = top [7   : 0  ];
-    assign top_i [ 1] = top [15  : 8  ];
-    assign top_i [ 2] = top [23  : 16 ];
-    assign top_i [ 3] = top [31  : 24 ];
-    assign top_i [ 4] = top [39  : 32 ];
-    assign top_i [ 5] = top [47  : 40 ];
-    assign top_i [ 6] = top [55  : 48 ];
-    assign top_i [ 7] = top [63  : 56 ];
-    assign top_i [ 8] = top [71  : 64 ];
-    assign top_i [ 9] = top [79  : 72 ];
-    assign top_i [10] = top [87  : 80 ];
-    assign top_i [11] = top [95  : 88 ];
-    assign top_i [12] = top [103 : 96 ];
-    assign top_i [13] = top [111 : 104];
-    assign top_i [14] = top [119 : 112];
-    assign top_i [15] = top [127 : 120];
+    genvar i;
 
-    assign left_i[ 0] = left[7   : 0  ];
-    assign left_i[ 1] = left[15  : 8  ];
-    assign left_i[ 2] = left[23  : 16 ];
-    assign left_i[ 3] = left[31  : 24 ];
-    assign left_i[ 4] = left[39  : 32 ];
-    assign left_i[ 5] = left[47  : 40 ];
-    assign left_i[ 6] = left[55  : 48 ];
-    assign left_i[ 7] = left[63  : 56 ];
-    assign left_i[ 8] = left[71  : 64 ];
-    assign left_i[ 9] = left[79  : 72 ];
-    assign left_i[10] = left[87  : 80 ];
-    assign left_i[11] = left[95  : 88 ];
-    assign left_i[12] = left[103 : 96 ];
-    assign left_i[13] = left[111 : 104];
-    assign left_i[14] = left[119 : 112];
-    assign left_i[15] = left[127 : 120];
+    generate
+
+    for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
+        assign top_i [i] = top [BIT_WIDTH * (i + 1) - 1 : BIT_WIDTH * i];
+        assign left_i[i] = left[BIT_WIDTH * (i + 1) - 1 : BIT_WIDTH * i];
+    end
+
+    endgenerate
 
     always @ (posedge clk or negedge rst_n)begin
         if(~rst_n)

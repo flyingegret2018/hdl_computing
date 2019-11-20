@@ -21,7 +21,7 @@ module True_Motion_Pred_UV#(
 ,parameter UV_SIZE      = 16
 )(
  input      [BIT_WIDTH - 1 : 0]                         top_left_u
- input      [BIT_WIDTH - 1 : 0]                         top_left_v
+,input      [BIT_WIDTH - 1 : 0]                         top_left_v
 ,input      [BIT_WIDTH * BLOCK_SIZE - 1 : 0]            top_u
 ,input      [BIT_WIDTH * BLOCK_SIZE - 1 : 0]            top_v
 ,input      [BIT_WIDTH * BLOCK_SIZE - 1 : 0]            left_u
@@ -33,11 +33,10 @@ genvar i,j;
 
 generate
 
-wire signed [BIT_WIDTH + 1 : 0] temp_u;
-wire signed [BIT_WIDTH + 1 : 0] temp_v;
-
 for(j = 0; j < BLOCK_SIZE; j = j + 1)begin
     for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
+        wire signed [BIT_WIDTH + 1 : 0] temp_u;
+        wire signed [BIT_WIDTH + 1 : 0] temp_v;
         assign temp_u = top_u[i * BIT_WIDTH + 7 : i * BIT_WIDTH] + 
             left_u[j * BIT_WIDTH + 7 : j * BIT_WIDTH] - top_left_u;
         assign temp_v = top_v[i * BIT_WIDTH + 7 : i * BIT_WIDTH] + 

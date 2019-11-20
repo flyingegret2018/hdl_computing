@@ -58,41 +58,18 @@ reg [BIT_WIDTH - 1 : 0] temp2_u,temp2_v;
     reg [BIT_WIDTH - 1 : 0] temp2_v;
     reg [SHIFT - 1 : 0]count;
 
-    assign top_u_i [0] = top_u [7  : 0 ];
-    assign top_u_i [1] = top_u [15 : 8 ];
-    assign top_u_i [2] = top_u [23 : 16];
-    assign top_u_i [3] = top_u [31 : 24];
-    assign top_u_i [4] = top_u [39 : 32];
-    assign top_u_i [5] = top_u [47 : 40];
-    assign top_u_i [6] = top_u [55 : 48];
-    assign top_u_i [7] = top_u [63 : 56];
+    genvar i;
 
-    assign top_v_i [0] = top_v [7  : 0 ];
-    assign top_v_i [1] = top_v [15 : 8 ];
-    assign top_v_i [2] = top_v [23 : 16];
-    assign top_v_i [3] = top_v [31 : 24];
-    assign top_v_i [4] = top_v [39 : 32];
-    assign top_v_i [5] = top_v [47 : 40];
-    assign top_v_i [6] = top_v [55 : 48];
-    assign top_v_i [7] = top_v [63 : 56];
+    generate
 
-    assign left_u_i[0] = left_u[7  : 0 ];
-    assign left_u_i[1] = left_u[15 : 8 ];
-    assign left_u_i[2] = left_u[23 : 16];
-    assign left_u_i[3] = left_u[31 : 24];
-    assign left_u_i[4] = left_u[39 : 32];
-    assign left_u_i[5] = left_u[47 : 40];
-    assign left_u_i[6] = left_u[55 : 48];
-    assign left_u_i[7] = left_u[63 : 56];
+    for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
+        assign top_u_i [i] = top_u [BIT_WIDTH * (i + 1) - 1 : BIT_WIDTH * i];
+        assign top_v_i [i] = top_v [BIT_WIDTH * (i + 1) - 1 : BIT_WIDTH * i];
+        assign left_u_i[i] = left_u[BIT_WIDTH * (i + 1) - 1 : BIT_WIDTH * i];
+        assign left_v_i[i] = left_v[BIT_WIDTH * (i + 1) - 1 : BIT_WIDTH * i];
+    end
 
-    assign left_v_i[0] = left_v[7  : 0 ];
-    assign left_v_i[1] = left_v[15 : 8 ];
-    assign left_v_i[2] = left_v[23 : 16];
-    assign left_v_i[3] = left_v[31 : 24];
-    assign left_v_i[4] = left_v[39 : 32];
-    assign left_v_i[5] = left_v[47 : 40];
-    assign left_v_i[6] = left_v[55 : 48];
-    assign left_v_i[7] = left_v[63 : 56];
+    endgenerate
 
     always @ (posedge clk or negedge rst_n)begin
         if(~rst_n)
