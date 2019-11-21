@@ -27,10 +27,10 @@ module FTransform#(
 ,output reg                                         done
 );
 
-reg        [ 7 : 0]src_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//8b
-reg        [ 7 : 0]ref_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//8b
-reg signed [13 : 0]tmp  [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//14b
-reg signed [11 : 0]out_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//12b
+wire        [ 7 : 0]src_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//8b
+wire        [ 7 : 0]ref_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//8b
+reg  signed [13 : 0]tmp  [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//14b
+reg  signed [11 : 0]out_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//12b
 
 reg shift;
 
@@ -50,19 +50,19 @@ genvar i;
 generate
 
 for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
-    assign src_i[i] = src[BIT_WIDTH * (i + 1) - 1 : BIT_WIDTH * i];
-    assign ref_i[i] = ref[BIT_WIDTH * (i + 1) - 1 : BIT_WIDTH * i];
-    assign out[i] = out_i[(BIT_WIDTH + 4) * (i + 1) - 1 : (BIT_WIDTH + 4) * i];
+    assign src_i[i] = src  [ 8 * (i + 1) - 1 :  8 * i];
+    assign ref_i[i] = ref  [ 8 * (i + 1) - 1 :  8 * i];
+    assign out  [i] = out_i[12 * (i + 1) - 1 : 12 * i];
 end
 
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
-    wire signed [BIT_WIDTH : 0] d0,d1,d2,d3;//9b
+    wire signed [8 : 0] d0,d1,d2,d3;//9b
     assign d0 = src_i[BLOCK_SIZE * i + 0] - ref_i[BLOCK_SIZE * i + 0];
     assign d1 = src_i[BLOCK_SIZE * i + 1] - ref_i[BLOCK_SIZE * i + 1];
     assign d2 = src_i[BLOCK_SIZE * i + 2] - ref_i[BLOCK_SIZE * i + 2];
     assign d3 = src_i[BLOCK_SIZE * i + 3] - ref_i[BLOCK_SIZE * i + 3];
 
-    wire signed [BIT_WIDTH + 1 : 0] a0,a1,a2,a3;//10b
+    wire signed [9 : 0] a0,a1,a2,a3;//10b
     assign a0 = d0 + d3;
     assign a1 = d1 + d2;
     assign a2 = d1 - d2;
@@ -83,11 +83,11 @@ for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
         end
     end
     
-    wire signed [BIT_WIDTH + 6 : 0] b0,b1,b2,b3;//15b
-    assign b0 = tmp[0 + i] + tmp[12 + i];
-    assign b1 = tmp[4 + i] + tmp[ 8 + i];
-    assign b2 = tmp[4 + i] - tmp[ 8 + i];
-    assign b3 = tmp[0 + i] - tmp[12 + i];
+    wire signed [14 : 0] b0,b1,b2,b3;//15b
+    assign b0 = tmp[i + 0] + tmp[i + 12];
+    assign b1 = tmp[i + 4] + tmp[i +  8];
+    assign b2 = tmp[i + 4] - tmp[i +  8];
+    assign b3 = tmp[i + 0] - tmp[i + 12];
     
     always @ (posedge clk or negedge rst_n)begin
         if(!rst_n)begin

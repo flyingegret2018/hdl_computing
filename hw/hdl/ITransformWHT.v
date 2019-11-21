@@ -16,20 +16,19 @@
 `timescale 1ns/100ps
 
 module ITransformWHT#(
- parameter BIT_WIDTH    = 8
-,parameter BLOCK_SIZE   = 4
+ parameter BLOCK_SIZE   = 4
 )(
- input                                                          clk
-,input                                                          rst_n
-,input                                                          start
-,input      [(BIT_WIDTH + 8) * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] in
-,output     [(BIT_WIDTH + 8) * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] out
-,output reg                                                     done
+ input                                             clk
+,input                                             rst_n
+,input                                             start
+,input      [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] in
+,output     [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] out
+,output reg                                        done
 );
 
-reg signed [BIT_WIDTH + 5 : 0]tmp  [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//14b
-reg signed [BIT_WIDTH + 8 : 0]in_i [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//12b
-reg signed [BIT_WIDTH + 8 : 0]out_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//15b
+wire signed [15 : 0]in_i [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+wire signed [15 : 0]out_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+reg  signed [17 : 0]tmp  [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 
 
 always @ (posedge clk or negedge rst_n)begin
@@ -46,46 +45,41 @@ genvar i;
 generate
 
 for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
-    assign in_i[i] = in   [(BIT_WIDTH + 8) * (i + 1) - 1 : (BIT_WIDTH + 8) * i];
-    assign out [i] = out_i[(BIT_WIDTH + 8) * (i + 1) - 1 : (BIT_WIDTH + 8) * i];
+    assign in_i[i] = in   [16 * (i + 1) - 1 : 16 * i];
+    assign out [i] = out_i[16 * (i + 1) - 1 : 16 * i];
 end
 
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
-    wire signed [BIT_WIDTH + 4 : 0] a0,a1,a2,a3;//13b
-    assign a0 = in_i[BLOCK_SIZE * i + 0] + in_i[BLOCK_SIZE * i + 2];
-    assign a1 = in_i[BLOCK_SIZE * i + 1] + in_i[BLOCK_SIZE * i + 3];
-    assign a2 = in_i[BLOCK_SIZE * i + 1] - in_i[BLOCK_SIZE * i + 3];
-    assign a3 = in_i[BLOCK_SIZE * i + 0] - in_i[BLOCK_SIZE * i + 2];
+    wire signed [16 : 0] a0,a1,a2,a3;
+    assign a0 = in_i[0 + i] + in_i[12 + i];
+    assign a1 = in_i[4 + i] + in_i[ 8 + i];
+    assign a2 = in_i[4 + i] - in_i[ 8 + i];
+    assign a3 = in_i[0 + i] - in_i[12 + i];
 
-    assign tmp[BLOCK_SIZE * i + 0] = a0 + a1;
-    assign tmp[BLOCK_SIZE * i + 1] = a3 + a2;
-    assign tmp[BLOCK_SIZE * i + 2] = a3 - a2;
-    assign tmp[BLOCK_SIZE * i + 3] = a0 - a1;
+    assign tmp[i +  0] = a0 + a1;
+    assign tmp[i +  4] = a3 + a2;
+    assign tmp[i +  8] = a0 - a1;
+    assign tmp[i + 12] = a3 - a2;
     
-    wire signed [BIT_WIDTH + 6 : 0] b0,b1,b2,b3;//15b
-    assign b0 = tmp[0 + i] + tmp[ 8 + i];
-    assign b1 = tmp[4 + i] + tmp[12 + i];
-    assign b2 = tmp[4 + i] - tmp[12 + i];
-    assign b3 = tmp[0 + i] - tmp[ 8 + i];
-    
-    wire signed [BIT_WIDTH + 7 : 0] c0,c1,c2,c3;//16b
-    assign c0 = b0 + b1;
-    assign c1 = b3 + b2;
-    assign c2 = b3 - b2;
-    assign c3 = b0 - b1;
+
+    wire signed [19 : 0] b0,b1,b2,b3;
+    assign b0 = tmp[BLOCK_SIZE * i + 0] + tmp[BLOCK_SIZE * i + 3] + 'd3;
+    assign b1 = tmp[BLOCK_SIZE * i + 1] + tmp[BLOCK_SIZE * i + 2];
+    assign b2 = tmp[BLOCK_SIZE * i + 1] - tmp[BLOCK_SIZE * i + 2];
+    assign b3 = tmp[BLOCK_SIZE * i + 0] - tmp[BLOCK_SIZE * i + 3] + 'd3;
     
     always @ (posedge clk or negedge rst_n)begin
         if(!rst_n)begin
-            out_i[i +  0] <= 'd0;
-            out_i[i +  4] <= 'd0;
-            out_i[i +  8] <= 'd0;
-            out_i[i + 12] <= 'd0;
+            out_i[BLOCK_SIZE * i + 0] <= 'd0;
+            out_i[BLOCK_SIZE * i + 1] <= 'd0;
+            out_i[BLOCK_SIZE * i + 2] <= 'd0;
+            out_i[BLOCK_SIZE * i + 3] <= 'd0;
         end
         else begin
-            out_i[i +  0] <= c0 >> 1;
-            out_i[i +  4] <= c1 >> 1;
-            out_i[i +  8] <= c2 >> 1;
-            out_i[i + 12] <= c3 >> 1;
+            out_i[BLOCK_SIZE * i + 0] <= (b0 + b1) >> 3;
+            out_i[BLOCK_SIZE * i + 1] <= (b3 + b2) >> 3;
+            out_i[BLOCK_SIZE * i + 2] <= (b0 - b1) >> 3;
+            out_i[BLOCK_SIZE * i + 3] <= (b3 - b2) >> 3;
         end
     end
 end

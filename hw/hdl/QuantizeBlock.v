@@ -16,34 +16,32 @@
 `timescale 1ns/100ps
 
 module QuantizeBlock#(
- parameter BIT_WIDTH    = 8
-,parameter BLOCK_SIZE   = 4
+ parameter BLOCK_SIZE   = 4
 )(
- input                                                          clk
-,input                                                          rst_n
-,input                                                          start
-,input      [(BIT_WIDTH + 8) * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] in
-,input      [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0]              q
-,input      [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0]              iq
-,input      [32 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0]              bias
-,input      [32 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0]              zthresh
-,input      [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0]              sharpen
-,output     [(BIT_WIDTH + 8) * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] R_in
-,output     [(BIT_WIDTH + 8) * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] out
-,output reg                                                     done
+ input                                             clk
+,input                                             rst_n
+,input                                             start
+,input      [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] in
+,input      [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] q
+,input      [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] iq
+,input      [32 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] bias
+,input      [32 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] zthresh
+,input      [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] sharpen
+,output     [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] R_in
+,output     [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] out
+,output reg                                        done
 );
 
-reg signed [BIT_WIDTH + 7 : 0]in_i [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-reg signed [BIT_WIDTH + 7 : 0]Rin_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-reg signed [BIT_WIDTH + 7 : 0]out_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+reg signed [15:0]in_i     [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+reg signed [15:0]Rin_i    [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+reg signed [15:0]out_i    [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+reg signed [31:0]level    [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+reg        [15:0]q_i      [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+reg        [15:0]iq_i     [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+reg        [31:0]bias_i   [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+reg        [31:0]zthresh_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+reg        [15:0]sharpen_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 
-reg [15:0]q_i      [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-reg [15:0]iq_i     [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-reg [31:0]bias_i   [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-reg [31:0]zthresh_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-reg [15:0]sharpen_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-
-reg signed [31:0]level[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 
 reg shift;
 
@@ -63,10 +61,9 @@ genvar i;
 generate
 
 for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
-    assign in_i[i] = in   [(BIT_WIDTH + 8) * (i + 1) - 1 : (BIT_WIDTH + 8) * i];
-    assign R_in[i] = Rin_i[(BIT_WIDTH + 8) * (i + 1) - 1 : (BIT_WIDTH + 8) * i];
-    assign out [i] = out_i[(BIT_WIDTH + 8) * (i + 1) - 1 : (BIT_WIDTH + 8) * i];
-
+    assign in_i     [i] = in     [16 * (i + 1) - 1 : 16 * i];
+    assign R_in     [i] = Rin_i  [16 * (i + 1) - 1 : 16 * i];
+    assign out      [i] = out_i  [16 * (i + 1) - 1 : 16 * i];
     assign q_i      [i] = q      [16 * (i + 1) - 1 : 16 * i];
     assign iq_i     [i] = iq     [16 * (i + 1) - 1 : 16 * i];
     assign bias_i   [i] = bias   [31 * (i + 1) - 1 : 31 * i];
