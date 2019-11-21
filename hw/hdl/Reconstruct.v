@@ -99,22 +99,20 @@ FTransformWHT U_FWHT(
 ,.done  (FWHT_done   )
 );
 
-
-QuantizeBlock #(
-    .BLOCK_SIZE                     ( 4                             ))
-U_QUANTIZEBLOCK_0(
-    .clk                            ( clk                           ),
-    .rst_n                          ( rst_n                         ),
-    .start                          ( start                         ),
-    .in                             ( in                            ),
-    .q                              ( q                             ),
-    .iq                             ( iq                            ),
-    .bias                           ( bias                          ),
-    .zthresh                        ( zthresh                       ),
-    .sharpen                        ( sharpen                       ),
-    .R_in                           ( R_in                          ),
-    .out                            ( out                           ),
-    .done                           ( done                          )
+wire QBDC_done;
+QuantizeBlock U_QBDC(
+    .clk     ( clk                           ),
+    .rst_n   ( rst_n                         ),
+    .start   ( FWHT_done                     ),
+    .in      ( {'b0,dc_out}                  ),
+    .q       ( q2                            ),
+    .iq      ( iq2                           ),
+    .bias    ( bias2                         ),
+    .zthresh ( zthresh2                      ),
+    .sharpen ( sharpen2                      ),
+    .Rout    ( Rout                          ),
+    .out     ( out                           ),
+    .done    ( QBDC_done                     )
 );
 
 

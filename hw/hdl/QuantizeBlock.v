@@ -27,13 +27,13 @@ module QuantizeBlock#(
 ,input      [32 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] bias
 ,input      [32 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] zthresh
 ,input      [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] sharpen
-,output     [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] R_in
+,output     [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] Rout
 ,output     [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] out
 ,output reg                                        done
 );
 
 reg signed [15:0]in_i     [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-reg signed [15:0]Rin_i    [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+reg signed [15:0]Rout_i   [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 reg signed [15:0]out_i    [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 reg signed [31:0]level    [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 reg        [15:0]q_i      [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
@@ -62,7 +62,7 @@ generate
 
 for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
     assign in_i     [i] = in     [16 * (i + 1) - 1 : 16 * i];
-    assign R_in     [i] = Rin_i  [16 * (i + 1) - 1 : 16 * i];
+    assign Rout     [i] = Rout_i [16 * (i + 1) - 1 : 16 * i];
     assign out      [i] = out_i  [16 * (i + 1) - 1 : 16 * i];
     assign q_i      [i] = q      [16 * (i + 1) - 1 : 16 * i];
     assign iq_i     [i] = iq     [16 * (i + 1) - 1 : 16 * i];
@@ -95,17 +95,17 @@ for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
     
     always @ (posedge clk or negedge rst_n)begin
         if(!rst_n)begin
-            Rin_i[i] <= 'b0;
-            out_i[i] <= 'b0;
+            Rout_i[i] <= 'b0;
+            out_i [i] <= 'b0;
         end
         else begin
             if(coeff > zthresh_i[i])begin
-                Rin_i[i] <= level2 * q_i[i];
-                out_i[i] <= level2;
+                Rout_i[i] <= level2 * q_i[i];
+                out_i [i] <= level2;
             end
             else begin
-                Rin_i[i] <= 'b0;
-                out_i[i] <= 'b0;
+                Rout_i[i] <= 'b0;
+                out_i [i] <= 'b0;
             end
         end
     end
