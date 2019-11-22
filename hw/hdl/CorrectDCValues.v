@@ -16,17 +16,22 @@
 `timescale 1ns/100ps
 
 module CorrectDCValues(
- input                        clk
-,input                        rst_n
-,input                        start
-,input               [15 : 0] in
-,input               [15 : 0] q
-,input               [15 : 0] iq
-,input               [31 : 0] bias
-,input               [31 : 0] zthresh
-,output reg signed   [15 : 0] out
-,output reg signed   [ 7 : 0] err
-,output reg                   done
+ input                         clk
+,input                         rst_n
+,input                         start
+,input               [  9 : 0] x
+,input               [  9 : 0] y
+,input               [ 15 : 0] q
+,input               [ 15 : 0] iq
+,input               [ 31 : 0] bias
+,input               [ 31 : 0] zthresh
+,input               [ 31 : 0] left_derr
+,input               [ 31 : 0] top_derr
+,output reg                    top_derr_en
+,output reg          [  9 : 0] top_derr_addr
+,output reg signed   [127 : 0] out
+,output reg signed   [ 47 : 0] derr
+,output reg                    done
 );
 
 always @ (posedge clk or negedge rst_n)begin
