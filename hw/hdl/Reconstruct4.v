@@ -71,6 +71,4 @@ ITransform U_IDCT(
     .done                           ( done                          )
 );
 
-endgenerate
-
 endmodule
