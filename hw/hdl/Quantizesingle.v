@@ -19,7 +19,7 @@ module QuantizeSingle(
  input                        clk
 ,input                        rst_n
 ,input                        start
-,input               [15 : 0] in
+,input      signed   [15 : 0] in
 ,input               [15 : 0] q
 ,input               [15 : 0] iq
 ,input               [31 : 0] bias
