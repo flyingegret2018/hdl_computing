@@ -4,32 +4,45 @@
 // ProjectName    : 
 // Author         : zhaoxingchang
 // E-mail         : zxctja@163.com
-// FileName       :	DC_Pred.v
+// FileName       :	PickBestIntra.v
 // ModelName      : 
 // Description    : 
 //-------------------------------------------------------------------
-// Create         : 2019-11-15 11:29
-// LastModified   :	2019-11-17 14:23
+// Create         : 2019-11-17 13:30
+// LastModified   :	2019-11-29 13:41
 // Version        : 1.0
 //-------------------------------------------------------------------
 
 `timescale 1ns/100ps
 
-module DC_Pred#(
- parameter BIT_WIDTH    = 8
-,parameter BLOCK_SIZE   = 16
-,parameter BLOCK_NUM    = 10 //2^10
-,parameter SHIFT        = 5
+module PickBestIntra#(
+ parameter BLOCK_SIZE   = 16
 )(
- input                                                    clk
-,input                                                    rst_n
-,input                                                    start
-,input      [BLOCK_NUM - 1 : 0]                           x
-,input      [BLOCK_NUM - 1 : 0]                           y
-,input      [BIT_WIDTH * BLOCK_SIZE - 1 : 0]              top
-,input      [BIT_WIDTH * BLOCK_SIZE - 1 : 0]              left
-,output     [BIT_WIDTH * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] dst
-,output reg                                               done
+ input                                             clk
+,input                                             rst_n
+,input                                             start
+,input      [10                           - 1 : 0] x
+,input      [10                           - 1 : 0] y
+,input      [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] Ysrc
+,input      [ 8                           - 1 : 0] top_left
+,input      [ 8 * BLOCK_SIZE              - 1 : 0] top
+,input      [ 8 * BLOCK_SIZE              - 1 : 0] left
+,input      [16 * BLOCK_SIZE              - 1 : 0] q1
+,input      [16 * BLOCK_SIZE              - 1 : 0] iq1
+,input      [32 * BLOCK_SIZE              - 1 : 0] bias1
+,input      [32 * BLOCK_SIZE              - 1 : 0] zthresh1
+,input      [16 * BLOCK_SIZE              - 1 : 0] sharpen1
+,input      [16 * BLOCK_SIZE              - 1 : 0] q2
+,input      [16 * BLOCK_SIZE              - 1 : 0] iq2
+,input      [32 * BLOCK_SIZE              - 1 : 0] bias2
+,input      [32 * BLOCK_SIZE              - 1 : 0] zthresh2
+,input      [16 * BLOCK_SIZE              - 1 : 0] sharpen2
+,output     [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] Yout
+,output     [64                           - 1 : 0] Score
+,output     [ 2                           - 1 : 0] mode_i16
+,output     [16 * BLOCK_SIZE              - 1 : 0] Y_dc_levels
+,output     [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] Y_ac_levels
+,output                                            done
 );
 
     parameter IDLE    = 6'h01;
@@ -144,12 +157,37 @@ module DC_Pred#(
         end
     end
 
-Fill #(
- .BIT_WIDTH     (BIT_WIDTH  )
-,.BLOCK_SIZE    (BLOCK_SIZE )
-) U_Fill (
- .value         (temp2   )
-,.dst           (dst     )
+wire [8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] dc_pred;
+DC_Pred U_DC_PRED(
+    .clk                            ( clk                           ),
+    .rst_n                          ( rst_n                         ),
+    .start                          ( start                         ),
+    .x                              ( x                             ),
+    .y                              ( y                             ),
+    .top                            ( top                           ),
+    .left                           ( left                          ),
+    .dst                            ( dc_pred                       ),
+    .done                           (                               )
+);
+
+wire [8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] ve_pred;
+Vertical_Pred U_VERTICAL_PRED(
+    .top                            ( top                           ),
+    .dst                            ( ve_pred                       )
+);
+
+wire [8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] he_pred;
+Horizontal_Pred U_HORIZONTAL_PRED(
+    .left                           ( left                          ),
+    .dst                            ( he_pred                       )
+);
+
+wire [8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] tm_pred;
+True_Motion_Pred U_TRUE_MOTION_PRED(
+    .top_left                       ( top_left                      ),
+    .top                            ( top                           ),
+    .left                           ( left                          ),
+    .dst                            ( tm_pred                       )
 );
 
 endmodule

@@ -119,13 +119,33 @@ QuantizeBlock U_QBDC(
     .done                           ( QBDC_done                     )
 );
 
+wire [16 * BLOCK_SIZE - 1 : 0]QBAC_i[BLOCK_SIZE - 1 : 0];
+for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
+    assign QBAC_i[i] = {{4'b0,FDCT_o[i][191:180]},
+                        {4'b0,FDCT_o[i][179:168]},
+                        {4'b0,FDCT_o[i][167:156]},
+                        {4'b0,FDCT_o[i][155:144]},
+                        {4'b0,FDCT_o[i][143:132]},
+                        {4'b0,FDCT_o[i][131:120]},
+                        {4'b0,FDCT_o[i][119:108]},
+                        {4'b0,FDCT_o[i][107: 96]},
+                        {4'b0,FDCT_o[i][ 95: 84]},
+                        {4'b0,FDCT_o[i][ 83: 72]},
+                        {4'b0,FDCT_o[i][ 71: 60]},
+                        {4'b0,FDCT_o[i][ 59: 48]},
+                        {4'b0,FDCT_o[i][ 47: 36]},
+                        {4'b0,FDCT_o[i][ 35: 24]},
+                        {4'b0,FDCT_o[i][ 23: 12]},
+                        16'b0};
+end
+
 wire [16 * BLOCK_SIZE - 1 : 0]QBAC_Rout[BLOCK_SIZE - 1 : 0];
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
 QuantizeBlock U_QBAC(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
     .start                          ( FWHT_done                     ),
-    .in                             ( {FDCT_o[i][191:12],12'b0}     ),
+    .in                             ( QBAC_i[i]                     ),
     .q                              ( q1                            ),
     .iq                             ( iq1                           ),
     .bias                           ( bias1                         ),

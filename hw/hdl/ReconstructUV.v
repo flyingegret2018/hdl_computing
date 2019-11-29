@@ -16,61 +16,69 @@
 `timescale 1ns/100ps
 
 module Reconstruct#(
- parameter BLOCK_SIZE   = 16
+ parameter BLOCK_SIZE   = 8
 )(
- input                                             clk
-,input                                             rst_n
-,input                                             start
-,input      [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] YPred
-,input      [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] Ysrc
-,input      [16 * BLOCK_SIZE              - 1 : 0] q1
-,input      [16 * BLOCK_SIZE              - 1 : 0] iq1
-,input      [32 * BLOCK_SIZE              - 1 : 0] bias1
-,input      [32 * BLOCK_SIZE              - 1 : 0] zthresh1
-,input      [16 * BLOCK_SIZE              - 1 : 0] sharpen1
-,input      [16 * BLOCK_SIZE              - 1 : 0] q2
-,input      [16 * BLOCK_SIZE              - 1 : 0] iq2
-,input      [32 * BLOCK_SIZE              - 1 : 0] bias2
-,input      [32 * BLOCK_SIZE              - 1 : 0] zthresh2
-,input      [16 * BLOCK_SIZE              - 1 : 0] sharpen2
-,output     [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] Yout
-,output     [16 * BLOCK_SIZE              - 1 : 0] Y_dc_levels
-,output     [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] Y_ac_levels
-,output                                            done
+ input                             clk
+,input                             rst_n
+,input                             start
+,input      [ 9               : 0] x
+,input      [ 9               : 0] y
+,input      [ 8 *  8 * 16 - 1 : 0] UVsrc
+,input      [ 8 *  8 * 16 - 1 : 0] UVPred
+,input      [16 * 16      - 1 : 0] q
+,input      [16 * 16      - 1 : 0] iq
+,input      [32 * 16      - 1 : 0] bias
+,input      [32 * 16      - 1 : 0] zthresh
+,input      [16 * 16      - 1 : 0] sharpen
+,input      [31               : 0] left_derr
+,input      [31               : 0] top_derr
+,output                            top_derr_en
+,output     [ 9               : 0] top_derr_addr
+,output     [ 8 *  8 * 16 - 1 : 0] UVout
+,output     [16 *  8 * 16 - 1 : 0] UVlevels
+,input      [47               : 0] derr
+,output                            done
 );
 
-wire        [ 8 * BLOCK_SIZE - 1 : 0]Ysrc_i [BLOCK_SIZE - 1 : 0];
-wire        [ 8 * BLOCK_SIZE - 1 : 0]YPred_i[BLOCK_SIZE - 1 : 0];
-wire        [ 8 * BLOCK_SIZE - 1 : 0]Yout_i [BLOCK_SIZE - 1 : 0];
-wire signed [12 * BLOCK_SIZE - 1 : 0]FDCT_o [BLOCK_SIZE - 1 : 0];
-wire signed [16 * BLOCK_SIZE - 1 : 0]Yac_i  [BLOCK_SIZE - 1 : 0];
+wire        [ 8 * 16 - 1 : 0]UVsrc_i     [BLOCK_SIZE - 1 : 0];
+wire        [ 8 * 16 - 1 : 0]UVPred_i    [BLOCK_SIZE - 1 : 0];
+wire        [ 8 * 16 - 1 : 0]UVout_i     [BLOCK_SIZE - 1 : 0];
+wire signed [12 * 16 - 1 : 0]FDCT_o      [BLOCK_SIZE - 1 : 0];
+wire signed [16 * 16 - 1 : 0]UVlevels_i  [BLOCK_SIZE - 1 : 0];
 
 genvar i;
 
 generate
 
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
-    assign Ysrc_i[i] = 
-    {Ysrc[8*((i/4)*64+(i%4)*4+52)-1:8*((i/4)*64+(i%4)*4+48)],
-     Ysrc[8*((i/4)*64+(i%4)*4+36)-1:8*((i/4)*64+(i%4)*4+32)],
-     Ysrc[8*((i/4)*64+(i%4)*4+20)-1:8*((i/4)*64+(i%4)*4+16)],
-     Ysrc[8*((i/4)*64+(i%4)*4+ 4)-1:8*((i/4)*64+(i%4)*4+ 0)]};
+    assign UVsrc_i[i] = 
+    {UVsrc[8*((i/4)*64+(i%4)*4+52)-1:8*((i/4)*64+(i%4)*4+48)],
+     UVsrc[8*((i/4)*64+(i%4)*4+36)-1:8*((i/4)*64+(i%4)*4+32)],
+     UVsrc[8*((i/4)*64+(i%4)*4+20)-1:8*((i/4)*64+(i%4)*4+16)],
+     UVsrc[8*((i/4)*64+(i%4)*4+ 4)-1:8*((i/4)*64+(i%4)*4+ 0)]};
 
-    assign YPred_i[i] = 
-    {YPred[8*((i/4)*64+(i%4)*4+52)-1:8*((i/4)*64+(i%4)*4+48)],
-     YPred[8*((i/4)*64+(i%4)*4+36)-1:8*((i/4)*64+(i%4)*4+32)],
-     YPred[8*((i/4)*64+(i%4)*4+20)-1:8*((i/4)*64+(i%4)*4+16)],
-     YPred[8*((i/4)*64+(i%4)*4+ 4)-1:8*((i/4)*64+(i%4)*4+ 0)]};
+    assign UVPred_i[i] = 
+    {UVPred[8*((i/4)*64+(i%4)*4+52)-1:8*((i/4)*64+(i%4)*4+48)],
+     UVPred[8*((i/4)*64+(i%4)*4+36)-1:8*((i/4)*64+(i%4)*4+32)],
+     UVPred[8*((i/4)*64+(i%4)*4+20)-1:8*((i/4)*64+(i%4)*4+16)],
+     UVPred[8*((i/4)*64+(i%4)*4+ 4)-1:8*((i/4)*64+(i%4)*4+ 0)]};
 
     assign 
-    {Yout[8*((i/4)*64+(i%4)*4+52)-1:8*((i/4)*64+(i%4)*4+48)],
-     Yout[8*((i/4)*64+(i%4)*4+36)-1:8*((i/4)*64+(i%4)*4+32)],
-     Yout[8*((i/4)*64+(i%4)*4+20)-1:8*((i/4)*64+(i%4)*4+16)],
-     Yout[8*((i/4)*64+(i%4)*4+ 4)-1:8*((i/4)*64+(i%4)*4+ 0)]}
-     = Yout_i[i];
-
-    assign Y_ac_levels[16 * (i + 1) : 16 * i] = Yac_i[i];
+    {UVout[8*((i/4)*64+(i%4)*4+52)-1:8*((i/4)*64+(i%4)*4+48)],
+     UVout[8*((i/4)*64+(i%4)*4+36)-1:8*((i/4)*64+(i%4)*4+32)],
+     UVout[8*((i/4)*64+(i%4)*4+20)-1:8*((i/4)*64+(i%4)*4+16)],
+     UVout[8*((i/4)*64+(i%4)*4+ 4)-1:8*((i/4)*64+(i%4)*4+ 0)]}
+     = UVout_i[i];
 end
+
+assign UVlevels[ 15 :   0] = UVlevels_i[0];
+assign UVlevels[ 31 :  16] = UVlevels_i[1];
+assign UVlevels[ 47 :  32] = UVlevels_i[4];
+assign UVlevels[ 63 :  48] = UVlevels_i[5];
+assign UVlevels[ 79 :  64] = UVlevels_i[2];
+assign UVlevels[ 95 :  80] = UVlevels_i[3];
+assign UVlevels[111 :  96] = UVlevels_i[6];
+assign UVlevels[127 : 112] = UVlevels_i[7];
 
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin:FDCT
     wire FDCT_done;
@@ -78,86 +86,92 @@ FTransform U_FDCT(
      .clk                           ( clk                           )
     ,.rst_n                         ( rst_n                         )
     ,.start                         ( start                         )
-    ,.src                           ( Ysrc[i]                       )
-    ,.ref                           ( YPred[i]                      )
+    ,.src                           ( UVsrc[i]                      )
+    ,.ref                           ( UVPred[i]                     )
     ,.out                           ( FDCT_o[i]                     )
     ,.done                          ( FDCT_done                     )
     );
 end
 
-wire [12 * BLOCK_SIZE - 1 : 0]dc_in ;
-wire [15 * BLOCK_SIZE - 1 : 0]dc_out;
+wire [127:0]CDCV_i;
+assign CDCV_i = {{4'b0,FDCT_o[7][11:0]},
+                 {4'b0,FDCT_o[6][11:0]},
+                 {4'b0,FDCT_o[5][11:0]},
+                 {4'b0,FDCT_o[4][11:0]},
+                 {4'b0,FDCT_o[3][11:0]},
+                 {4'b0,FDCT_o[2][11:0]},
+                 {4'b0,FDCT_o[1][11:0]},
+                 {4'b0,FDCT_o[0][11:0]}};
 
+wire CDCV_done;
+wire [127:0]CDCV_o;
+CorrectDCValues U_CDCV(
+    .clk                            ( clk                           ),
+    .rst_n                          ( rst_n                         ),
+    .start                          ( FDCT[0].FDCT_done             ),
+    .x                              ( x                             ),
+    .y                              ( y                             ),
+    .in                             ( CDCV_i                        ),
+    .q                              ( q[15:0]                       ),
+    .iq                             ( iq[15:0]                      ),
+    .bias                           ( bias[31:0]                    ),
+    .zthresh                        ( zthresh[31:0]                 ),
+    .left_derr                      ( left_derr                     ),
+    .top_derr                       ( top_derr                      ),
+    .top_derr_en                    ( top_derr_en                   ),
+    .top_derr_addr                  ( top_derr_addr                 ),
+    .out                            ( CDCV_o                        ),
+    .derr                           ( derr                          ),
+    .done                           ( CDCV_done                     )
+);
+
+wire [255:0]QB_i[BLOCK_SIZE - 1 : 0];
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
-    assign dc_in[12 * (i + 1) -1 : 12 * i] = FDCT_o[i][11:0];
+    assign QB_i[i] = {{4'b0,FDCT_o[i][191:180]},
+                      {4'b0,FDCT_o[i][179:168]},
+                      {4'b0,FDCT_o[i][167:156]},
+                      {4'b0,FDCT_o[i][155:144]},
+                      {4'b0,FDCT_o[i][143:132]},
+                      {4'b0,FDCT_o[i][131:120]},
+                      {4'b0,FDCT_o[i][119:108]},
+                      {4'b0,FDCT_o[i][107: 96]},
+                      {4'b0,FDCT_o[i][ 95: 84]},
+                      {4'b0,FDCT_o[i][ 83: 72]},
+                      {4'b0,FDCT_o[i][ 71: 60]},
+                      {4'b0,FDCT_o[i][ 59: 48]},
+                      {4'b0,FDCT_o[i][ 47: 36]},
+                      {4'b0,FDCT_o[i][ 35: 24]},
+                      {4'b0,FDCT_o[i][ 23: 12]},
+                      CDCV_o[16 * (i + 1) : 16 * i]};
 end
 
-wire FWHT_done;
-FTransformWHT U_FWHT(
-     .clk                           ( clk                           )   
-    ,.rst_n                         ( rst_n                         )
-    ,.start                         ( FDCT[0].FDCT_done             )
-    ,.in                            ( dc_in                         )
-    ,.out                           ( dc_out                        )
-    ,.done                          ( FWHT_done                     )
-);
-
-wire QBDC_done;
-wire [16 * BLOCK_SIZE - 1 : 0]QBDC_Rout;
-QuantizeBlock U_QBDC(
+wire [16 * 16 - 1 : 0]QB_Rout[BLOCK_SIZE - 1 : 0];
+for(i = 0; i < BLOCK_SIZE; i = i + 1)begin:QB
+wire QB_done;
+QuantizeBlock U_QB(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
-    .start                          ( FWHT_done                     ),
-    .in                             ( {'b0,dc_out}                  ),
-    .q                              ( q2                            ),
-    .iq                             ( iq2                           ),
-    .bias                           ( bias2                         ),
-    .zthresh                        ( zthresh2                      ),
-    .sharpen                        ( sharpen2                      ),
-    .Rout                           ( QBDC_Rout                     ),
-    .out                            ( Y_dc_levels                   ),
-    .done                           ( QBDC_done                     )
-);
-
-wire [16 * BLOCK_SIZE - 1 : 0]QBAC_Rout[BLOCK_SIZE - 1 : 0];
-for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
-QuantizeBlock U_QBAC(
-    .clk                            ( clk                           ),
-    .rst_n                          ( rst_n                         ),
-    .start                          ( FWHT_done                     ),
-    .in                             ( {FDCT_o[i][191:12],12'b0}     ),
-    .q                              ( q1                            ),
-    .iq                             ( iq1                           ),
-    .bias                           ( bias1                         ),
-    .zthresh                        ( zthresh1                      ),
-    .sharpen                        ( sharpen1                      ),
-    .Rout                           ( QBAC_Rout[i]                  ),
-    .out                            ( Yac_i[i]                      ),
-    .done                           (                               )
+    .start                          ( CDCV_done                     ),
+    .in                             ( QB_i[i]                       ),
+    .q                              ( q                             ),
+    .iq                             ( iq                            ),
+    .bias                           ( bias                          ),
+    .zthresh                        ( zthresh                       ),
+    .sharpen                        ( sharpen                       ),
+    .Rout                           ( QB_Rout[i]                    ),
+    .out                            ( UVlevels_i[i]                 ),
+    .done                           ( QB_done                       )
 );
 end
 
-wire IWHT_done;
-wire [16 * BLOCK_SIZE - 1 : 0]IWHT_out;
-ITransformWHT U_IWHT(
-    .clk                            ( clk                           ),
-    .rst_n                          ( rst_n                         ),
-    .start                          ( QBDC_done                     ),
-    .in                             ( QBDC_Rout                     ),
-    .out                            ( IWHT_out                      ),
-    .done                           ( IWHT_done                     )
-);
-
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
-wire [255:0] tmp;
-assgin tmp = {QBAC_Rout[i][255:16],IWHT_out[16 * (i + 1) - 1 : 16 * i]};
 ITransform U_IDCT(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
-    .start                          ( IWHT_done                     ),
-    .src                            ( tmp                           ),
-    .ref                            ( YPred_i[i]                    ),
-    .out                            ( Yout_i[i]                     ),
+    .start                          ( QB[0].QB_done                 ),
+    .src                            ( QB_rout[i]                    ),
+    .ref                            ( UVPred_i[i]                   ),
+    .out                            ( UVout_i[i]                    ),
     .done                           ( done                          )
 );
 end

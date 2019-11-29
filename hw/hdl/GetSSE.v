@@ -4,31 +4,27 @@
 // ProjectName    : 
 // Author         : zhaoxingchang
 // E-mail         : zxctja@163.com
-// FileName       :	DC_Pred.v
+// FileName       :	GetSSE.v
 // ModelName      : 
 // Description    : 
 //-------------------------------------------------------------------
 // Create         : 2019-11-15 11:29
-// LastModified   :	2019-11-17 14:23
+// LastModified   :	2019-11-29 14:59
 // Version        : 1.0
 //-------------------------------------------------------------------
 
 `timescale 1ns/100ps
 
-module DC_Pred#(
+module GetSSE#(
  parameter BIT_WIDTH    = 8
 ,parameter BLOCK_SIZE   = 16
-,parameter BLOCK_NUM    = 10 //2^10
-,parameter SHIFT        = 5
 )(
  input                                                    clk
 ,input                                                    rst_n
 ,input                                                    start
-,input      [BLOCK_NUM - 1 : 0]                           x
-,input      [BLOCK_NUM - 1 : 0]                           y
-,input      [BIT_WIDTH * BLOCK_SIZE - 1 : 0]              top
-,input      [BIT_WIDTH * BLOCK_SIZE - 1 : 0]              left
-,output     [BIT_WIDTH * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] dst
+,input      [BIT_WIDTH * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] a
+,input      [BIT_WIDTH * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] b
+,output     [32                                  - 1 : 0] sse
 ,output reg                                               done
 );
 
