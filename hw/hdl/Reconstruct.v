@@ -102,13 +102,31 @@ FTransformWHT U_FWHT(
     ,.done                          ( FWHT_done                     )
 );
 
+wire [255:0]QBDC_i;
+assign QBDC_i = {{1'b0,dc_out[239:225]},
+                 {1'b0,dc_out[224:210]},
+                 {1'b0,dc_out[209:195]},
+                 {1'b0,dc_out[194:180]},
+                 {1'b0,dc_out[179:165]},
+                 {1'b0,dc_out[164:150]},
+                 {1'b0,dc_out[149:135]},
+                 {1'b0,dc_out[134:120]},
+                 {1'b0,dc_out[119:105]},
+                 {1'b0,dc_out[104: 90]},
+                 {1'b0,dc_out[ 89: 75]},
+                 {1'b0,dc_out[ 74: 60]},
+                 {1'b0,dc_out[ 59: 45]},
+                 {1'b0,dc_out[ 44: 30]},
+                 {1'b0,dc_out[ 29: 15]},
+                 {1'b0,dc_out[ 14:  0]}};
+
 wire QBDC_done;
 wire [16 * BLOCK_SIZE - 1 : 0]QBDC_Rout;
 QuantizeBlock U_QBDC(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
     .start                          ( FWHT_done                     ),
-    .in                             ( {'b0,dc_out}                  ),
+    .in                             ( QBDC_i                        ),
     .q                              ( q2                            ),
     .iq                             ( iq2                           ),
     .bias                           ( bias2                         ),
