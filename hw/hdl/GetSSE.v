@@ -24,128 +24,97 @@ module GetSSE#(
 ,input                                                    start
 ,input      [BIT_WIDTH * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] a
 ,input      [BIT_WIDTH * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] b
-,output     [32                                  - 1 : 0] sse
+,output reg [32                                  - 1 : 0] sse
 ,output reg                                               done
 );
 
-    parameter IDLE    = 6'h01;
-    parameter BOTH    = 6'h02;
-    parameter TOP     = 6'h04; 
-    parameter LEFT    = 6'h08;
-    parameter NONE    = 6'h10;
-    parameter DONE    = 6'h20;
-   
-    reg  [5:0] cstate;
-    reg  [5:0] nstate;
+reg [3:0]count;
+reg ena;
+reg valid;
 
-    wire[BIT_WIDTH - 1 : 0] top_i  [SHIFT - 2 : 0];
-    wire[BIT_WIDTH - 1 : 0] left_i [SHIFT - 2 : 0];
-    reg [BIT_WIDTH + SHIFT : 0] temp1;
-    reg [BIT_WIDTH - 1 : 0] temp2;
-    reg [SHIFT - 1 : 0]count;
+always @ (posedge clk or negedge rst_n)begin
+    if(~rst_n)
+        count <= 'b0;
+    else
+        if(start | count != 'b0)
+            count <= count + 1'b1;
+end
 
-    genvar i;
+always @ (posedge clk or negedge rst_n)begin
+    if(~rst_n)
+        ena <= 1'b0;
+    else
+        if(start | count != 'b0)
+            ena <= 1'b1;
+        else
+            ena <= 1'b0;
+end
 
-    generate
+always @ (posedge clk or negedge rst_n)begin
+    if(~rst_n)
+        valid <= 1'b0;
+    else
+        if(ena)
+            valid <= 1'b1;
+        else
+            valid <= 1'b0;
+end
 
-    for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
-        assign top_i [i] = top [BIT_WIDTH * (i + 1) - 1 : BIT_WIDTH * i];
-        assign left_i[i] = left[BIT_WIDTH * (i + 1) - 1 : BIT_WIDTH * i];
-    end
+wire [8 * 16 - 1:0]tmpa[15:0];
+wire [8 * 16 - 1:0]tmpb[15:0];
 
-    endgenerate
+genvar i;
+
+generate
+
+for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
+    assign tmpa[i] = a[8 * 16 * (i + 1) - 1 : 8 * 16 * i];
+    assign tmpb[i] = b[8 * 16 * (i + 1) - 1 : 8 * 16 * i];
+end
+
+for(i = 0; i < BLOCK_SIZE; i = i + 1)begin:ROM
+reg  [8:0]addra;
+wire [31:0]douta;
+rom_pow U0 (
+    .clka                           (clk                            ),
+    .ena                            (ena                            ),
+    .addra                          (addra                          ),
+    .douta                          (douta                          )
+);
 
     always @ (posedge clk or negedge rst_n)begin
         if(~rst_n)
-            cstate <= IDLE;
+            addra <= 'b0;
         else
-            cstate <= nstate;
+            addra <= tmpa[count][8 * (i + 1) - 1 : 8 * i] - 
+                     tmpb[count][8 * (i + 1) - 1 : 8 * i]; 
     end
+end
 
-    always @ * begin
-        case(cstate)
-            IDLE:
-                if(start)
-                    if(x != 'b0)
-                        if(y != 'b0)
-                            nstate = BOTH;
-                        else
-                            nstate = LEFT;
-                    else
-                        if(y != 'b0)
-                            nstate = TOP;
-                        else
-                            nstate = NONE;
-                else
-                    nstate = IDLE;
-            BOTH:
-                if(count < BLOCK_SIZE - 1)
-                    nstate = BOTH;
-                else
-                    nstate = DONE;
-            TOP:
-                if(count < BLOCK_SIZE - 1)
-                    nstate = TOP;
-                else
-                    nstate = DONE;
-            LEFT: 
-                if(count < BLOCK_SIZE - 1)
-                    nstate = LEFT;
-                else
-                    nstate = DONE;
-            NONE:
-                nstate = DONE;
-            DONE:
-                nstate = IDLE;
-            default:
-                nstate = IDLE;
-        endcase
-    end
+endgenerate
 
-    always @ (posedge clk or negedge rst_n)begin
-        if(~rst_n)begin
-            count <= 'b0;
-            temp1 <= 'b0;
-            temp2 <= 'b0;
-            done  <= 'b0;
-        end
-        else begin
-            case(cstate)
-                IDLE:begin
-                    count <= 'b0;
-                    temp1 <= 'b0;
-                    temp2 <= 'b0;
-                    done  <= 'b0;
-                end
-                BOTH:begin
-                    count <= count + 1'b1;
-                    temp1 <= top_i[count] + left_i[count] + temp1;
-                end
-                TOP:begin
-                    count <= count + 1'b1;
-                    temp1 <= (top_i[count] << 1) + temp1;
-                end
-                LEFT:begin
-                    count <= count + 1'b1;
-                    temp1 <= (left_i[count] << 1) + temp1;
-                end
-                NONE:begin
-                    temp1 <= 'h80 << SHIFT;
-                end
-                DONE:begin
-                    temp2 <= (temp1 + BLOCK_SIZE) >> SHIFT;
-                    done  <= 1'b1;
-                end
-            endcase
-        end
-    end
+always @ (posedge clk or negedge rst_n)begin
+    if(~rst_n)
+        sse <= 'b0;
+    else
+        if(start)
+            sse <= 'b0;
+        else if(valid)
+            sse <= ROM[ 0].douta + ROM[ 1].douta + ROM[ 2].douta + ROM[ 3].douta
+                   ROM[ 4].douta + ROM[ 5].douta + ROM[ 6].douta + ROM[ 7].douta
+                   ROM[ 8].douta + ROM[ 9].douta + ROM[10].douta + ROM[11].douta
+                   ROM[12].douta + ROM[13].douta + ROM[14].douta + ROM[15].douta;
+end
 
-Fill #(
- .BIT_WIDTH     (BIT_WIDTH  )
-,.BLOCK_SIZE    (BLOCK_SIZE )
-) U_Fill (
- .value         (temp2   )
-,.dst           (dst     )
-);
+reg [16:0]shift;
+always @ (posedge clk or negedge rst_n)begin
+    if(~rst_n)
+        done  <= 'b0;
+        shift <= 'b0;
+    else
+        shift[0] <= start;
+        shift[16:1] <= shift[15:0];
+        done  <= shift[16];
+end
 
 endmodule
