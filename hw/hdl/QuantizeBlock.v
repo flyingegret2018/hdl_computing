@@ -29,6 +29,7 @@ module QuantizeBlock#(
 ,input      [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] sharpen
 ,output     [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] Rout
 ,output     [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] out
+,output                                            nz
 ,output reg                                        done
 );
 
@@ -41,7 +42,6 @@ reg        [15:0]iq_i     [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 reg        [31:0]bias_i   [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 reg        [31:0]zthresh_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 reg        [15:0]sharpen_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-
 
 reg shift;
 
@@ -109,9 +109,15 @@ for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
             end
         end
     end
+
+    wire[15:0]t;
+    assign t[i] = out_i[i] != 'b0;
 end
 
 endgenerate
+
+assign nz = t[ 0] | t[ 1] | t[ 2] | t[ 3] | t[ 4] | t[ 5] | t[ 6] | t[ 7] |
+            t[ 8] | t[ 9] | t[10] | t[11] | t[12] | t[13] | t[14] | t[15];
 
 //zigzag
 assign out[ 0] = out_i[ 0];

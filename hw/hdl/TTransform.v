@@ -19,13 +19,13 @@ module TTransform#(
  parameter BIT_WIDTH    = 8
 ,parameter BLOCK_SIZE   = 4
 )(
- input                                             clk
-,input                                             rst_n
-,input                                             start
-,input      [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] in
-,input      [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] w
-,output reg [31:0]                                 sum
-,output reg                                        done
+ input                                                    clk
+,input                                                    rst_n
+,input                                                    start
+,input             [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] in
+,input             [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] w
+,output reg signed [31                               : 0] sum
+,output reg                                               done
 );
 
 wire        [ 7 : 0]in_i [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];

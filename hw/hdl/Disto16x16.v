@@ -19,43 +19,104 @@ module Disto16x16#(
  parameter BIT_WIDTH    = 8
 ,parameter BLOCK_SIZE   = 16
 )(
- input                                             clk
-,input                                             rst_n
-,input                                             start
-,input      [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] ina
-,input      [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] inb
-,input      [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] w
-,output reg [31:0]                                 sum
-,output reg                                        done
+ input                                                    clk
+,input                                                    rst_n
+,input                                                    start
+,input             [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] ina
+,input             [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] inb
+,input             [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] w
+,output reg signed [31                               : 0] sum
+,output reg                                               done
 );
 
-wire [31:0]suma,sumb;
+wire[ 8 * BLOCK_SIZE - 1 : 0]tmpa[BLOCK_SIZE - 1 : 0];
+wire[ 8 * BLOCK_SIZE - 1 : 0]tmpb[BLOCK_SIZE - 1 : 0];
+reg [ 8 * BLOCK_SIZE - 1 : 0]tmpc;
+reg [ 8 * BLOCK_SIZE - 1 : 0]tmpd;
+reg [3:0]count;
+reg valid;
 
-TTransform U_TT_A(
+genvar i;
+
+generate
+
+for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
+    assign tmpa[i] = 
+    {ina[8*((i/4)*64+(i%4)*4+52)-1:8*((i/4)*64+(i%4)*4+48)],
+     ina[8*((i/4)*64+(i%4)*4+36)-1:8*((i/4)*64+(i%4)*4+32)],
+     ina[8*((i/4)*64+(i%4)*4+20)-1:8*((i/4)*64+(i%4)*4+16)],
+     ina[8*((i/4)*64+(i%4)*4+ 4)-1:8*((i/4)*64+(i%4)*4+ 0)]};
+
+    assign tmpb[i] = 
+    {inb[8*((i/4)*64+(i%4)*4+52)-1:8*((i/4)*64+(i%4)*4+48)],
+     inb[8*((i/4)*64+(i%4)*4+36)-1:8*((i/4)*64+(i%4)*4+32)],
+     inb[8*((i/4)*64+(i%4)*4+20)-1:8*((i/4)*64+(i%4)*4+16)],
+     inb[8*((i/4)*64+(i%4)*4+ 4)-1:8*((i/4)*64+(i%4)*4+ 0)]};
+end
+
+endgenerate
+
+wire [31:0]sum4;
+wire done4;
+Disto4x4 U_DISTO4X4(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
-    .start                          ( start                         ),
-    .in                             ( ina                           ),
+    .start                          ( valid                         ),
+    .ina                            ( tmpc                          ),
+    .inb                            ( tmpd                          ),
     .w                              ( w                             ),
-    .sum                            ( suma                          ),
-    .done                           ( done                          )
+    .sum                            ( sum4                          ),
+    .done                           ( done4                         )
 );
 
-TTransform U_TT_B(
-    .clk                            ( clk                           ),
-    .rst_n                          ( rst_n                         ),
-    .start                          ( start                         ),
-    .in                             ( inb                           ),
-    .w                              ( w                             ),
-    .sum                            ( sumb                          ),
-    .done                           (                               )
-);
+always @ (posedge clk or negedge rst_n)begin
+    if(~rst_n)
+        count <= 'b0;
+    else
+        if(start | count != 'b0)
+            count <= count + 1'b1;
+end
 
-wire signed[31:0]tmp;
-wire [31:0]tmp1;
+always @ (posedge clk or negedge rst_n)begin
+    if(~rst_n)
+        valid <= 1'b0;
+    else
+        if(start | count != 'b0)
+            valid <= 1'b1;
+        else
+            valid <= 1'b0;
+end
 
-assign tmp = sumb - suma;
-assign tmp1 = (tmp < 'b0) ? ('b0 - tmp) : tmp;
-assign sum = tmp1 >> 5;
+always @ (posedge clk or negedge rst_n)begin
+    if(~rst_n)begin
+        tmpc <= 'b0;
+        tmpd <= 'b0;
+    end
+    else begin
+        tmpc <= tmpa[count];
+        tmpd <= tmpb[count];
+    end
+end
+
+always @ (posedge clk or negedge rst_n)begin
+    if(~rst_n)
+        sum <= 'b0;
+    else
+        if(start)
+            sum <= 'b0;
+        else if(done4)
+            sum <= sum + sum4;
+end
+
+reg [15:0]shift;
+always @ (posedge clk or negedge rst_n)begin
+    if(~rst_n)
+        done  <= 'b0;
+        shift <= 'b0;
+    else
+        shift[0] <= start;
+        shift[15:1] <= shift[14:0];
+        done  <= shift[15];
+end
 
 endmodule
