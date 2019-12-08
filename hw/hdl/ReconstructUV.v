@@ -37,6 +37,7 @@ module Reconstruct#(
 ,output     [ 8 *  8 * 16 - 1 : 0] UVout
 ,output     [16 *  8 * 16 - 1 : 0] UVlevels
 ,input      [47               : 0] derr
+,input      [31               : 0] nz
 ,output                            done
 );
 
@@ -46,30 +47,36 @@ wire        [ 8 * 16 - 1 : 0]UVout_i     [BLOCK_SIZE - 1 : 0];
 wire signed [12 * 16 - 1 : 0]FDCT_o      [BLOCK_SIZE - 1 : 0];
 wire signed [16 * 16 - 1 : 0]UVlevels_i  [BLOCK_SIZE - 1 : 0];
 
+assign UVsrc_i[0] = {UVsrc[ 415:384],UVsrc[287:256],UVsrc[159:128],UVsrc[ 31:  0]};
+assign UVsrc_i[1] = {UVsrc[ 447:416],UVsrc[319:288],UVsrc[191:160],UVsrc[ 63: 32]};
+assign UVsrc_i[2] = {UVsrc[ 927:896],UVsrc[799:768],UVsrc[671:640],UVsrc[543:512]};
+assign UVsrc_i[3] = {UVsrc[ 959:928],UVsrc[831:800],UVsrc[703:672],UVsrc[575:544]};
+assign UVsrc_i[4] = {UVsrc[ 479:448],UVsrc[351:320],UVsrc[223:192],UVsrc[ 95: 64]};
+assign UVsrc_i[5] = {UVsrc[ 511:480],UVsrc[383:352],UVsrc[255:224],UVsrc[127: 96]};
+assign UVsrc_i[6] = {UVsrc[ 991:960],UVsrc[863:832],UVsrc[735:704],UVsrc[607:576]};
+assign UVsrc_i[7] = {UVsrc[1023:992],UVsrc[895:864],UVsrc[767:736],UVsrc[639:608]};
+
+assign UVPred_i[0] = {UVPred[ 415:384],UVPred[287:256],UVPred[159:128],UVPred[ 31:  0]};
+assign UVPred_i[1] = {UVPred[ 447:416],UVPred[319:288],UVPred[191:160],UVPred[ 63: 32]};
+assign UVPred_i[2] = {UVPred[ 927:896],UVPred[799:768],UVPred[671:640],UVPred[543:512]};
+assign UVPred_i[3] = {UVPred[ 959:928],UVPred[831:800],UVPred[703:672],UVPred[575:544]};
+assign UVPred_i[4] = {UVPred[ 479:448],UVPred[351:320],UVPred[223:192],UVPred[ 95: 64]};
+assign UVPred_i[5] = {UVPred[ 511:480],UVPred[383:352],UVPred[255:224],UVPred[127: 96]};
+assign UVPred_i[6] = {UVPred[ 991:960],UVPred[863:832],UVPred[735:704],UVPred[607:576]};
+assign UVPred_i[7] = {UVPred[1023:992],UVPred[895:864],UVPred[767:736],UVPred[639:608]};
+
+assign {UVout[ 415:384],UVout[287:256],UVout[159:128],UVout[ 31:  0]} = UVout_i[0];
+assign {UVout[ 447:416],UVout[319:288],UVout[191:160],UVout[ 63: 32]} = UVout_i[1];
+assign {UVout[ 927:896],UVout[799:768],UVout[671:640],UVout[543:512]} = UVout_i[2];
+assign {UVout[ 959:928],UVout[831:800],UVout[703:672],UVout[575:544]} = UVout_i[3];
+assign {UVout[ 479:448],UVout[351:320],UVout[223:192],UVout[ 95: 64]} = UVout_i[4];
+assign {UVout[ 511:480],UVout[383:352],UVout[255:224],UVout[127: 96]} = UVout_i[5];
+assign {UVout[ 991:960],UVout[863:832],UVout[735:704],UVout[607:576]} = UVout_i[6];
+assign {UVout[1023:992],UVout[895:864],UVout[767:736],UVout[639:608]} = UVout_i[7];
+
 genvar i;
 
 generate
-
-for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
-    assign UVsrc_i[i] = 
-    {UVsrc[8*((i/4)*64+(i%4)*4+52)-1:8*((i/4)*64+(i%4)*4+48)],
-     UVsrc[8*((i/4)*64+(i%4)*4+36)-1:8*((i/4)*64+(i%4)*4+32)],
-     UVsrc[8*((i/4)*64+(i%4)*4+20)-1:8*((i/4)*64+(i%4)*4+16)],
-     UVsrc[8*((i/4)*64+(i%4)*4+ 4)-1:8*((i/4)*64+(i%4)*4+ 0)]};
-
-    assign UVPred_i[i] = 
-    {UVPred[8*((i/4)*64+(i%4)*4+52)-1:8*((i/4)*64+(i%4)*4+48)],
-     UVPred[8*((i/4)*64+(i%4)*4+36)-1:8*((i/4)*64+(i%4)*4+32)],
-     UVPred[8*((i/4)*64+(i%4)*4+20)-1:8*((i/4)*64+(i%4)*4+16)],
-     UVPred[8*((i/4)*64+(i%4)*4+ 4)-1:8*((i/4)*64+(i%4)*4+ 0)]};
-
-    assign 
-    {UVout[8*((i/4)*64+(i%4)*4+52)-1:8*((i/4)*64+(i%4)*4+48)],
-     UVout[8*((i/4)*64+(i%4)*4+36)-1:8*((i/4)*64+(i%4)*4+32)],
-     UVout[8*((i/4)*64+(i%4)*4+20)-1:8*((i/4)*64+(i%4)*4+16)],
-     UVout[8*((i/4)*64+(i%4)*4+ 4)-1:8*((i/4)*64+(i%4)*4+ 0)]}
-     = UVout_i[i];
-end
 
 assign UVlevels[ 15 :   0] = UVlevels_i[0];
 assign UVlevels[ 31 :  16] = UVlevels_i[1];
@@ -145,6 +152,7 @@ for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
                       CDCV_o[16 * (i + 1) : 16 * i]};
 end
 
+wire [7:0]QB_nz;
 wire [16 * 16 - 1 : 0]QB_Rout[BLOCK_SIZE - 1 : 0];
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin:QB
 wire QB_done;
@@ -160,9 +168,12 @@ QuantizeBlock U_QB(
     .sharpen                        ( sharpen                       ),
     .Rout                           ( QB_Rout[i]                    ),
     .out                            ( UVlevels_i[i]                 ),
+    .nz                             ( QB_nz[i]                      ),
     .done                           ( QB_done                       )
 );
 end
+
+assign nz = {'b0,QB_nz,16'b0};
 
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
 ITransform U_IDCT(

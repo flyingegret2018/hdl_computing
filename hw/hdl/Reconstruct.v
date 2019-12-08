@@ -36,6 +36,7 @@ module Reconstruct#(
 ,output     [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] Yout
 ,output     [16 * BLOCK_SIZE              - 1 : 0] Y_dc_levels
 ,output     [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] Y_ac_levels
+,output     [31                           - 1 : 0] nz
 ,output                                            done
 );
 
@@ -121,6 +122,7 @@ assign QBDC_i = {{1'b0,dc_out[239:225]},
                  {1'b0,dc_out[ 14:  0]}};
 
 wire QBDC_done;
+wire QBDC_nz;
 wire [16 * BLOCK_SIZE - 1 : 0]QBDC_Rout;
 QuantizeBlock U_QBDC(
     .clk                            ( clk                           ),
@@ -134,6 +136,7 @@ QuantizeBlock U_QBDC(
     .sharpen                        ( sharpen2                      ),
     .Rout                           ( QBDC_Rout                     ),
     .out                            ( Y_dc_levels                   ),
+    .nz                             ( QBDC_nz                       ),
     .done                           ( QBDC_done                     )
 );
 
@@ -157,6 +160,7 @@ for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
                         16'b0};
 end
 
+wire [15:0]QBAC_nz;
 wire [16 * BLOCK_SIZE - 1 : 0]QBAC_Rout[BLOCK_SIZE - 1 : 0];
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
 QuantizeBlock U_QBAC(
@@ -171,9 +175,12 @@ QuantizeBlock U_QBAC(
     .sharpen                        ( sharpen1                      ),
     .Rout                           ( QBAC_Rout[i]                  ),
     .out                            ( Yac_i[i]                      ),
+    .nz                             ( QBAC_nz[i]                    ),
     .done                           (                               )
 );
 end
+
+assign nz = {'b0,QBDC_nz,8'b0,QBAC_nz};
 
 wire IWHT_done;
 wire [16 * BLOCK_SIZE - 1 : 0]IWHT_out;

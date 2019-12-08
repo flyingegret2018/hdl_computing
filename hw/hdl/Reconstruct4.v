@@ -30,6 +30,7 @@ module Reconstruct4#(
 ,input      [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] sharpen
 ,output     [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] Yout
 ,output     [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] YLevels
+,output                                            nz
 ,output                                            done
 );
 
@@ -76,6 +77,7 @@ QuantizeBlock U_QB(
     .sharpen                        ( sharpen                       ),
     .Rout                           ( QB_Rout                       ),
     .out                            ( YLevels                       ),
+    .nz                             ( nz                            ),
     .done                           ( QB_done                       )
 );
 
