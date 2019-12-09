@@ -100,10 +100,10 @@ always @ (posedge clk or negedge rst_n)begin
         if(start)
             sse <= 'b0;
         else if(valid)
-            sse <= ROM[ 0].douta + ROM[ 1].douta + ROM[ 2].douta + ROM[ 3].douta
-                   ROM[ 4].douta + ROM[ 5].douta + ROM[ 6].douta + ROM[ 7].douta
-                   ROM[ 8].douta + ROM[ 9].douta + ROM[10].douta + ROM[11].douta
-                   ROM[12].douta + ROM[13].douta + ROM[14].douta + ROM[15].douta;
+            sse <= ROM[ 0].douta + ROM[ 1].douta + ROM[ 2].douta + ROM[ 3].douta +
+                   ROM[ 4].douta + ROM[ 5].douta + ROM[ 6].douta + ROM[ 7].douta +
+                   ROM[ 8].douta + ROM[ 9].douta + ROM[10].douta + ROM[11].douta +
+                   ROM[12].douta + ROM[13].douta + ROM[14].douta + ROM[15].douta + sse;
 end
 
 reg [16:0]shift;
