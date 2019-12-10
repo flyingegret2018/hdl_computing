@@ -49,6 +49,7 @@ module PickBestIntra#(
 ,output reg        [32                           - 1 : 0] max_edgeo
 ,output            [16 * BLOCK_SIZE              - 1 : 0] dc_levels
 ,output            [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] ac_levels
+,output            [32                           - 1 : 0] nz
 ,output reg                                               done
 );
 
@@ -160,7 +161,7 @@ Disto16x16 U_DISTO16X16(
 );
 
 wire[31:0]sum;
-wire cost_done
+wire cost_done;
 GetCostLuma U_GETCOSTLUMA(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
