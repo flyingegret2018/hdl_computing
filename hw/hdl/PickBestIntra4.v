@@ -37,7 +37,7 @@ module PickBestIntra4#(
 ,output reg        [64                           - 1 : 0] Score
 ,output            [ 8 * BLOCK_SIZE              - 1 : 0] mode_i4
 ,output            [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] levels
-,output            [32                           - 1 : 0] nz
+,output reg        [32                           - 1 : 0] nz
 ,output reg                                               done
 );
 
@@ -155,7 +155,17 @@ wire[   9:0]disto_done;
 wire[  31:0]sum[9:0];
 wire[   9:0]cost_done;
 wire[  15:0]FixedCost[9:0];
-wire[  31:0]score[9:0];
+wire[  63:0]score[9:0];
+reg [   4:0]i4;
+reg [   1:0]flag;
+reg [  31:0]D_tmp;
+reg [  31:0]SD_tmp;
+reg [  31:0]H_tmp;
+reg [  31:0]R_tmp;
+reg [  63:0]score_tmp;
+reg [   7:0]mode;
+reg [ 127:0]o_tmp;
+
 
 assign FixedCost[0] = 'd40;
 assign FixedCost[1] = 'd1151;
@@ -263,20 +273,39 @@ BestScore U_BESTSCORE(
     .mode                           ( bestmode                      )
 );
 
-reg [21:0] cstate;
-reg [21:0] nstate;
+wire[ 31:0]left_w;
+wire[  7:0]top_left_w;
+wire[ 31:0]top_w;
+wire[ 31:0]top_right_w;
+reg load;
+RotateI4 U_ROTATEI4(
+    .clk                            ( clk                           ),
+    .rst_n                          ( rst_n                         ),
+    .load                           ( load                          ),
+    .i4                             ( i4                            ),
+    .Yin                            ( o_tmp                         ),
+    .top_left                       ( top_left                      ),
+    .top                            ( top                           ),
+    .left                           ( left                          ),
+    .left_i                         ( left_w                        ),
+    .top_left_i                     ( top_left_w                    ),
+    .top_i                          ( top_w                         ),
+    .top_right_i                    ( top_right_w                   )
+);
 
-reg [   4:0]i4;
-reg [   1:0]flag;
-reg [  31:0]D_tmp;
-reg [  31:0]SD_tmp;
-reg [  31:0]H_tmp;
-reg [  31:0]R_tmp;
-reg [   7:0]mode;
-reg [ 127:0]o_tmp;
+reg [9:0] cstate;
+reg [9:0] nstate;
 
 parameter IDLE        = 'h1;
-parameter DONE        = 'h200000;
+parameter INIT        = 'h2;
+parameter PRED        = 'h4;
+parameter RECO        = 'h8;
+parameter CALC        = 'h10;
+parameter SCORE       = 'h20;
+parameter BEST        = 'h40;
+parameter ROTATE      = 'h80;
+parameter REINIT      = 'h100;
+parameter DONE        = 'h200;
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
@@ -293,6 +322,8 @@ always @ * begin
             else
                 nstate = IDLE;
         INIT:
+            nstate = PRED;
+        PRED:
             nstate = RECO;
         RECO:
             nstate = CALC;
@@ -304,10 +335,14 @@ always @ * begin
         SCORE:
             nstate = BEST;
         BEST:
-            nstate = BEST;
-        HE_SCORE:
-            nstate = CMP0;
-       
+            nstate = ROTATE;
+        ROTATE:
+            nstate = REINIT;
+        REINIT:
+            if(i4 >= 'd15)
+                nstate = DONE;
+            else
+                nstate = PRED;
         DONE:
             nstate = IDLE;
         default:
@@ -328,8 +363,11 @@ always @ (posedge clk or negedge rst_n)begin
         SD_tmp       <= 'b0;
         H_tmp        <= 'b0;
         R_tmp        <= 'b0;
+        score_tmp    <= 'b0;
         mode         <= 'b0;
         o_tmp        <= 'b0;
+        load         <= 'b0;
+        nz           <= 'b0;
         mode_i[ 0]   <= 'b0;
         mode_i[ 1]   <= 'b0;
         mode_i[ 2]   <= 'b0;
@@ -411,14 +449,27 @@ always @ (posedge clk or negedge rst_n)begin
             STORE:beign
                 mode_i[i4]   <= mode;
                 Yout_i[i4]   <= dst[mode];
-                o_tmp        <= dst[mode];
                 levels_i[i4] <= Ylevels[mode];
+                nz[i4]       <= nz_i[mode];
+                o_tmp        <= dst[mode];
                 D_tmp        <= sse[mode];
                 SD_tmp       <= disto[mode];
                 H_tmp        <= FixedCost[mode];
                 R_tmp        <= sum[mode];
             end
             ROTATE:begin
+                load         <= 1'b1;
+                score_tmp    <= ((R_tmp << 10) + H_tmp) * lambda_mode +
+                             'd256 * (D_tmp + ((SD_tmp * tlambda + 'd128) >> 8));
+            end
+            REINIT:begin
+                load         <= 1'b0;
+                Score        <= Score + score_tmp;
+                left_i       <= left_w;
+                top_left_i   <= top_left_w;
+                top_i        <= top_w;
+                top_right_i  <= top_right_w;
+                i4           <= i4 + 1'b1;
             end
             DONE:begin
                 done      <= 1'b1;

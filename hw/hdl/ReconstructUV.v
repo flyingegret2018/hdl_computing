@@ -4,18 +4,18 @@
 // ProjectName    : 
 // Author         : zhaoxingchang
 // E-mail         : zxctja@163.com
-// FileName       :	Reconstruct.v
+// FileName       :	ReconstructUV.v
 // ModelName      : 
 // Description    : 
 //-------------------------------------------------------------------
 // Create         : 2019-11-17 13:30
-// LastModified   :	2019-11-21 13:31
+// LastModified   :	2019-12-11 14:00
 // Version        : 1.0
 //-------------------------------------------------------------------
 
 `timescale 1ns/100ps
 
-module Reconstruct#(
+module ReconstructUV#(
  parameter BLOCK_SIZE   = 8
 )(
  input                             clk
@@ -36,8 +36,8 @@ module Reconstruct#(
 ,output     [ 9               : 0] top_derr_addr
 ,output     [ 8 *  8 * 16 - 1 : 0] UVout
 ,output     [16 *  8 * 16 - 1 : 0] UVlevels
-,input      [47               : 0] derr
-,input      [31               : 0] nz
+,output     [47               : 0] derr
+,output     [31               : 0] nz
 ,output                            done
 );
 

@@ -30,7 +30,7 @@ module CorrectDCValues(
 ,input               [ 31 : 0] top_derr
 ,output reg                    top_derr_en
 ,output reg          [  9 : 0] top_derr_addr
-,output reg signed   [127 : 0] out
+,output reg          [127 : 0] out
 ,output              [ 47 : 0] derr
 ,output reg                    done
 );
@@ -49,20 +49,20 @@ module CorrectDCValues(
     parameter STEP5   = 'h800;
     parameter STEP6   = 'h1000;
    
-    reg [12:0] cstate;
-    reg [12:0] nstate;
+    reg  [12:0] cstate;
+    reg  [12:0] nstate;
 
-    reg signed[31:0]tmp [5:0];
-    reg signed[ 7:0]top [3:0];
-    reg sidned[ 7:0]left[3:0];
-    reg signed[15:0]u_tmp;
-    reg signed[15:0]v_tmp;
-    reg signed[ 7:0]uerr0;
-    reg signed[ 7:0]verr0;
-    reg signed[ 7:0]uerr1;
-    reg signed[ 7:0]verr1;
-    reg signed[ 7:0]uerr2;
-    reg signed[ 7:0]verr2;
+    reg  signed[31:0]tmp [5:0];
+    reg  signed[ 7:0]top [3:0];
+    reg  sidned[ 7:0]left[3:0];
+    reg  signed[15:0]u_tmp;
+    reg  signed[15:0]v_tmp;
+    reg  signed[ 7:0]uerr0;
+    reg  signed[ 7:0]verr0;
+    reg  signed[ 7:0]uerr1;
+    reg  signed[ 7:0]verr1;
+    reg  signed[ 7:0]uerr2;
+    reg  signed[ 7:0]verr2;
 
     wire signed[ 7:0] uerr;
     wire signed[ 7:0] verr;

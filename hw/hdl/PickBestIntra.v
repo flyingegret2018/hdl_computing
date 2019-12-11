@@ -43,9 +43,9 @@ module PickBestIntra#(
 ,input             [32 * BLOCK_SIZE              - 1 : 0] bias2
 ,input             [32 * BLOCK_SIZE              - 1 : 0] zthresh2
 ,input             [16 * BLOCK_SIZE              - 1 : 0] sharpen2
-,output            [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] Yout
+,output            [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] out
 ,output reg        [64                           - 1 : 0] Score
-,output reg        [ 2                           - 1 : 0] mode_i16
+,output            [32                           - 1 : 0] mode_i16
 ,output reg        [32                           - 1 : 0] max_edgeo
 ,output            [16 * BLOCK_SIZE              - 1 : 0] dc_levels
 ,output            [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] ac_levels
@@ -53,7 +53,7 @@ module PickBestIntra#(
 ,output reg                                               done
 );
 
-wire [8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] dc_pred;
+wire [8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0]pred[3:0];
 DC_Pred U_DC_PRED(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
@@ -62,37 +62,34 @@ DC_Pred U_DC_PRED(
     .y                              ( y                             ),
     .top                            ( top                           ),
     .left                           ( left                          ),
-    .dst                            ( dc_pred                       ),
+    .dst                            ( pred[3]                       ),
     .done                           (                               )
 );
 
-wire [8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] ve_pred;
 Vertical_Pred U_VERTICAL_PRED(
     .top                            ( top                           ),
-    .dst                            ( ve_pred                       )
+    .dst                            ( pred[0]                       )
 );
 
-wire [8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] he_pred;
 Horizontal_Pred U_HORIZONTAL_PRED(
     .left                           ( left                          ),
-    .dst                            ( he_pred                       )
+    .dst                            ( pred[1]                       )
 );
 
-wire [8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] tm_pred;
 True_Motion_Pred U_TRUE_MOTION_PRED(
     .top_left                       ( top_left                      ),
     .top                            ( top                           ),
     .left                           ( left                          ),
-    .dst                            ( tm_pred                       )
+    .dst                            ( pred[2]                       )
 );
 
-wire rec_done;
-reg rec_start;
+wire        rec_done;
+reg         rec_start;
 reg [2047:0]YPred;
 wire[2047:0]Yout;
 wire[ 255:0]Y_dc_levels;
 wire[4095:0]Y_ac_levels;
-wire[  31:0]nz;
+wire[  31:0]nz_i;
 Reconstruct U_RECONSTRUCT(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
@@ -112,7 +109,7 @@ Reconstruct U_RECONSTRUCT(
     .Yout                           ( Yout                          ),
     .Y_dc_levels                    ( Y_dc_levels                   ),
     .Y_ac_levels                    ( Y_ac_levels                   ),
-    .nz                             ( nz                            ),
+    .nz                             ( nz_i                          ),
     .done                           ( rec_done                      )
 );
 
@@ -160,6 +157,12 @@ Disto16x16 U_DISTO16X16(
     .done                           ( disto_done                    )
 );
 
+wire[15:0]FixedCost[3:0];
+assign FixedCost[0] = 'd663;
+assign FixedCost[1] = 'd919;
+assign FixedCost[2] = 'd872;
+assign FixedCost[3] = 'd919;
+
 wire[31:0]sum;
 wire cost_done;
 GetCostLuma U_GETCOSTLUMA(
@@ -172,8 +175,8 @@ GetCostLuma U_GETCOSTLUMA(
     .done                           ( cost_done                     )
 );
 
-reg [21:0] cstate;
-reg [21:0] nstate;
+reg [9:0] cstate;
+reg [9:0] nstate;
 
 reg [   1:0]count;
 reg [ 255:0]dc_tmp;
@@ -185,35 +188,26 @@ reg [  31:0]D_tmp;
 reg [  31:0]SD_tmp;
 reg [  31:0]H_tmp;
 reg [  31:0]R_tmp;
-reg flag;
+reg [   1:0]i16;
+reg [   1:0]mode;
+reg         flag;
 
 assign ac_levels = ac_tmp;
 assign dc_levels = dc_tmp;
 assign nz = nz_tmp;
-assign Yout = Yout_tmp;
+assign out = Yout_tmp;
+assign mode_i16 = {'b0,mode};
 
 parameter IDLE        = 'h1;
-parameter VE_MODE     = 'h2;
-parameter WAIT0       = 'h4; 
-parameter VE_SCORE    = 'h8;
-parameter HE_MODE     = 'h10;
-parameter WAIT1       = 'h20;
-parameter HE_SCORE    = 'h40;
-parameter CMP0        = 'h80;
-parameter STORE0      = 'h100;
-parameter TM_MODE     = 'h200;
-parameter WAIT2       = 'h400;
-parameter TM_SCORE    = 'h800;
-parameter CMP1        = 'h1000;
-parameter STORE1      = 'h2000;
-parameter DC_MODE     = 'h4000;
-parameter WAIT3       = 'h8000;
-parameter DC_SCORE    = 'h10000;
-parameter CMP2        = 'h20000;
-parameter STORE2      = 'h40000;
-parameter SCORE       = 'h80000;
-parameter STORE_DELTA = 'h100000;
-parameter DONE        = 'h200000;
+parameter PRED        = 'h2;
+parameter WAIT        = 'h4; 
+parameter FIRSTSCORE  = 'h8;
+parameter SCORE       = 'h10;
+parameter COMP        = 'h20;
+parameter STORE       = 'h40;
+parameter LASTSCORE   = 'h80;
+parameter STORE_DELTA = 'h100;
+parameter DONE        = 'h200;
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
@@ -226,67 +220,37 @@ always @ * begin
     case(cstate)
         IDLE:
             if(start)
-                nstate = VE_MODE;
+                nstate = PRED;
             else
                 nstate = IDLE;
-        VE_MODE:
-            nstate = WAIT0;
-        WAIT0:
+        PERD:
+            nstate = WAIT;
+        WAIT:
             if(count == 2'b11)
-                nstate = VE_SCORE;
+                if(i16 == 'b1)
+                    nstate = FIRSTSCORE;
+                else
+                    nstate = SCORE;
             else
-                nstate = WAIT0;
-        VE_SCORE:
-            nstate = HE_MODE;
-        HE_MODE:
-            nstate = WAIT1;
-        WAIT1:
-            if(count == 2'b11)
-                nstate = HE_SCORE;
-            else
-                nstate = WAIT1;
-        HE_SCORE:
-            nstate = CMP0;
-        CMP0:
-            if(Score > score_tmp)
-                nstate = STORE0;
-            else
-                nstate = TM_MODE;
-        STORE0:
-            nstate = TM_MODE;
-        TM_MODE:
-            nstate = WAIT2;
-        WAIT2:
-            if(count == 2'b11)
-                nstate = TM_SCORE;
-            else
-                nstate = WAIT2;
-        TM_SCORE:
-            nstate = CMP1;
-        CMP1:
-            if(Score > score_tmp)
-                nstate = STORE1;
-            else
-                nstate = DC_MODE;
-        STORE1:
-            nstate = DC_MODE;
-        DC_MODE:
-            nstate = WAIT3;
-        WAIT3:
-            if(count == 2'b11)
-                nstate = DC_SCORE;
-            else
-                nstate = WAIT3;
-        DC_SCORE:
-            nstate = CMP2;
-        CMP2:
-            if(Score > score_tmp)
-                nstate = STORE2;
-            else
-                nstate = SCORE;
-        STORE2:
-            nstate = SCORE;
+                nstate = WAIT;
+        FIRSTSCORE:
+            nstate = PRED;
         SCORE:
+            nstate = COMP;
+        COMP:
+            if(Score > score_tmp)
+                nstate = STORE;
+            else
+                if(i16 == 'd0)
+                    nstate = LASTSCORE;
+                else
+                    nstate = PRED;
+        STORE:
+            if(i16 == 'd0)
+                nstate = LASTSCORE;
+            else
+                nstate = PRED;
+        LASTSCORE:
             if(((nz_tmp & 'h100ffff) == 'h1000000) && (D_tmp > min_disto))
                 nstate = STORE_DELTA;
             else
@@ -309,118 +273,63 @@ always @ (posedge clk or negedge rst_n)begin
         Score     <= 'b0;
         score_tmp <= 'b0;
         Yout_tmp  <= 'b0;
-        mode_i16  <= 'b0;
-        done      <= 'b0;
+        mode      <= 'b0;
         D_tmp     <= 'b0;
         SD_tmp    <= 'b0;
         H_tmp     <= 'b0;
         R_tmp     <= 'b0;
         flag      <= 'b0;
+        i16       <= 'b0;
+        done      <= 'b0;
     end
     else begin
         case(cstate)
             IDLE:begin
+                i16       <= 2'b0;
                 done      <= 1'b0;
             end
-            VE_MODE:begin
+            PRED:begin
                 rec_start <= 1'b1;
-                YPred     <= ve_pred;
+                YPred     <= pred[i16];
+                i16       <= i16 + 1'b1;
             end
-            WAIT0:begin
+            WAIT:begin
                 rec_start <= 1'b0;
             end
-            VE_SCORE:begin
-                Score     <= ((sum << 10) + 'd919) * lambda_i16 +
+            FIRSTSCORE:begin
+                Score     <= ((sum << 10) + FixedCost[1]) * lambda_i16 +
                              'd256 * (sse + ((disto * tlambda + 'd128) >> 8));
-                mode_i16  <= 'd1;
+                mode      <= 2'b1;
+                i16       <= 2'b1;
                 dc_tmp    <= Y_dc_levels;
                 ac_tmp    <= Y_ac_levels;
                 Yout_tmp  <= Yout;
-                nz_tmp    <= nz;
+                nz_tmp    <= nz_i;
                 D_tmp     <= sse;
                 SD_tmp    <= disto;
-                H_tmp     <= 'd919;
-                R_tmp     <= sum;
-            end
-            HE_MODE:begin
-                rec_start <= 1'b1;
-                YPred     <= he_pred;
-            end
-            WAIT1:begin
-                rec_start <= 1'b0;
-            end
-            HE_SCORE:begin
-                score_tmp <= ((sum << 10) + 'd872) * lambda_i16 +
-                             'd256 * (sse + ((disto * tlambda + 'd128) >> 8));
-            end
-            CMP0:begin
-                ;
-            end
-            STORE0:begin
-                mode_i16  <= 'd2;
-                dc_tmp    <= Y_dc_levels;
-                ac_tmp    <= Y_ac_levels;
-                Yout_tmp  <= Yout;
-                nz_tmp    <= nz;
-                Score     <= score_tmp;
-                D_tmp     <= sse;
-                SD_tmp    <= disto;
-                H_tmp     <= 'd872;
-                R_tmp     <= sum;
-            end
-            TM_MODE:begin
-                rec_start <= 1'b1;
-                YPred     <= tm_pred;
-            end
-            WAIT2:begin
-                rec_start <= 1'b0;
-            end
-            TM_SCORE:begin
-                score_tmp <= ((sum << 10) + 'd919) * lambda_i16 +
-                             'd256 * (sse + ((disto * tlambda + 'd128) >> 8));
-            end
-            CMP1:begin
-                ;
-            end
-            STORE1:begin
-                mode_i16  <= 'd3;
-                dc_tmp    <= Y_dc_levels;
-                ac_tmp    <= Y_ac_levels;
-                Yout_tmp  <= Yout;
-                nz_tmp    <= nz;
-                Score     <= score_tmp;
-                D_tmp     <= sse;
-                SD_tmp    <= disto;
-                H_tmp     <= 'd919;
-                R_tmp     <= sum;
-            end
-            DC_MODE:begin
-                rec_start <= 1'b1;
-                YPred     <= dc_pred;
-            end
-            WAIT3:begin
-                rec_start <= 1'b0;
-            end
-            DC_SCORE:begin
-                score_tmp <= ((sum << 10) + 'd663) * lambda_i16 +
-                             'd256 * (sse + ((disto * tlambda + 'd128) >> 8));
-            end
-            CMP2:begin
-                ;
-            end
-            STORE2:begin
-                mode_i16  <= 'd0;
-                dc_tmp    <= Y_dc_levels;
-                ac_tmp    <= Y_ac_levels;
-                Yout_tmp  <= Yout;
-                nz_tmp    <= nz;
-                Score     <= score_tmp;
-                D_tmp     <= sse;
-                SD_tmp    <= disto;
-                H_tmp     <= 'd663;
+                H_tmp     <= FixedCost[1];
                 R_tmp     <= sum;
             end
             SCORE:begin
+                score_tmp <= ((sum << 10) + FixedCost[i16]) * lambda_i16 +
+                             'd256 * (sse + ((disto * tlambda + 'd128) >> 8));
+            end
+            COMP:begin
+                ;
+            end
+            STORE:begin
+                mode      <= i16;
+                dc_tmp    <= Y_dc_levels;
+                ac_tmp    <= Y_ac_levels;
+                Yout_tmp  <= Yout;
+                nz_tmp    <= nz_i;
+                Score     <= score_tmp;
+                D_tmp     <= sse;
+                SD_tmp    <= disto;
+                H_tmp     <= FixedCost[i16];
+                R_tmp     <= sum;
+            end
+            LASTSCORE:begin
                 Score     <= ((R_tmp << 10) + H_tmp) * lambda_mode +
                              'd256 * (D_tmp + ((SD_tmp * tlambda + 'd128) >> 8));
             end
