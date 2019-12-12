@@ -27,10 +27,10 @@ module PickBestUV#(
 ,input             [ 8 * 16 * BLOCK_SIZE - 1 : 0] in
 ,input             [ 8                   - 1 : 0] top_left_u
 ,input             [ 8                   - 1 : 0] top_left_v
-,input             [ 8 * 16              - 1 : 0] top_v
-,input             [ 8 * 16              - 1 : 0] top_u
-,input             [ 8 * 16              - 1 : 0] left_u
-,input             [ 8 * 16              - 1 : 0] left_v
+,input             [ 8 *  8              - 1 : 0] top_v
+,input             [ 8 *  8              - 1 : 0] top_u
+,input             [ 8 *  8              - 1 : 0] left_u
+,input             [ 8 *  8              - 1 : 0] left_v
 ,input             [16 * 16              - 1 : 0] q
 ,input             [16 * 16              - 1 : 0] iq
 ,input             [32 * 16              - 1 : 0] bias

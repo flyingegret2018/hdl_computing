@@ -1,39 +1,19 @@
-/*
- * Copyright 2019 International Business Machines
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
-//
-// Copyright 2016,2017 International Business Machines
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions AND
-// limitations under the License.
-//
-////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////
+//-------------------------------------------------------------------
+// CopyRight(c) 2019 zhaoxingchang All Rights Reserved
+//-------------------------------------------------------------------
+// ProjectName    : 
+// Author         : zhaoxingchang
+// E-mail         : zxctja@163.com
+// FileName       : action_wrapper.v
+// ModelName      : 
+// Description    : 
+//-------------------------------------------------------------------
+// Create         : 2019-12-12 16:08
+// LastModified   : 2019-12-12 16:08
+// Version        : 1.0
+//-------------------------------------------------------------------
 
-`timescale 1ns/1ps
+`timescale 1ns/100ps
 
 module action_wrapper #(
     // Parameters of Axi Master Bus Interface AXI_CARD_MEM0 ; to DDR memory
@@ -142,7 +122,7 @@ module action_wrapper #(
     // Make wuser stick to 0
     assign m_axi_host_mem_wuser = 0;
 
-    action_single_engine #(
+    hdl_computing #(
            // Parameters of Axi Slave Bus Interface AXI_CTRL_REG
            .C_S_AXI_CTRL_REG_DATA_WIDTH   (C_S_AXI_CTRL_REG_DATA_WIDTH   ),
            .C_S_AXI_CTRL_REG_ADDR_WIDTH   (C_S_AXI_CTRL_REG_ADDR_WIDTH   ),
@@ -156,7 +136,7 @@ module action_wrapper #(
            .C_M_AXI_HOST_MEM_WUSER_WIDTH  (C_M_AXI_HOST_MEM_WUSER_WIDTH  ),
            .C_M_AXI_HOST_MEM_RUSER_WIDTH  (C_M_AXI_HOST_MEM_RUSER_WIDTH  ),
            .C_M_AXI_HOST_MEM_BUSER_WIDTH  (C_M_AXI_HOST_MEM_BUSER_WIDTH  )
-    ) action_hdl_single_engine (
+    ) U_HDL_COMPUTING (
         .clk                   (ap_clk),
         .rst_n                 (ap_rst_n), 
     
