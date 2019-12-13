@@ -49,33 +49,6 @@ module StoreDiffusionErrors(
     assign top[2] = derr_i[1];
     assign top[3] = derr_i[5] - left[3];
 
-    parameter IDLE    = 'h01;
-    parameter WRITE   = 'h02;
-   
-    reg [1:0] cstate;
-    reg [1:0] nstate;
-
-    always @ (posedge clk or negedge rst_n)begin
-        if(~rst_n)
-            cstate <= IDLE;
-        else
-            cstate <= nstate;
-    end
-
-    always @ * begin
-        case(cstate)
-            IDLE:
-                if(start)
-                    nstate = WRITE;
-                else
-                    nstate = IDLE;
-            WRITE:
-                nstate = IDLE;
-            default:
-                nstate = IDLE;
-        endcase
-    end
-
     always @ (posedge clk or negedge rst_n)begin
         if(~rst_n)begin
             top_derr_en   <= 'b0;
@@ -86,21 +59,19 @@ module StoreDiffusionErrors(
             done          <= 'b0;
         end
         else begin
-            case(cstate)
-                IDLE:begin
-                    top_derr_en   <= 'b0;
-                    top_derr_wea  <= 'b0;
-                    done          <= 'b0;
-                end
-                WRITE:begin
-                    top_derr_en   <= 1'b1;
-                    top_derr_wea  <= 1'b1;
-                    top_derr_addr <= x;
-                    top_derr      <= {top[3],top[2],top[1],top[0]};
-                    left_derr     <= {left[3],left[2],left[1],left[0]};
-                    done          <= 1'b1;
-                end
-            endcase
+            if(start)begin
+                top_derr_en   <= 1'b1;
+                top_derr_wea  <= 1'b1;
+                top_derr_addr <= x;
+                top_derr      <= {top[3],top[2],top[1],top[0]};
+                left_derr     <= {left[3],left[2],left[1],left[0]};
+                done          <= 1'b1;
+            end
+            else begin
+                top_derr_en   <= 'b0;
+                top_derr_wea  <= 'b0;
+                done          <= 'b0;
+            end
         end
     end
 

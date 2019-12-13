@@ -209,6 +209,107 @@ wire  [31:0]    snap_context       ;
  assign tt_bid = m_axi_snap_bid;
 
 //---- writing channel of AXI master interface facing SNAP ----
+ axi_master_rd#(
+                .ID_WIDTH     (C_M_AXI_HOST_MEM_ID_WIDTH     ),
+                .ADDR_WIDTH   (C_M_AXI_HOST_MEM_ADDR_WIDTH   ),
+                .DATA_WIDTH   (C_M_AXI_HOST_MEM_DATA_WIDTH   ),
+                .AWUSER_WIDTH (C_M_AXI_HOST_MEM_AWUSER_WIDTH ),
+                .ARUSER_WIDTH (C_M_AXI_HOST_MEM_ARUSER_WIDTH ),
+                .WUSER_WIDTH  (C_M_AXI_HOST_MEM_WUSER_WIDTH  ),
+                .RUSER_WIDTH  (C_M_AXI_HOST_MEM_RUSER_WIDTH  ),
+                .BUSER_WIDTH  (C_M_AXI_HOST_MEM_BUSER_WIDTH  )
+                ) maxi_master_rd( 
+      .clk                (clk                ),
+      .rst_n              (rst_n), 
+      .m_axi_arid         (m_axi_snap_arid    ),
+      .m_axi_araddr       (m_axi_snap_araddr  ),
+      .m_axi_arlen        (m_axi_snap_arlen   ),
+      .m_axi_arsize       (m_axi_snap_arsize  ),
+      .m_axi_arburst      (m_axi_snap_arburst ),
+      .m_axi_aruser       (m_axi_snap_aruser  ),
+      .m_axi_arcache      (m_axi_snap_arcache ),
+      .m_axi_arlock       (m_axi_snap_arlock  ),
+      .m_axi_arprot       (m_axi_snap_arprot  ),
+      .m_axi_arqos        (m_axi_snap_arqos   ),
+      .m_axi_arregion     (m_axi_snap_arregion),
+      .m_axi_arvalid      (m_axi_snap_arvalid ),
+      .m_axi_arready      (m_axi_snap_arready ),
+      .m_axi_rready       (m_axi_snap_rready  ),
+      .m_axi_rid          (m_axi_snap_rid     ),
+      .m_axi_rdata        (m_axi_snap_rdata   ),
+      .m_axi_rresp        (m_axi_snap_rresp   ),
+      .m_axi_rlast        (m_axi_snap_rlast   ),
+      .m_axi_rvalid       (m_axi_snap_rvalid  ),
+      .engine_start_pulse (engine_start_pulse ),
+      .wrap_mode          ( wrap_mode          ) ,
+      .wrap_len           ( wrap_len           ) ,
+      .source_address     (source_address     ),
+      .rd_init_data       (rd_init_data       ),
+      .rd_pattern         (rd_pattern         ),
+      .rd_number          (rd_number          ),
+      .rd_done_pulse      (rd_done_pulse      ),
+      .rd_error           (rd_error           ),
+      .rd_error_info      (rd_error_info      ),
+      .i_snap_context     (snap_context       )
+     );
+
+fifo_1024 fifo_y0_in (
+    .clk                            ( clk                           ),
+    .srst                           ( srst                          ),
+    .din                            ( din                           ),
+    .wr_en                          ( wr_en                         ),
+    .rd_en                          ( rd_en                         ),
+    .dout                           ( dout                          ),
+    .full                           ( full                          ),
+    .empty                          ( empty                         ),
+    .prog_full                      ( prog_full                     ),
+    .wr_rst_busy                    ( wr_rst_busy                   ),
+    .rd_rst_busy                    ( rd_rst_busy                   )
+);
+
+fifo_1024 fifo_y1_in (
+    .clk                            ( clk                           ),
+    .srst                           ( srst                          ),
+    .din                            ( din                           ),
+    .wr_en                          ( wr_en                         ),
+    .rd_en                          ( rd_en                         ),
+    .dout                           ( dout                          ),
+    .full                           ( full                          ),
+    .empty                          ( empty                         ),
+    .prog_full                      ( prog_full                     ),
+    .wr_rst_busy                    ( wr_rst_busy                   ),
+    .rd_rst_busy                    ( rd_rst_busy                   )
+);
+
+fifo_1024 fifo_uv_in (
+    .clk                            ( clk                           ),
+    .srst                           ( srst                          ),
+    .din                            ( din                           ),
+    .wr_en                          ( wr_en                         ),
+    .rd_en                          ( rd_en                         ),
+    .dout                           ( dout                          ),
+    .full                           ( full                          ),
+    .empty                          ( empty                         ),
+    .prog_full                      ( prog_full                     ),
+    .wr_rst_busy                    ( wr_rst_busy                   ),
+    .rd_rst_busy                    ( rd_rst_busy                   )
+);
+
+fifo_1024 fifo_out (
+    .clk                            ( clk                           ),
+    .srst                           ( srst                          ),
+    .din                            ( din                           ),
+    .wr_en                          ( wr_en                         ),
+    .rd_en                          ( rd_en                         ),
+    .dout                           ( dout                          ),
+    .full                           ( full                          ),
+    .empty                          ( empty                         ),
+    .prog_full                      ( prog_full                     ),
+    .wr_rst_busy                    ( wr_rst_busy                   ),
+    .rd_rst_busy                    ( rd_rst_busy                   )
+);
+
+//---- writing channel of AXI master interface facing SNAP ----
  axi_master_wr#(
                 .ID_WIDTH     (C_M_AXI_HOST_MEM_ID_WIDTH     ),
                 .ADDR_WIDTH   (C_M_AXI_HOST_MEM_ADDR_WIDTH   ),
@@ -254,52 +355,5 @@ wire  [31:0]    snap_context       ;
        .wr_error           (wr_error           ),
        .i_snap_context     (snap_context       )
       );
-
-
-
-//---- writing channel of AXI master interface facing SNAP ----
- axi_master_rd#(
-                .ID_WIDTH     (C_M_AXI_HOST_MEM_ID_WIDTH     ),
-                .ADDR_WIDTH   (C_M_AXI_HOST_MEM_ADDR_WIDTH   ),
-                .DATA_WIDTH   (C_M_AXI_HOST_MEM_DATA_WIDTH   ),
-                .AWUSER_WIDTH (C_M_AXI_HOST_MEM_AWUSER_WIDTH ),
-                .ARUSER_WIDTH (C_M_AXI_HOST_MEM_ARUSER_WIDTH ),
-                .WUSER_WIDTH  (C_M_AXI_HOST_MEM_WUSER_WIDTH  ),
-                .RUSER_WIDTH  (C_M_AXI_HOST_MEM_RUSER_WIDTH  ),
-                .BUSER_WIDTH  (C_M_AXI_HOST_MEM_BUSER_WIDTH  )
-                ) maxi_master_rd( 
-      .clk                (clk                ),
-      .rst_n              (rst_n), 
-      .m_axi_arid         (m_axi_snap_arid    ),
-      .m_axi_araddr       (m_axi_snap_araddr  ),
-      .m_axi_arlen        (m_axi_snap_arlen   ),
-      .m_axi_arsize       (m_axi_snap_arsize  ),
-      .m_axi_arburst      (m_axi_snap_arburst ),
-      .m_axi_aruser       (m_axi_snap_aruser  ),
-      .m_axi_arcache      (m_axi_snap_arcache ),
-      .m_axi_arlock       (m_axi_snap_arlock  ),
-      .m_axi_arprot       (m_axi_snap_arprot  ),
-      .m_axi_arqos        (m_axi_snap_arqos   ),
-      .m_axi_arregion     (m_axi_snap_arregion),
-      .m_axi_arvalid      (m_axi_snap_arvalid ),
-      .m_axi_arready      (m_axi_snap_arready ),
-      .m_axi_rready       (m_axi_snap_rready  ),
-      .m_axi_rid          (m_axi_snap_rid     ),
-      .m_axi_rdata        (m_axi_snap_rdata   ),
-      .m_axi_rresp        (m_axi_snap_rresp   ),
-      .m_axi_rlast        (m_axi_snap_rlast   ),
-      .m_axi_rvalid       (m_axi_snap_rvalid  ),
-      .engine_start_pulse (engine_start_pulse ),
-      .wrap_mode          ( wrap_mode          ) ,
-      .wrap_len           ( wrap_len           ) ,
-      .source_address     (source_address     ),
-      .rd_init_data       (rd_init_data       ),
-      .rd_pattern         (rd_pattern         ),
-      .rd_number          (rd_number          ),
-      .rd_done_pulse      (rd_done_pulse      ),
-      .rd_error           (rd_error           ),
-      .rd_error_info      (rd_error_info      ),
-      .i_snap_context     (snap_context       )
-     );
 
 endmodule

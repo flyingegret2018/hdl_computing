@@ -120,15 +120,15 @@ ReconstructUV U_RECONSTRUCTUV(
 );
 
 top_derr_ram U_TOP_DERR_RAM (
-  .clka                             ( clk                           ),
-  .ena                              ( top_derr_wen                  ),
-  .wea                              ( top_derr_wea                  ),
-  .addra                            ( top_derr_waddr                ),
-  .dina                             ( top_derr_w                    ),
-  .clkb                             ( clk                           ),
-  .enb                              ( top_derr_en                   ),
-  .addrb                            ( top_derr_addr                 ),
-  .doutb                            ( top_derr                      )
+    .clka                           ( clk                           ),
+    .ena                            ( top_derr_wen                  ),
+    .wea                            ( top_derr_wea                  ),
+    .addra                          ( top_derr_waddr                ),
+    .dina                           ( top_derr_w                    ),
+    .clkb                           ( clk                           ),
+    .enb                            ( top_derr_en                   ),
+    .addrb                          ( top_derr_addr                 ),
+    .doutb                          ( top_derr                      )
 );
 
 reg  SDE_start;
@@ -176,9 +176,6 @@ assign FixedCost[1] = 'd984;
 assign FixedCost[2] = 'd439;
 assign FixedCost[3] = 'd642;
 
-reg [7:0] cstate;
-reg [7:0] nstate;
-
 reg [   1:0]count;
 reg [2047:0]levels_tmp;
 reg [  31:0]nz_tmp;
@@ -192,6 +189,9 @@ assign levels = levels_tmp;
 assign nz = nz_tmp;
 assign out = UVout_tmp;
 assign mode_uv = {'b0,mode};
+
+reg [7:0] cstate;
+reg [7:0] nstate;
 
 parameter IDLE       = 'h1;
 parameter PRED       = 'h2;
