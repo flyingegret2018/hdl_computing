@@ -56,7 +56,7 @@ module WebPEncode#(
 ,output                                           fifo_rd_y1
 ,output                                           fifo_rd_uv
 ,output reg                                       fifo_wr
-,output reg        [32 * 32              - 1 : 0] date_out
+,output reg        [32 * 32              - 1 : 0] data_out
 ,output reg                                       done
 );
 
