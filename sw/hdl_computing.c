@@ -68,10 +68,10 @@ typedef struct {
   int16_t y_ac_levels[16][16];    // Quantized levels for luma-DC, luma-AC, chroma.
   int16_t uv_levels[4 + 4][16];
   int16_t y_dc_levels[16];
-  uint32_t nz;                // non-zero blocks
   int mode_i16;               // mode number for intra16 prediction
-  int mode_uv;                // mode number of chroma prediction
   uint8_t modes_i4[16];       // mode numbers for intra4 predictions
+  int mode_uv;                // mode number of chroma prediction
+  uint32_t nz;                // non-zero blocks
   score_t D, SD;              // Distortion, spectral distortion
   score_t H, R, score;        // header bits, rate, score.
   int8_t derr[2][3];          // DC diffusion errors for U/V for blocks #1/2/3
