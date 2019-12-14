@@ -60,7 +60,7 @@ module WebPEncode#(
 ,output reg                                       done
 );
 
-reg [   1:0]count;
+reg [   2:0]count;
 reg [   9:0]x;
 reg [   9:0]y;
 reg [   9:0]w1;
@@ -224,7 +224,7 @@ always @ * begin
                 if(fifo_full)
                     nstate = FULL;
                 else
-                    if(x >= w && y >= h)
+                    if(x >= w1 && y >= h1)
                         nstate = DONE;
                     else
                         nstate = REINIT;
@@ -234,7 +234,7 @@ always @ * begin
             if(fifo_full)
                 nstate = FULL;
             else
-                if(x >= w && y >= h)
+                if(x >= w1 && y >= h1)
                     nstate = DONE;
                 else
                     nstate = REINIT;
@@ -305,8 +305,8 @@ always @ (posedge clk or negedge rst_n)begin
                 ;
             end
             REINIT:begin
-                x          <= (x >= w) ? 'b0 : (x + 1'b1);
-                y          <= (x >= w) ? (y + 1'b1) : y;
+                x          <= (x >= w1) ? 'b0 : (x + 1'b1);
+                y          <= (x >= w1) ? (y + 1'b1) : y;
                 top_left_y <= top_left_y_w;
                 top_left_u <= top_left_u_w;
                 top_left_v <= top_left_v_w;
@@ -323,6 +323,40 @@ always @ (posedge clk or negedge rst_n)begin
             end
         endcase
     end
+end
+
+always @ (posedge clk or negedge rst_n)begin
+    if(~rst_n)
+        count <= 'b0;
+    else
+        if(count >= 'd6)
+            count <= 'b0;
+        else if(D_done | count != 'b0)
+            count <= count + 1'b1;
+end
+
+always @ (posedge clk or negedge rst_n)begin
+    if(~rst_n)begin
+        data_out <= 'b0;
+        fifo_wr  <= 'b0;
+    end
+    else
+        if(D_done | count != 'b0)begin
+            fifo_wr  <= 1'b1;
+            case(count)
+                'd0: data_out <= ac_levels[1023:   0];
+                'd1: data_out <= ac_levels[2047:1024];
+                'd2: data_out <= ac_levels[3071:2048];
+                'd3: data_out <= ac_levels[4095:3072];
+                'd4: data_out <= uv_levels[1023:   0];
+                'd5: data_out <= uv_levels[2047:1024];
+                'd6: data_out <= {'b0,skipped,mbtype,mode_i4,mode_uv,mode_i16,max_edgeo,nz,dc_levels};
+                default:;
+            endcase 
+        end
+        else begin
+            fifo_wr  <= 1'b0;
+        end
 end
 
 endmodule
