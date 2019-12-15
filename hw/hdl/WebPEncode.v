@@ -213,7 +213,7 @@ always @ * begin
         INIT:
             nstate = RDEN;
         RDEN:
-            if(Y0_fifo_empty | Y1_fifo_empty)
+            if(Y0_fifo_empty | Y1_fifo_empty | UV_fifo_empty)
                 nstate = RDEN;
             else
                 nstate = DSTART;
@@ -239,7 +239,7 @@ always @ * begin
                 else
                     nstate = REINIT;
         REINIT:
-            if(Y0_fifo_empty | Y1_fifo_empty)
+            if(Y0_fifo_empty | Y1_fifo_empty | UV_fifo_empty)
                 nstate = RDEN;
             else
                 nstate = DSTART;
@@ -350,7 +350,8 @@ always @ (posedge clk or negedge rst_n)begin
                 'd3: data_out <= ac_levels[4095:3072];
                 'd4: data_out <= uv_levels[1023:   0];
                 'd5: data_out <= uv_levels[2047:1024];
-                'd6: data_out <= {'b0,max_edgeo,skipped,mbtype,nz,mode_uv,mode_i4,mode_i16,dc_levels};
+                'd6: data_out <= {'b0,max_edgeo,16'b0,skipped,mbtype,416'b0,
+                                  nz,mode_uv,mode_i4,mode_i16,dc_levels};
                 default:;
             endcase 
         end
