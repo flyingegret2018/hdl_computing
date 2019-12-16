@@ -21,8 +21,9 @@ module WebPEncode#(
  input                                            clk
 ,input                                            rst_n
 ,input                                            start
-,input             [10                   - 1 : 0] mb_w
-,input             [10                   - 1 : 0] mb_h
+,input             [10                   - 1 : 0] w1
+,input             [10                   - 1 : 0] w2
+,input             [10                   - 1 : 0] h1
 ,input      signed [32                   - 1 : 0] lambda_i16
 ,input      signed [32                   - 1 : 0] lambda_i4
 ,input      signed [32                   - 1 : 0] lambda_uv
@@ -63,9 +64,6 @@ module WebPEncode#(
 reg [   2:0]count;
 reg [   9:0]x;
 reg [   9:0]y;
-reg [   9:0]w1;
-reg [   9:0]w2;
-reg [   9:0]h1;
 reg [   7:0]top_left_y;
 reg [   7:0]top_left_u;
 reg [   7:0]top_left_v;
@@ -75,7 +73,7 @@ reg [  63:0]top_v;
 reg [ 127:0]left_y;
 reg [  63:0]left_u;
 reg [  63:0]left_v;
-reg         fifo_rd;
+wire        fifo_rd;
 reg         D_start;
 wire        D_done;
 wire[2047:0]Yout;
@@ -99,10 +97,22 @@ wire[  63:0]top_v_w;
 wire[ 127:0]left_y_w;
 wire[  63:0]left_u_w;
 wire[  63:0]left_v_w;
+reg [   7:0]cstate;
+reg [   7:0]nstate;
+
+parameter IDLE   = 'h1;
+parameter INIT   = 'h2;
+parameter RDEN   = 'h4; 
+parameter DSTART = 'h8;
+parameter WAIT   = 'h10;
+parameter FULL   = 'h20;
+parameter REINIT = 'h40;
+parameter DONE   = 'h80;
 
 assign fifo_rd_y0 = fifo_rd;
 assign fifo_rd_y1 = fifo_rd;
 assign fifo_rd_uv = fifo_rd;
+assign fifo_rd = (cstate == RDEN) && (cstate == REINIT);
 
 Decimate U_DECIMATE(
     .clk                            ( clk                           ),
@@ -184,18 +194,6 @@ SaveBoundary U_SAVEBOUNDARY(
     .left_v                         ( left_v_w                      )
 );
 
-reg [7:0] cstate;
-reg [7:0] nstate;
-
-parameter IDLE   = 'h1;
-parameter INIT   = 'h2;
-parameter RDEN   = 'h4; 
-parameter DSTART = 'h8;
-parameter WAIT   = 'h10;
-parameter FULL   = 'h20;
-parameter REINIT = 'h40;
-parameter DONE   = 'h80;
-
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
         cstate <= IDLE;
@@ -213,7 +211,7 @@ always @ * begin
         INIT:
             nstate = RDEN;
         RDEN:
-            if(Y0_fifo_empty | Y1_fifo_empty | UV_fifo_empty)
+            if(Y0_fifo_empty)
                 nstate = RDEN;
             else
                 nstate = DSTART;
@@ -239,7 +237,7 @@ always @ * begin
                 else
                     nstate = REINIT;
         REINIT:
-            if(Y0_fifo_empty | Y1_fifo_empty | UV_fifo_empty)
+            if(Y0_fifo_empty)
                 nstate = RDEN;
             else
                 nstate = DSTART;
@@ -255,9 +253,6 @@ always @ (posedge clk or negedge rst_n)begin
         done       <= 'b0;
         x          <= 'b0;
         y          <= 'b0;
-        w1         <= 'b0;
-        w2         <= 'b0;
-        h1         <= 'b0;
         top_left_y <= 'b0;
         top_left_u <= 'b0;
         top_left_v <= 'b0;
@@ -267,7 +262,6 @@ always @ (posedge clk or negedge rst_n)begin
         left_y     <= 'b0;
         left_u     <= 'b0;
         left_v     <= 'b0;
-        fifo_rd    <= 'b0;
         D_start    <= 'b0;
     end
     else begin
@@ -278,9 +272,6 @@ always @ (posedge clk or negedge rst_n)begin
             INIT:begin
                 x          <= 'b0;
                 y          <= 'b0;
-                w1         <= mb_w - 1'b1;
-                w2         <= mb_w - 2'd2;
-                h1         <= mb_h - 1'b1;
                 top_left_y <= 8'd127;
                 top_left_u <= 8'd127;
                 top_left_v <= 8'd127;
@@ -292,10 +283,9 @@ always @ (posedge clk or negedge rst_n)begin
                 left_v     <= { 8{8'd129}};
             end
             RDEN:begin
-                fifo_rd    <= 1'b1;
+                ;
             end
             DSTART:begin
-                fifo_rd    <= 1'b0;
                 D_start    <= 1'b1;
             end
             WAIT:begin
@@ -316,7 +306,6 @@ always @ (posedge clk or negedge rst_n)begin
                 left_y     <= left_y_w;
                 left_u     <= left_u_w;
                 left_v     <= left_v_w;
-                fifo_rd    <= 1'b1;
             end
             DONE:begin
                 done       <= 1'b1;

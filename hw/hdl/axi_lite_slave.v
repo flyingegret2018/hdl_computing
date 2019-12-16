@@ -53,6 +53,9 @@ module axi_lite_slave #(
                       output     [63:0]                dqm_address      ,
                       output     [31:0]                mb_w             ,
                       output     [31:0]                mb_h             ,
+                      output     [09:0]                w1               ,
+                      output     [09:0]                w2               ,
+                      output     [09:0]                h1               ,
                       //---- local status ----
                       input                            done_pulse       ,
                       input                            rd_error         ,
@@ -229,6 +232,30 @@ module axi_lite_slave #(
        ADDR_MB_H             : REG_mb_h            <= regw_mb_h;
 
        ADDR_SOFT_RESET       : REG_soft_reset      <= regw_soft_reset;
+       default :;
+     endcase
+
+ reg [9:0]w1;
+ reg [9:0]w2;
+ reg [9:0]h1;
+ always@(posedge clk or negedge rst_n)
+   if(~rst_n)
+     begin
+       w1 <= 10'd0;
+       w2 <= 10'd0;
+       h1 <= 10'd0;
+     end
+    else if(soft_reset)
+    begin
+       w1 <= 10'd0;
+       w2 <= 10'd0;
+       h1 <= 10'd0;
+    end
+   else if(s_axi_wvalid & s_axi_wready)
+     case(write_address)
+       ADDR_MB_W: w1 <= regw_mb_w - 1'd1;
+       ADDR_MB_W: w2 <= regw_mb_w - 2'd2;
+       ADDR_MB_H: h1 <= regw_mb_h - 1'd1;
        default :;
      endcase
 
