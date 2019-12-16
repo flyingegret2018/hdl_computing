@@ -105,6 +105,23 @@ waddr_channel U_WADDR_CHANNEL(
     .h1                             ( h1                            )
 );
 
+wdata_channel U_WDATA_CHANNEL(
+    .clk                            ( clk                           ),
+    .rst_n                          ( rst_n                         ),
+    .m_axi_wdata                    ( m_axi_wdata                   ),
+    .m_axi_wstrb                    ( m_axi_wstrb                   ),
+    .m_axi_wvalid                   ( m_axi_wvalid                  ),
+    .m_axi_wlast                    ( m_axi_wlast                   ),
+    .m_axi_wready                   ( m_axi_wready                  ),
+    .start_pulse                    ( start_pulse                   ),
+    .mb_w                           ( mb_w                          ),
+    .mb_h                           ( mb_h                          ),
+    .done_pulse                     ( done_pulse                    ),
+    .fifo_empty                     ( fifo_empty                    ),
+    .fifo_dout                      ( fifo_dout                     ),
+    .fifo_rd                        ( fifo_rd                       )
+);
+
  always@(posedge clk or negedge rst_n)
  begin
      if(~rst_n)

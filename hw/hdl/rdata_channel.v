@@ -73,11 +73,11 @@ module rdata_channel #(
  reg       fifo_wr;
  reg [ 3:0]count;
 
+ assign m_axi_rready   = ~Y0_fifo_full | count != 'd6;
  assign data_receive   = m_axi_rvalid && m_axi_rready;
  assign Y0_fifo_wr     = fifo_wr;
  assign Y1_fifo_wr     = fifo_wr;
  assign UV_fifo_wr     = fifo_wr;
- assign m_axi_rready   = ~Y0_fifo_full;
  assign UV_fifo_din    = m_axi_rdata;
 
 always @ (posedge clk or negedge rst_n)begin
