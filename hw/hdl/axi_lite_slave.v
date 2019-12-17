@@ -234,6 +234,8 @@ module axi_lite_slave #(
        ADDR_SOFT_RESET       : REG_soft_reset      <= regw_soft_reset;
        default :;
      endcase
+     else
+         REG_user_control[0] <= 1'b0;
 
  reg [9:0]w1;
  reg [9:0]w2;
@@ -283,10 +285,8 @@ module axi_lite_slave #(
 //                                          |                                          | .
 //                                          |                                          | done
 //                                          | USER_STATUS[done]= 1                     |
-// wait(USER_STATUS)                        |                                          |
-// mmio_write(USER_CONTROL[finish])=1       |                                          |
-//                                          | USER_CONTROL[finish]=1                   |
 //                                          | SNAP_CONTROL[snap_idle]=1                |
+// wait(USER_STATUS)                        |                                          |
 // snap_action_completed()                  |                                          |
 //
 
@@ -294,7 +294,6 @@ wire snap_start_pulse;
 
 reg snap_start_q;
 reg snap_idle_q;
-reg start_q;
 
 reg rd_error_q;
 reg wr_error_q;
@@ -303,20 +302,17 @@ reg done_q;
 always @(posedge clk or negedge rst_n) begin
     if (~rst_n) begin
         snap_start_q <= 0;
-        start_q      <= 0;
     end
     else if(soft_reset) begin
         snap_start_q <= 0;
-        start_q      <= 0;
     end
     else begin
         snap_start_q <= REG_snap_control[0];
-        start_q      <= REG_user_control[0];
     end
 end
 
 assign snap_start_pulse = REG_snap_control[0] & ~snap_start_q;
-assign start_pulse = REG_user_control[0] & ~start_q;
+assign start_pulse = REG_user_control[0];
 
 always @(posedge clk or negedge rst_n) begin
     if (~rst_n) begin
@@ -325,7 +321,7 @@ always @(posedge clk or negedge rst_n) begin
     else if(soft_reset) begin
        snap_idle_q <= 0;
     end
-    else if (REG_user_control[1]) begin   //finish
+    else if(done_pusle) begin   //finish
        snap_idle_q <= 1;
     end
 end
