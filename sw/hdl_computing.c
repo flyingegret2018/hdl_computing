@@ -14690,30 +14690,6 @@ static int VP8EmitTokens(VP8TBuffer* const b, VP8BitWriter* const bw,
 #define MIN_COUNT 96  // minimum number of macroblocks before updating stats
 #define DEBUG_SEARCH 0    // useful to track search convergence
 
-// Function that fills the MMIO registers / data structure 
-// these are all data exchanged between the application and the action
-static void snap_prepare_computing(struct snap_job *cjob,
-				 struct computing_job *mjob,
-				 void *addr_in,
-				 void *addr_out,
-				 void *dqm,
-				 int mb_w,
-				 int mb_h)
-{
-	//fprintf(stderr, "  prepare computing job of %ld bytes size\n", sizeof(*mjob));
-
-	assert(sizeof(*mjob) <= SNAP_JOBSIZE);
-	memset(mjob, 0, sizeof(*mjob));
-
-	mjob->in = (unsigned long)addr_in;
-	mjob->out = (unsigned long)addr_out;
-	mjob->dqm= (unsigned long)dqm;
-	mjob->mb_w= mb_w;
-	mjob->mb_h= mb_h;
-
-	snap_job_set(cjob, mjob, sizeof(*mjob), NULL, 0);
-}
-
 static int VP8EncFinishAlpha(VP8Encoder* const enc) {
   if (enc->has_alpha_) {
     if (enc->thread_level_ > 0) {
