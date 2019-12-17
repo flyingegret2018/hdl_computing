@@ -54,6 +54,31 @@ static void* alloc_mem (uint32_t align, uint64_t bytes)
     return a;
 }
 
+/* Action or Kernel Write and Read are 32 bit MMIO */
+static void action_write (struct snap_card* h, uint32_t addr, uint32_t data)
+{
+    int rc;
+
+    rc = snap_action_write32 (h, (uint64_t)addr, data);
+
+    if (0 != rc) {
+        perror ("Write MMIO 32 Err\n");
+    }
+
+    return;
+}
+
+static uint32_t action_read(struct snap_card* h, uint32_t addr)
+{
+    int rc;
+    uint32_t data;
+
+    rc = snap_action_read32(h, (uint64_t)addr, &data);
+    if (0 != rc)
+        perror ("Read MMIO 32 Err\n");
+    return data;
+}
+
 typedef int64_t score_t;     // type used for scores, rate, distortion
 
 typedef struct VP8Matrix {
@@ -15388,14 +15413,14 @@ static void *FPGAEncode(void *tid) {
   
   card = snap_card_alloc_dev (device, SNAP_VENDOR_ID_IBM, SNAP_DEVICE_ID_SNAP);  
   if (card == NULL) {
-	  fprintf(stderr, "ERROR: snap_card_alloc_dev(%s)\n", device, strerror(errno));
+	  fprintf(stderr, "ERROR: snap_card_alloc_dev(%s)\n", device);
 	  return tid;
   }
   
   // Attach the action that will be used on the allocated card
   action = snap_attach_action(card, ACTION_TYPE_HDL_COMPUTING, attach_flags, timeout);
   if (action == NULL) {
-	  fprintf(stderr, "Error: Can not attach Action: %x\n", ACTION_TYPE_HDL_COMPUTING, strerror(errno));
+	  fprintf(stderr, "Error: Can not attach Action: %x\n", ACTION_TYPE_HDL_COMPUTING);
 	  return tid;
   }
 
