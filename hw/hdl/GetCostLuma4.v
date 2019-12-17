@@ -30,12 +30,14 @@ module GetCostLuma4#(
 reg [1:0]shift;
 
 always @ (posedge clk or negedge rst_n)begin
-    if(~rst_n)
+    if(~rst_n)begin
         done  <= 'b0;
         shift <= 'b0;
-    else
+    end
+    else begin
         shift[0] <= start;
         done  <= shift[0];
+    end
 end
 
 always @ (posedge clk or negedge rst_n)begin

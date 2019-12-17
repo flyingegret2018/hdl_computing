@@ -144,7 +144,7 @@ HU4 U_HU4(
 reg rec_start;
 reg [ 127:0]src;
 reg [ 127:0]dst[9:0];
-wire[ 255:0]Ylevels[9:0];
+wire[ 255:0]YLevels[9:0];
 wire[   9:0]nz_i;
 wire[   9:0]rec_done;
 wire[ 255:0]kWeightY;

@@ -31,13 +31,15 @@ reg [2:0]count;
 reg [7:0]shift;
 
 always @ (posedge clk or negedge rst_n)begin
-    if(~rst_n)
+    if(~rst_n)begin
         done  <= 'b0;
         shift <= 'b0;
-    else
+    end
+    else begin
         shift[0]   <= start;
         shift[7:1] <= shift[6:0];
         done       <= shift[7];
+    end
 end
 
 always @ (posedge clk or negedge rst_n)begin

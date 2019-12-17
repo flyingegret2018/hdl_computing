@@ -54,7 +54,7 @@ module CorrectDCValues(
 
     reg  signed[31:0]tmp [5:0];
     reg  signed[ 7:0]top [3:0];
-    reg  sidned[ 7:0]left[3:0];
+    reg  signed[ 7:0]left[3:0];
     reg  signed[15:0]u_tmp;
     reg  signed[15:0]v_tmp;
     reg  signed[ 7:0]uerr0;

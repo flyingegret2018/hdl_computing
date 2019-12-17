@@ -90,13 +90,15 @@ end
 
 reg [1:0]shift;
 always @ (posedge clk or negedge rst_n)begin
-    if(~rst_n)
+    if(~rst_n)begin
         done  <= 'b0;
         shift <= 'b0;
-    else
+    end
+    else begin
         shift[0] <= start;
         shift[1] <= shift[0];
         done  <= shift[1];
+    end
 end
 
 endmodule
