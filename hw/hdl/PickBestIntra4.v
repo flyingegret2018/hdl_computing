@@ -447,9 +447,9 @@ always @ (posedge clk or negedge rst_n)begin
                 mode         <= bestmode;
             end
             STORE:beign
-                mode_i[i4]   <= mode;
+                mode_i[i4]   <= {'b0,mode};
                 Yout_i[i4]   <= dst[mode];
-                levels_i[i4] <= Ylevels[mode];
+                levels_i[i4] <= YLevels[mode];
                 nz[i4]       <= nz_i[mode];
                 o_tmp        <= dst[mode];
                 D_tmp        <= sse[mode];
@@ -472,7 +472,7 @@ always @ (posedge clk or negedge rst_n)begin
                 i4           <= i4 + 1'b1;
             end
             DONE:begin
-                done      <= 1'b1;
+                done         <= 1'b1;
             end
         endcase
     end
