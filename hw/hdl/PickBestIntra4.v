@@ -240,7 +240,7 @@ GetCostLuma4 U_GETCOSTLUMA4(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
     .start                          ( rec_done[i]                   ),
-    .levels                         ( Ylevels[i]                    ),
+    .levels                         ( YLevels[i]                    ),
     .sum                            ( sum[i]                        ),
     .done                           ( cost_done[i]                  )
 );
