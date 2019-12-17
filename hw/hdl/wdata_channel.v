@@ -148,8 +148,22 @@ always @ (posedge clk or negedge rst_n)begin
     else begin
         if(start_pulse)
             mb_count <= 'b0;
-        else if(m_axi_wlast)
+        else if(mb_count >= mb_total)
+            mb_count <= 'b0;
+        else if(m_axi_wlast && m_axi_wready)
             mb_count <= mb_count + 1'b1;
+    end
+end
+
+always @ (posedge clk or negedge rst_n)begin
+    if(~rst_n)begin
+        done_pulse <= 'b0;
+    end
+    else begin
+        if(mb_count >= mb_total)
+            done_pulse <= 'b1;
+        else
+            done_pulse <= 'b0;
     end
 end
 
