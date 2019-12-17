@@ -161,7 +161,7 @@ GetSSEUV U_GETSSEUV(
 
 wire[31:0]sum;
 wire cost_done;
-GetCostLuma U_GETCOSTLUMA(
+GetCostUV U_GETCOSTUV(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
     .start                          ( rec_done                      ),
