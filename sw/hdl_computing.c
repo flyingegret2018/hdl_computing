@@ -110,16 +110,6 @@ typedef struct DATA_O{
 	uint8_t pad[4];
 } DATA_O;
 
-/* Data structure used to exchange information between action and application */
-/* Size limit is 108 Bytes */
-typedef struct computing_job {
-	uint64_t in;	/* input data */
-	uint64_t out;   /* offset table */
-	uint64_t dqm;
-	int mb_w;
-	int mb_h;
-} computing_job_t;
-
 //typedef struct WebPConfig WebPConfig;
 typedef struct WebPPicture WebPPicture;   // main structure for I/O
 typedef struct WebPAuxStats WebPAuxStats;
@@ -14710,7 +14700,7 @@ static void snap_prepare_computing(struct snap_job *cjob,
 				 int mb_w,
 				 int mb_h)
 {
-	fprintf(stderr, "  prepare computing job of %ld bytes size\n", sizeof(*mjob));
+	//fprintf(stderr, "  prepare computing job of %ld bytes size\n", sizeof(*mjob));
 
 	assert(sizeof(*mjob) <= SNAP_JOBSIZE);
 	memset(mjob, 0, sizeof(*mjob));
@@ -15395,8 +15385,105 @@ static int DeleteVP8Encoder(VP8Encoder* enc) {
 VP8Encoder* enc[BUFFER_LEN];
 VP8EncIterator* it[BUFFER_LEN];
 uint8_t* mem_output[BUFFER_LEN];
+uint8_t* mem_input[BUFFER_LEN];
+uint8_t* mem_dqm_g[BUFFER_LEN];
 WebPPicture* picture[BUFFER_LEN];
+int card_no = 0;
+uint32_t timeout = 60;
+snap_action_flag_t attach_flags = 0;
 sem_t binSem;
+sem_t FPGASem;
+
+char device[64];
+struct snap_card *card = NULL;
+struct snap_action *action = NULL;
+
+struct timeval endtime, starttime;
+
+static void *FPGAEncode(void *tid) {
+	
+  int buffer_cnt = 0;
+ 
+  // Allocate the card that will be used
+  if(card_no == 0)
+	snprintf(device, sizeof(device)-1, "IBM,oc-snap");
+  else
+	snprintf(device, sizeof(device)-1, "/dev/ocxl/IBM,oc-snap.000%d:00:00.1.0", card_no);
+  
+  card = snap_card_alloc_dev (device, SNAP_VENDOR_ID_IBM, SNAP_DEVICE_ID_SNAP);  
+  if (card == NULL) {
+	  fprintf(stderr, "ERROR: snap_card_alloc_dev(%s)\n", device, strerror(errno));
+	  return tid;
+  }
+  
+  // Attach the action that will be used on the allocated card
+  action = snap_attach_action(card, ACTION_TYPE_HDL_COMPUTING, attach_flags, timeout);
+  if (action == NULL) {
+	  fprintf(stderr, "Error: Can not attach Action: %x\n", ACTION_TYPE_HDL_COMPUTING, strerror(errno));
+	  return tid;
+  }
+
+  while(1){
+	sem_wait(&FPGASem);
+
+	uint8_t* mem_in = mem_input[buffer_cnt];
+	uint8_t* mem_dqm = mem_dqm_g[buffer_cnt];
+	uint8_t* mem_out = mem_output[buffer_cnt];
+	FILE *out = enc[buffer_cnt]->pic_->custom_ptr;
+	int mb_w_ = enc[buffer_cnt]->mb_w_;
+	int mb_h_ = enc[buffer_cnt]->mb_h_; 
+
+	snap_action_start ((void*)card);
+
+	action_write(card, REG_SOURCE_ADDRESS_L, (uint32_t) (((uint64_t) mem_in) & 0xffffffff));
+	action_write(card, REG_SOURCE_ADDRESS_H, (uint32_t) ((((uint64_t) mem_in) >> 32) & 0xffffffff));
+	  
+	action_write(card, REG_TARGET_ADDRESS_L, (uint32_t) (((uint64_t) mem_out) & 0xffffffff));
+	action_write(card, REG_TARGET_ADDRESS_H, (uint32_t) ((((uint64_t) mem_out) >> 32) & 0xffffffff));
+	  
+	action_write(card, REG_DQM_ADDRESS_L, (uint32_t) (((uint64_t) mem_dqm) & 0xffffffff));
+	action_write(card, REG_DQM_ADDRESS_H, (uint32_t) ((((uint64_t) mem_dqm) >> 32) & 0xffffffff));
+	  
+	action_write(card, REG_MB_W, mb_w_);
+	action_write(card, REG_MB_H, mb_h_);
+
+	action_write(card, REG_USER_CONTROL, 0x00000001);
+	  
+	int rc = -1;
+	uint32_t cnt = 0;
+    uint32_t reg_data;
+	do { 
+		reg_data = action_read(card, REG_USER_STATUS);
+		if ((reg_data & 0x1) == 0x1 ){
+			rc = 0;
+			printf("WebPEncode done.\n");
+			break;
+		}
+		cnt ++;
+	} while (cnt < timeout * 1000);
+	
+	if (rc != 0) {
+  		fprintf(stderr, "time out %d: %s!\n", rc, strerror(errno));
+		WebPPictureFree(picture[buffer_cnt]);
+		WebPSafeFree(picture[buffer_cnt]);
+		DeleteVP8Encoder(enc[buffer_cnt]);
+		WebPSafeFree(it[buffer_cnt]);
+		__free(mem_out); 		
+        __free(mem_dqm);
+        __free(mem_in);
+		fclose(out);
+		return tid;
+	}
+	
+	sem_post(&binSem);
+
+	if(buffer_cnt >= BUFFER_LEN - 1) buffer_cnt = 0;
+	else buffer_cnt++;
+
+  }
+  
+  return tid;
+}
 
 static void *WebPEncode(void *tid) {
   int ok = 0;
@@ -15417,9 +15504,6 @@ static void *WebPEncode(void *tid) {
 	VP8EncProba* proba_ = &enc[buffer_cnt]->proba_;
 	VP8BitWriter* parts_ = enc[buffer_cnt]->parts_;
 	int x, y, i, j;
-	//struct timeval etime, stime;
-
-	//gettimeofday(&stime, NULL);
 
 	for(y = 0; y < mb_h_; y++){
 		for(x = 0; x < mb_w_; x++){
@@ -15499,10 +15583,7 @@ static void *WebPEncode(void *tid) {
 	__free(mem_out);
 	fclose(out);
 
-	//gettimeofday(&etime, NULL);
-
-	//fprintf(stdout, "\nArithmetic coding took %lld usec\n\n",
-	//		(long long)timediff_usec(&etime, &stime));
+	gettimeofday(&endtime, NULL);
 
     if(buffer_cnt >= BUFFER_LEN - 1) buffer_cnt = 0;
 	else buffer_cnt++;
@@ -15516,7 +15597,6 @@ int main(int argc, const char *argv[]) {
   FILE *out = NULL;
   int c;
   int keep_alpha = 1;
-  int card_no = 0;
   WebPConfig config;
   WebPAuxStats stats;
   Stopwatch stop_watch;
@@ -15541,8 +15621,6 @@ int main(int argc, const char *argv[]) {
       return 0;
     } else if (!strcmp(argv[c], "-i") && c < argc - 1) {
       in_dir = argv[++c];
-    } else if (!strcmp(argv[c], "-C") && c < argc - 1) {
-      card_no = ExUtilGetInt(argv[++c], 0, &parse_error);
     } else if (!strcmp(argv[c], "-q") && c < argc - 1) {
       config.quality = ExUtilGetFloat(argv[++c], &parse_error);
     } else if (!strcmp(argv[c], "-version")) {
@@ -15552,6 +15630,12 @@ int main(int argc, const char *argv[]) {
       return 0;
     } else if (!strcmp(argv[c], "-v")) {
       verbose = 1;
+    } else if (!strcmp(argv[c], "-C") && c < argc - 1) {
+      card_no = ExUtilGetInt(argv[++c], 0, &parse_error);
+    } else if (!strcmp(argv[c], "-t") && c < argc - 1) {
+      timeout = ExUtilGetInt(argv[++c], 0, &parse_error);
+    } else if (!strcmp(argv[c], "-I") && c < argc - 1) {
+      attach_flags = SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ;
     } else if (argv[c][0] == '-') {
       fprintf(stderr, "Error! Unknown option '%s'\n", argv[c]);
       HelpLong();
@@ -15593,15 +15677,26 @@ int main(int argc, const char *argv[]) {
   int res = 0;
   res = sem_init(&binSem, 0, 0);
   if(res){
-	printf("Semaphore initialization failed!!/n");
+	printf("binSem initialization failed!!/n");
+	return return_value;
+  }
+  res = sem_init(&FPGASem, 0, 0);
+  if(res){
+	printf("FPGASem initialization failed!!/n");
 	return return_value;
   }
 
   //creat thread
-  pthread_t threads;
+  pthread_t threads_code;
+  pthread_t threads_fpga;
   int status;
-  status=pthread_create(&threads, NULL, WebPEncode, NULL);
-  
+  status=pthread_create(&threads_code, NULL, WebPEncode, NULL);
+  if(status!=0)
+  {
+	printf("pthread_create return error code%d", status);
+	return return_value;
+  }
+  status=pthread_create(&threads_fpga, NULL, FPGAEncode, NULL);
   if(status!=0)
   {
 	printf("pthread_create return error code%d", status);
@@ -15615,16 +15710,18 @@ int main(int argc, const char *argv[]) {
   sprintf(creat_dir, "%swebp/", in_dir);
   dir_len = strlen(creat_dir);
   mkdir(creat_dir, S_IRWXU);
-  
-  struct timeval etime, stime;
-  
-  gettimeofday(&stime, NULL);
+
+  gettimeofday(&starttime, NULL);
 
   while((entry = readdir(dir)) != NULL){
   	if(entry->d_type == 8){	
       char* dot;
 	  char in_dir_file[256] = {0};
 	  char out_dir_file[256] = {0};
+
+      if (verbose) {
+        StopwatchReset(&stop_watch);
+      }	  
 	  
 	  //input file 
 	  sprintf(in_dir_file, "%s%s", in_dir, entry->d_name);
@@ -15647,9 +15744,6 @@ int main(int argc, const char *argv[]) {
 	  }
 
       // Read the input.
-      if (verbose) {
-        StopwatchReset(&stop_watch);
-      }
       if (!ReadPicture(in_dir_file, picture[buffer_cnt], keep_alpha, NULL)) {
         fprintf(stderr, "Error! Cannot read input picture file '%s'\n", in_dir_file);
 		WebPPictureFree(picture[buffer_cnt]);
@@ -15657,12 +15751,7 @@ int main(int argc, const char *argv[]) {
 		return -1;
       }
       picture[buffer_cnt]->progress_hook = NULL;
-    
-      if (verbose) {
-        const double read_time = StopwatchReadAndReset(&stop_watch);
-        fprintf(stderr, "Time to read input: %.3fs\n", read_time);
-      }
-    
+
       // Open the output
       out = fopen(out_dir_file, "wb");
       if (out == NULL) {
@@ -15679,10 +15768,6 @@ int main(int argc, const char *argv[]) {
       picture[buffer_cnt]->user_data = (void*)in_dir_file;
     
       // Compress.
-      if (verbose) {
-        StopwatchReset(&stop_watch);
-      }
-
 	  int ok = 0;
 
       WebPEncodingSetError(picture[buffer_cnt], VP8_ENC_OK);  // all ok so far
@@ -15755,15 +15840,17 @@ int main(int argc, const char *argv[]) {
 	  int mb_h_ = enc[buffer_cnt]->mb_h_; 
 	  uint8_t * mem_in = NULL;
 	  
-	  mem_in = (uint8_t*)alloc_mem(4096,384 * mb_w_ * mb_h_);
+	  mem_input[buffer_cnt] = (uint8_t*)alloc_mem(4096, 384 * mb_w_ * mb_h_);
+	  mem_in = mem_input[buffer_cnt];
 	  if (mem_in == NULL){
 	  	fprintf(stderr, "mem_in malloc failed!\n");
 		WebPPictureFree(picture[buffer_cnt]);
 		WebPSafeFree(picture[buffer_cnt]);
 		DeleteVP8Encoder(enc[buffer_cnt]);
 	  	WebPSafeFree(it[buffer_cnt]);
+		__free(mem_in);
 	  	fclose(out);
-		goto out_error4;
+		return -1;
 	  }
 	  
 	  for(y = 0; y < mb_h_; y++){
@@ -15796,15 +15883,18 @@ int main(int argc, const char *argv[]) {
 	  }
 	  
 	  uint8_t * mem_dqm = NULL;
-	  mem_dqm = (uint8_t*)alloc_mem(4096,768);
+	  mem_dqm_g[buffer_cnt] = (uint8_t*)alloc_mem(4096, 768);
+	  mem_dqm = mem_dqm_g[buffer_cnt];
 	  if (mem_dqm == NULL){
 	  	fprintf(stderr, "mem_dqm malloc failed!\n");
 		WebPPictureFree(picture[buffer_cnt]);
 		WebPSafeFree(picture[buffer_cnt]);
 		DeleteVP8Encoder(enc[buffer_cnt]);
 	  	WebPSafeFree(it[buffer_cnt]);
+		__free(mem_in);
+		__free(mem_dqm);
 	  	fclose(out);
-		goto out_error3;
+		return -1;
 	  }
 	  memcpy(mem_dqm, &enc[buffer_cnt]->dqm_[0], sizeof(VP8SegmentInfo));
 	  
@@ -15817,142 +15907,46 @@ int main(int argc, const char *argv[]) {
 		WebPSafeFree(picture[buffer_cnt]);
 		DeleteVP8Encoder(enc[buffer_cnt]);
 	  	WebPSafeFree(it[buffer_cnt]);
+		__free(mem_in);
+		__free(mem_dqm);
 		__free(mem_out);
 		fclose(out);
-		goto out_error3;
+		return -1;
 	  }
 	  memset(mem_out, 0, sizeof(DATA_O) * mb_w_ * mb_h_);
-	  
-	  char device[128];
-	  struct snap_card *card = NULL;
-	  struct snap_action *action = NULL;
-	  // default is interrupt mode enabled (vs polling)
-	  snap_action_flag_t action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
-	  
-	  // Allocate the card that will be used
-	  snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
-	  card = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM,
-					 SNAP_DEVICE_ID_SNAP);
-	  if (card == NULL) {
-		  fprintf(stderr, "err: failed to open card %u: %s\n",
-			  card_no, strerror(errno));
-				  fprintf(stderr, "Default mode is FPGA mode.\n");
-				  fprintf(stderr, "Did you want to run CPU mode ? => add SNAP_CONFIG=CPU before your command.\n");
-				  fprintf(stderr, "Otherwise make sure you ran snap_find_card and snap_maint for your selected card.\n");
-		  WebPPictureFree(picture[buffer_cnt]);
-		  WebPSafeFree(picture[buffer_cnt]);
-		  DeleteVP8Encoder(enc[buffer_cnt]);
-	  	  WebPSafeFree(it[buffer_cnt]);
-		  __free(mem_out);
-		  fclose(out);
-		  goto out_error3;
-	  }
-	  
-	  // Attach the action that will be used on the allocated card
-	  action = snap_attach_action(card, ACTION_TYPE_HDL_COMPUTING, action_irq, 60);
-	  if (action == NULL) {
-		  fprintf(stderr, "err: failed to attach action %u: %s\n",
-			  card_no, strerror(errno));
-		  WebPPictureFree(picture[buffer_cnt]);
-		  WebPSafeFree(picture[buffer_cnt]);
-		  DeleteVP8Encoder(enc[buffer_cnt]);
-	  	  WebPSafeFree(it[buffer_cnt]);
-		  __free(mem_out);
-		  fclose(out);
-		  goto out_error1;
-	  }
-	  
-	  struct snap_job cjob;
-	  struct computing_job mjob;
-	  
-	  snap_prepare_computing(&cjob, &mjob, mem_in, mem_out, mem_dqm, mb_w_, mb_h_);
-	  
-	  int rc = 0;
-	  struct timeval etime, stime;
-	  unsigned long timeout = 600;
-	  
-	  // Collect the timestamp BEFORE the call of the action
-	  gettimeofday(&stime, NULL);
-	  
-	  // Call the action will:
-	  //	write all the registers to the action (MMIO) 
-	  //  + start the action 
-	  //  + wait for completion
-	  //  + read all the registers from the action (MMIO) 
-	  rc = snap_action_sync_execute_job(action, &cjob, timeout);
-	  
-	  // Collect the timestamp AFTER the call of the action
-	  gettimeofday(&etime, NULL);
-	  if (rc != 0) {
-		  fprintf(stderr, "err: job execution %d: %s!\n", rc,
-			  strerror(errno));
-		  WebPPictureFree(picture[buffer_cnt]);
-		  WebPSafeFree(picture[buffer_cnt]);
-		  DeleteVP8Encoder(enc[buffer_cnt]);
-	  	  WebPSafeFree(it[buffer_cnt]);
-		  __free(mem_out);
-		  fclose(out);
-		  goto out_error2;
-	  }
-	  
-	  // test return code
-	  (cjob.retc == SNAP_RETC_SUCCESS) ? fprintf(stdout, "SUCCESS\n") : fprintf(stdout, "FAILED\n");
-	  if (cjob.retc != SNAP_RETC_SUCCESS) {
-		  fprintf(stderr, "err: Unexpected RETC=%x!\n", cjob.retc);
-		  WebPPictureFree(picture[buffer_cnt]);
-		  WebPSafeFree(picture[buffer_cnt]);
-		  DeleteVP8Encoder(enc[buffer_cnt]);
-	  	  WebPSafeFree(it[buffer_cnt]);
-		  __free(mem_out);
-		  fclose(out);
-		  goto out_error2;
-	  }
 
-	  sem_post(&binSem);
-
-	  // Display the time of the action call (MMIO registers filled + execution)
-	  fprintf(stdout, "SNAP computing took %lld usec\n",
-		  (long long)timediff_usec(&etime, &stime));
-
-      if (verbose) {
-        const double encode_time = StopwatchReadAndReset(&stop_watch);
-        fprintf(stderr, "FPGA computing took: %.3fs\n", encode_time);
-      }
+	  sem_post(&FPGASem);
+	  
+	  if (verbose) {
+		const double encode_time = StopwatchReadAndReset(&stop_watch);
+		fprintf(stderr, "FPGA prepare took: %.3fs\n", encode_time);
+	  }
 
       return_value = 0;
 	  if(buffer_cnt >= BUFFER_LEN - 1) buffer_cnt = 0;
 	  else buffer_cnt++;
-		  
-	  out_error2:
-	  snap_detach_action(action);
-		  
-	  out_error1:
-	  snap_card_free(card);
-	  
-	  out_error3:		  
-	  __free(mem_dqm);
-	  
-	  out_error4:
-	  __free(mem_in);
 
   	}
   }
-  
-  gettimeofday(&etime, NULL);
-  
-  fprintf(stdout, "All picture coding took %lld usec\n",
-  (long long)timediff_usec(&etime, &stime));
-		
 
   closedir(dir); 
-  int value;
+  int value1, value2;
   while(1){
-	sem_getvalue(&binSem, &value);
-	if(value == 0)break;
+	sem_getvalue(&binSem, &value1);
+	sem_getvalue(&FPGASem, &value2);
+	if(value1 == 0 && value2 == 0)break;
 	sleep(1);
   }
   sleep(1);
+    
+  fprintf(stdout, "All picture coding took %lld usec\n", (long long)timediff_usec(&endtime, &starttime));
+  
+  snap_detach_action(action);
+		
+  snap_card_free(card);
+			
   sem_destroy(&binSem);
+  sem_destroy(&FPGASem);
   
   return return_value;
 }
