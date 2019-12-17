@@ -446,7 +446,7 @@ always @ (posedge clk or negedge rst_n)begin
             BEST:begin
                 mode         <= bestmode;
             end
-            STORE:beign
+            STORE:begin
                 mode_i[i4]   <= {'b0,mode};
                 Yout_i[i4]   <= dst[mode];
                 levels_i[i4] <= YLevels[mode];
