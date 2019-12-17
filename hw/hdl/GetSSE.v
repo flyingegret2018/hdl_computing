@@ -74,7 +74,7 @@ end
 
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin:ROM
 reg signed [8:0]addra;
-wire [31:0]douta;
+wire [15:0]douta;
 rom_pow U0 (
     .clka                           (clk                            ),
     .ena                            (ena                            ),
