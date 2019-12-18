@@ -34,7 +34,7 @@ module wdata_channel
                        input       [0031:0]            mb_h               ,
                                  
                        //---- local status report ----         
-                       output wire                     done_pulse         ,
+                       output reg                      done_pulse         ,
 
                        //---- WebPEncode ----
                        input                           fifo_empty         ,
