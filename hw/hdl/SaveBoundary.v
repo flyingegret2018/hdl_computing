@@ -31,28 +31,28 @@ module SaveBoundary#(
 ,input             [ 8 * 20              - 1 : 0] top_y_i
 ,input             [ 8 *  8              - 1 : 0] top_u_i
 ,input             [ 8 *  8              - 1 : 0] top_v_i
-,output            [ 8                   - 1 : 0] top_left_y
-,output            [ 8                   - 1 : 0] top_left_u
-,output            [ 8                   - 1 : 0] top_left_v
-,output            [ 8 * 20              - 1 : 0] top_y
-,output            [ 8 *  8              - 1 : 0] top_u
-,output            [ 8 *  8              - 1 : 0] top_v
-,output            [ 8 * 16              - 1 : 0] left_y
-,output            [ 8 *  8              - 1 : 0] left_u
-,output            [ 8 *  8              - 1 : 0] left_v
+,output reg        [ 8                   - 1 : 0] top_left_y
+,output reg        [ 8                   - 1 : 0] top_left_u
+,output reg        [ 8                   - 1 : 0] top_left_v
+,output reg        [ 8 * 20              - 1 : 0] top_y
+,output reg        [ 8 *  8              - 1 : 0] top_u
+,output reg        [ 8 *  8              - 1 : 0] top_v
+,output reg        [ 8 * 16              - 1 : 0] left_y
+,output reg        [ 8 *  8              - 1 : 0] left_u
+,output reg        [ 8 *  8              - 1 : 0] left_v
 );
 
-reg         top_y_wen;
-reg         top_y_wea;
-reg [  9:0] top_y_waddr;
-reg [127:0] top_y_w;
+wire        top_y_wen;
+wire        top_y_wea;
+wire[  9:0] top_y_waddr;
+wire[127:0] top_y_w;
 reg         top_y_ren;
 reg [  9:0] top_y_raddr;
 wire[127:0] top_y_r;
-reg         top_uv_wen;
-reg         top_uv_wea;
-reg [  9:0] top_uv_waddr;
-reg [127:0] top_uv_w;
+wire        top_uv_wen;
+wire        top_uv_wea;
+wire[  9:0] top_uv_waddr;
+wire[127:0] top_uv_w;
 reg         top_uv_ren;
 reg [  9:0] top_uv_raddr;
 wire[127:0] top_uv_r;
@@ -83,37 +83,14 @@ top_ram U_TOP_UV_RAM (
     .addrb                          ( top_uv_raddr                  ),
     .doutb                          ( top_uv_r                      )
 );
-
-always @ (posedge clk or negedge rst_n)begin
-    if(~rst_n)begin
-        top_y_wen    <= 'b0;
-        top_y_wea    <= 'b0;
-        top_y_waddr  <= 'b0;
-        top_y_w      <= 'b0;
-        top_uv_wen   <= 'b0;
-        top_uv_wea   <= 'b0;
-        top_uv_waddr <= 'b0;
-        top_uv_w     <= 'b0;
-    end
-    else begin
-        if(load)begin
-            top_y_wen    <= 1'b1;
-            top_y_wea    <= 1'b1;
-            top_y_waddr  <= x;
-            top_y_w      <= Yin[2047:1920];
-            top_uv_wen   <= 1'b1;
-            top_uv_wea   <= 1'b1;
-            top_uv_waddr <= x;
-            top_uv_w     <= UVin[1023:896];
-        end
-        else begin
-            top_y_wen    <= 1'b0;
-            top_y_wea    <= 1'b0;
-            top_uv_wen   <= 1'b0;
-            top_uv_wea   <= 1'b0;
-        end
-    end
-end
+assign top_y_wen    <= load;
+assign top_y_wea    <= load;
+assign top_y_waddr  <= x;
+assign top_y_w      <= Yin[2047:1920];
+assign top_uv_wen   <= load;
+assign top_uv_wea   <= load;
+assign top_uv_waddr <= x;
+assign top_uv_w     <= UVin[1023:896];
 
 reg [3:0] cstate;
 reg [3:0] nstate;

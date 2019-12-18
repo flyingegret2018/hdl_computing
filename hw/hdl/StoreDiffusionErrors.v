@@ -26,7 +26,6 @@ module StoreDiffusionErrors(
 ,output reg                    top_derr_en
 ,output reg                    top_derr_wea
 ,output reg          [  9 : 0] top_derr_addr
-,output reg                    done
 );
 
     wire signed[7:0]derr_i[5:0];
@@ -56,7 +55,6 @@ module StoreDiffusionErrors(
             top_derr_addr <= 'b0;
             top_derr      <= 'b0;
             left_derr     <= 'b0;
-            done          <= 'b0;
         end
         else begin
             if(start)begin
@@ -65,12 +63,10 @@ module StoreDiffusionErrors(
                 top_derr_addr <= x;
                 top_derr      <= {top[3],top[2],top[1],top[0]};
                 left_derr     <= {left[3],left[2],left[1],left[0]};
-                done          <= 1'b1;
             end
             else begin
                 top_derr_en   <= 'b0;
                 top_derr_wea  <= 'b0;
-                done          <= 'b0;
             end
         end
     end

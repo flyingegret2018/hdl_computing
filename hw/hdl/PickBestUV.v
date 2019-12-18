@@ -132,7 +132,6 @@ top_derr_ram U_TOP_DERR_RAM (
 );
 
 reg  SDE_start;
-wire SDE_done;
 StoreDiffusionErrors U_STOREDIFFUSIONERRORS(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
@@ -143,8 +142,7 @@ StoreDiffusionErrors U_STOREDIFFUSIONERRORS(
     .top_derr                       ( top_derr_w                    ),
     .top_derr_en                    ( top_derr_wen                  ),
     .top_derr_wea                   ( top_derr_wea                  ),
-    .top_derr_addr                  ( top_derr_waddr                ),
-    .done                           ( SDE_done                      )
+    .top_derr_addr                  ( top_derr_waddr                )
 );
 
 wire[31:0]sse;
