@@ -46,7 +46,7 @@ generate_target all [get_files  $src_dir/top_derr_ram/top_derr_ram.xci] >> $log_
 
 puts "                        Generating rom_pow ......"
 create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name rom_pow >> $log_file
-set_property -dict [list CONFIG.Component_Name {rom_pow} CONFIG.Memory_Type {Single_Port_ROM} CONFIG.Write_Width_A {16} CONFIG.Write_Depth_A {512} CONFIG.Read_Width_A {16} CONFIG.Write_Width_B {16} CONFIG.Read_Width_B {16} CONFIG.Register_PortA_Output_of_Memory_Primitives {false} CONFIG.Load_Init_File {true} CONFIG.Coe_File {~/oc-accel/actions/hdl_computing/ip/rom_pow.coe} CONFIG.Port_A_Write_Rate {0}] [get_ips rom_pow]
+set_property -dict [list CONFIG.Component_Name {rom_pow} CONFIG.Memory_Type {Single_Port_ROM} CONFIG.Write_Width_A {16} CONFIG.Write_Depth_A {512} CONFIG.Read_Width_A {16} CONFIG.Write_Width_B {16} CONFIG.Read_Width_B {16} CONFIG.Register_PortA_Output_of_Memory_Primitives {false} CONFIG.Load_Init_File {true} CONFIG.Coe_File {/home/xczhao/oc-accel/actions/hdl_computing/ip/rom_pow.coe} CONFIG.Port_A_Write_Rate {0}] [get_ips rom_pow]
 set_property generate_synth_checkpoint false [get_files $src_dir/rom_pow/rom_pow.xci]
 generate_target all [get_files  $src_dir/rom_pow/rom_pow.xci] >> $log_file
 
