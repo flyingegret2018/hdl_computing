@@ -223,7 +223,7 @@ always @ * begin
                 nstate = PRED;
             else
                 nstate = IDLE;
-        PERD:
+        PRED:
             nstate = WAIT;
         WAIT:
             if(count == 2'b11)

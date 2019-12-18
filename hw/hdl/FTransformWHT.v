@@ -31,7 +31,6 @@ wire signed [11 : 0]in_i [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//12b
 wire signed [13 : 0]tmp  [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//14b
 reg  signed [14 : 0]out_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//15b
 
-
 always @ (posedge clk or negedge rst_n)begin
     if(!rst_n)begin
         done  <= 'b0;

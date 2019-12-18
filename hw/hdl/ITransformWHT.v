@@ -27,9 +27,8 @@ module ITransformWHT#(
 );
 
 wire signed [15 : 0]in_i [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-reg  signed [15 : 0]out_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 wire signed [17 : 0]tmp  [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-
+reg  signed [15 : 0]out_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 
 always @ (posedge clk or negedge rst_n)begin
     if(!rst_n)begin
@@ -61,7 +60,6 @@ for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
     assign tmp[i +  8] = a0 - a1;
     assign tmp[i + 12] = a3 - a2;
     
-
     wire signed [19 : 0] b0,b1,b2,b3;
     assign b0 = tmp[BLOCK_SIZE * i + 0] + tmp[BLOCK_SIZE * i + 3] + 'd3;
     assign b1 = tmp[BLOCK_SIZE * i + 1] + tmp[BLOCK_SIZE * i + 2];
