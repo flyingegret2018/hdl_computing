@@ -24,10 +24,10 @@ module RotateI4(
 ,input         [ 8      - 1 : 0] top_left
 ,input         [ 8 * 20 - 1 : 0] top
 ,input         [ 8 * 16 - 1 : 0] left
-,output        [32      - 1 : 0] left_i
-,output        [ 8      - 1 : 0] top_left_i
-,output        [32      - 1 : 0] top_i
-,output        [32      - 1 : 0] top_right_i
+,output reg    [32      - 1 : 0] left_i
+,output reg    [ 8      - 1 : 0] top_left_i
+,output reg    [32      - 1 : 0] top_i
+,output reg    [32      - 1 : 0] top_right_i
 );
 
 reg [127:0]mem;
