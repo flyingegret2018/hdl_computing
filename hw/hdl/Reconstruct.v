@@ -195,7 +195,7 @@ ITransformWHT U_IWHT(
 
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
 wire [255:0] tmp;
-assgin tmp = {QBAC_Rout[i][255:16],IWHT_out[16 * (i + 1) - 1 : 16 * i]};
+assign tmp = {QBAC_Rout[i][255:16],IWHT_out[16 * (i + 1) - 1 : 16 * i]};
 ITransform U_IDCT(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
