@@ -52,7 +52,7 @@ generate
 for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
     assign src_i[i] = src  [ 8 * (i + 1) - 1 :  8 * i];
     assign ref_i[i] = ref  [ 8 * (i + 1) - 1 :  8 * i];
-    assign out  [i] = out_i[12 * (i + 1) - 1 : 12 * i];
+    assign out[12 * (i + 1) - 1 : 12 * i] = out_i[i];
 end
 
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin

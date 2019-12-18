@@ -46,8 +46,8 @@ genvar i;
 generate
 
 for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
-    assign in_i[i] = in   [12 * (i + 1) - 1 : (BIT_WIDTH + 4) * i];
-    assign out [i] = out_i[15 * (i + 1) - 1 : (BIT_WIDTH + 7) * i];
+    assign in_i[i] = in   [12 * (i + 1) - 1 : 12 * i];
+    assign out[15 * (i + 1) - 1 : 15 * i] = out_i[i];
 end
 
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin

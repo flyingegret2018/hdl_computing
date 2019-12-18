@@ -46,7 +46,7 @@ generate
 
 for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
     assign in_i[i] = in   [16 * (i + 1) - 1 : 16 * i];
-    assign out [i] = out_i[16 * (i + 1) - 1 : 16 * i];
+    assign out[16 * (i + 1) - 1 : 16 * i] = out_i[i];
 end
 
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
