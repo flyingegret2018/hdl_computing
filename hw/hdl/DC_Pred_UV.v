@@ -35,9 +35,6 @@ module DC_Pred_UV#(
 ,output reg                                             done
 );
 
-reg [BIT_WIDTH + SHIFT : 0] temp1_u,temp1_v;
-reg [BIT_WIDTH - 1 : 0] temp2_u,temp2_v;
-
     parameter IDLE    = 6'h01;
     parameter BOTH    = 6'h02;
     parameter TOP     = 6'h04; 
