@@ -27,8 +27,8 @@ module ITransformWHT#(
 );
 
 wire signed [15 : 0]in_i [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-wire signed [15 : 0]out_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-reg  signed [17 : 0]tmp  [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+reg  signed [15 : 0]out_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+wire signed [17 : 0]tmp  [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 
 
 always @ (posedge clk or negedge rst_n)begin
