@@ -33,15 +33,16 @@ module QuantizeBlock#(
 ,output reg                                        done
 );
 
-reg signed [15:0]in_i     [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-reg signed [15:0]Rout_i   [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-reg signed [15:0]out_i    [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-reg signed [31:0]level    [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-reg        [15:0]q_i      [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-reg        [15:0]iq_i     [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-reg        [31:0]bias_i   [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-reg        [31:0]zthresh_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-reg        [15:0]sharpen_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+wire signed [15:0]in_i     [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+wire        [15:0]q_i      [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+wire        [15:0]iq_i     [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+wire        [31:0]bias_i   [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+wire        [31:0]zthresh_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+wire        [15:0]sharpen_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+reg  signed [31:0]level    [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+reg  signed [15:0]Rout_i   [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+reg  signed [15:0]out_i    [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+wire        [15:0]t;
 
 reg shift;
 
@@ -62,13 +63,14 @@ generate
 
 for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
     assign in_i     [i] = in     [16 * (i + 1) - 1 : 16 * i];
-    assign Rout     [i] = Rout_i [16 * (i + 1) - 1 : 16 * i];
-    assign out      [i] = out_i  [16 * (i + 1) - 1 : 16 * i];
     assign q_i      [i] = q      [16 * (i + 1) - 1 : 16 * i];
     assign iq_i     [i] = iq     [16 * (i + 1) - 1 : 16 * i];
     assign bias_i   [i] = bias   [31 * (i + 1) - 1 : 31 * i];
     assign zthresh_i[i] = zthresh[31 * (i + 1) - 1 : 31 * i];
     assign sharpen_i[i] = sharpen[16 * (i + 1) - 1 : 16 * i];
+
+    assign Rout[16 * (i + 1) - 1 : 16 * i] = Rout_i[i];
+    assign out [16 * (i + 1) - 1 : 16 * i] = out_i [i];
 end
 
 for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
@@ -83,7 +85,7 @@ for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
             level[i] <= 'b0;
         end
         else begin
-            level[i] <= (coeff * iq_i + bias_i) >> 17;
+            level[i] <= (coeff * iq_i[i] + bias_i[i]) >> 17;
         end
     end
     
@@ -110,7 +112,6 @@ for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
         end
     end
 
-    wire[15:0]t;
     assign t[i] = out_i[i] != 'b0;
 end
 
