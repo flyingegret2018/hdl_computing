@@ -122,10 +122,7 @@ raddr_channel U_RADDR_CHANNEL(
     .source_address                 ( source_address                ),
     .dqm_address                    ( dqm_address                   ),
     .w1                             ( w1                            ),
-    .h1                             ( h1                            ),
-    .Y0_fifo_full                   ( Y0_fifo_full                  ),
-    .Y1_fifo_full                   ( Y1_fifo_full                  ),
-    .UV_fifo_full                   ( UV_fifo_full                  )
+    .h1                             ( h1                            )
 );
 
 rdata_channel #(
@@ -164,6 +161,9 @@ U_RDATA_CHANNEL(
     .uv_bias                        ( uv_bias                       ),
     .uv_zthresh                     ( uv_zthresh                    ),
     .uv_sharpen                     ( uv_sharpen                    ),
+    .Y0_fifo_full                   ( Y0_fifo_full                  ),
+    .Y1_fifo_full                   ( Y1_fifo_full                  ),
+    .UV_fifo_full                   ( UV_fifo_full                  ),
     .Y0_fifo_din                    ( Y0_fifo_din                   ),
     .Y1_fifo_din                    ( Y1_fifo_din                   ),
     .UV_fifo_din                    ( UV_fifo_din                   ),
