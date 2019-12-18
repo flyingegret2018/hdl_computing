@@ -49,18 +49,18 @@ module wdata_channel
  reg [ 4:0]cstate;
  reg [ 4:0]nstate;
 
+parameter IDLE = 'h1;
+parameter INIT = 'h2;
+parameter WAIT = 'h4;
+parameter SEND = 'h8;
+parameter DONE = 'h10;
+
  assing m_axi_wdata    = fifo_dout;
  assign m_axi_wstrb    = {128{1'b1}};
  assign m_axi_wlast    = rd_count >= 'd6 && (cstate == SEND);
  assign m_axi_wvalid   = m_axi_wready && (cstate == SEND);
  assign fifo_rd        = m_axi_wready && (cstate == SEND);
  assign data_send      = m_axi_wready && (cstate == SEND);
-
-parameter IDLE = 'h1;
-parameter INIT = 'h2;
-parameter WAIT = 'h4;
-parameter SEND = 'h8;
-parameter DONE = 'h10;
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
