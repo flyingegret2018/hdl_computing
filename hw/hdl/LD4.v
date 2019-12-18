@@ -26,13 +26,13 @@ module LD4#(
 
 wire [BIT_WIDTH - 1 : 0] vals [6 : 0];
 
-assgin vals[0] = (top[ 7: 0]       + (top[15: 8]       << 1) + top[23:16]       + 2) >> 2;
-assgin vals[1] = (top[15: 8]       + (top[23:16]       << 1) + top[31:24]       + 2) >> 2;
-assgin vals[2] = (top[23:16]       + (top[31:24]       << 1) + top_right[ 7: 0] + 2) >> 2;
-assgin vals[3] = (top[31:24]       + (top_right[ 7: 0] << 1) + top_right[15: 8] + 2) >> 2;
-assgin vals[4] = (top_right[ 7: 0] + (top_right[15: 8] << 1) + top_right[23:16] + 2) >> 2;
-assgin vals[5] = (top_right[15: 8] + (top_right[23:16] << 1) + top_right[31:24] + 2) >> 2;
-assgin vals[6] = (top_right[23:16] + (top_right[31:24] << 1) + top_right[31:24] + 2) >> 2;
+assign vals[0] = (top[ 7: 0]       + (top[15: 8]       << 1) + top[23:16]       + 2) >> 2;
+assign vals[1] = (top[15: 8]       + (top[23:16]       << 1) + top[31:24]       + 2) >> 2;
+assign vals[2] = (top[23:16]       + (top[31:24]       << 1) + top_right[ 7: 0] + 2) >> 2;
+assign vals[3] = (top[31:24]       + (top_right[ 7: 0] << 1) + top_right[15: 8] + 2) >> 2;
+assign vals[4] = (top_right[ 7: 0] + (top_right[15: 8] << 1) + top_right[23:16] + 2) >> 2;
+assign vals[5] = (top_right[15: 8] + (top_right[23:16] << 1) + top_right[31:24] + 2) >> 2;
+assign vals[6] = (top_right[23:16] + (top_right[31:24] << 1) + top_right[31:24] + 2) >> 2;
 
 assign dst [7  :0  ] = vals[0]; //00
 assign dst [15 :8  ] = vals[1]; //01

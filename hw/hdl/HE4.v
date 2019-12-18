@@ -26,10 +26,10 @@ module HE4#(
 
 wire [BIT_WIDTH - 1 : 0] vals [BLOCK_SIZE - 1 : 0];
 
-assgin vals[0] = (top_left    + (left[ 7: 0] << 1) + left[15: 8] + 2) >> 2;
-assgin vals[1] = (left[ 7: 0] + (left[15: 8] << 1) + left[23:16] + 2) >> 2;
-assgin vals[2] = (left[15: 8] + (left[23:16] << 1) + left[31:24] + 2) >> 2;
-assgin vals[3] = (left[23:16] + (left[31:24] << 1) + left[31:24] + 2) >> 2;
+assign vals[0] = (top_left    + (left[ 7: 0] << 1) + left[15: 8] + 2) >> 2;
+assign vals[1] = (left[ 7: 0] + (left[15: 8] << 1) + left[23:16] + 2) >> 2;
+assign vals[2] = (left[15: 8] + (left[23:16] << 1) + left[31:24] + 2) >> 2;
+assign vals[3] = (left[23:16] + (left[31:24] << 1) + left[31:24] + 2) >> 2;
 
 genvar i,j;
 
