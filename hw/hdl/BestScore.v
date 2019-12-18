@@ -26,7 +26,7 @@ module BestScore(
 ,input  signed [63:0] score7
 ,input  signed [63:0] score8
 ,input  signed [63:0] score9
-,output        [ 7:0] mode
+,output reg    [ 7:0] mode
 );
 
 wire[8:0]a;

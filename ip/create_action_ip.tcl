@@ -20,11 +20,11 @@ create_project action_ip_prj $aip_dir/action_ip_prj -force -part $fpga_part -ip 
 
 ## Project IP Settings
 ## General
-puts "                        Generating fifo_1024 ......"
-create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.2 -module_name fifo_1024 >> $log_file
-set_property -dict [list CONFIG.Component_Name {fifo_1024} CONFIG.Input_Data_Width {1024} CONFIG.Input_Depth {512} CONFIG.Output_Data_Width {1024} CONFIG.Output_Depth {512} CONFIG.Data_Count_Width {9} CONFIG.Write_Data_Count_Width {9} CONFIG.Read_Data_Count_Width {9} CONFIG.Programmable_Full_Type {Single_Programmable_Full_Threshold_Constant} CONFIG.Full_Threshold_Assert_Value {480} CONFIG.Full_Threshold_Negate_Value {479}] [get_ips fifo_1024]
-set_property generate_synth_checkpoint false [get_files $src_dir/fifo_1024/fifo_1024.xci]
-generate_target all [get_files  $src_dir/fifo_1024/fifo_1024.xci] >> $log_file
+puts "                        Generating fifo_1024_in ......"
+create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.2 -module_name fifo_1024_in >> $log_file
+set_property -dict [list CONFIG.Component_Name {fifo_1024_in} CONFIG.Input_Data_Width {1024} CONFIG.Input_Depth {512} CONFIG.Output_Data_Width {1024} CONFIG.Output_Depth {512} CONFIG.Data_Count_Width {9} CONFIG.Write_Data_Count_Width {9} CONFIG.Read_Data_Count_Width {9} CONFIG.Programmable_Full_Type {Single_Programmable_Full_Threshold_Constant} CONFIG.Full_Threshold_Assert_Value {480} CONFIG.Full_Threshold_Negate_Value {479}] [get_ips fifo_1024_in]
+set_property generate_synth_checkpoint false [get_files $src_dir/fifo_1024_in/fifo_1024_in.xci]
+generate_target all [get_files  $src_dir/fifo_1024_in/fifo_1024_in.xci] >> $log_file
 
 puts "                        Generating fifo_1024_out ......"
 create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.2 -module_name fifo_1024_out >> $log_file

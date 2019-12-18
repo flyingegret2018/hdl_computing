@@ -293,7 +293,7 @@ U_AXI_MASTER_RD(
     .UV_fifo_wr                     ( UV_fifo_wr                    )
 );
 
-fifo_1024 fifo_y0_in (
+fifo_1024_in fifo_y0_in (
     .clk                            ( clk                           ),
     .srst                           ( ~rst_n                        ),
     .din                            ( Y0_fifo_din                   ),
@@ -307,7 +307,7 @@ fifo_1024 fifo_y0_in (
     .rd_rst_busy                    (                               )
 );
 
-fifo_1024 fifo_y1_in (
+fifo_1024_in fifo_y1_in (
     .clk                            ( clk                           ),
     .srst                           ( ~rst_n                        ),
     .din                            ( Y1_fifo_din                   ),
@@ -321,7 +321,7 @@ fifo_1024 fifo_y1_in (
     .rd_rst_busy                    (                               )
 );
 
-fifo_1024 fifo_uv_in (
+fifo_1024_in fifo_uv_in (
     .clk                            ( clk                           ),
     .srst                           ( ~rst_n                        ),
     .din                            ( UV_fifo_din                   ),
