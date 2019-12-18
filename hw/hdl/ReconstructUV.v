@@ -180,7 +180,7 @@ ITransform U_IDCT(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
     .start                          ( QB[0].QB_done                 ),
-    .src                            ( QB_rout[i]                    ),
+    .src                            ( QB_Rout[i]                    ),
     .ref                            ( UVPred_i[i]                   ),
     .out                            ( UVout_i[i]                    ),
     .done                           ( done                          )
