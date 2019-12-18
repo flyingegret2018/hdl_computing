@@ -293,8 +293,8 @@ RotateI4 U_ROTATEI4(
     .top_right_i                    ( top_right_w                   )
 );
 
-reg [9:0] cstate;
-reg [9:0] nstate;
+reg [10:0] cstate;
+reg [10:0] nstate;
 
 parameter IDLE        = 'h1;
 parameter INIT        = 'h2;
@@ -303,9 +303,10 @@ parameter RECO        = 'h8;
 parameter CALC        = 'h10;
 parameter SCORE       = 'h20;
 parameter BEST        = 'h40;
-parameter ROTATE      = 'h80;
-parameter REINIT      = 'h100;
-parameter DONE        = 'h200;
+parameter STORE       = 'h80;
+parameter ROTATE      = 'h100;
+parameter REINIT      = 'h200;
+parameter DONE        = 'h400;
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
@@ -335,6 +336,8 @@ always @ * begin
         SCORE:
             nstate = BEST;
         BEST:
+            nstate = STORE;
+        STORE:
             nstate = ROTATE;
         ROTATE:
             nstate = REINIT;
