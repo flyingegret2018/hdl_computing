@@ -57,7 +57,7 @@ genvar i;
 generate
 
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
-    assign tmp[i] = ac[16 * 16 * (i + 1) - 1 : 16 * 16 * i];
+    assign tmp[i] = levels[16 * 16 * (i + 1) - 1 : 16 * 16 * i];
 end
 
 endgenerate
