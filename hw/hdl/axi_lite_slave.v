@@ -53,9 +53,9 @@ module axi_lite_slave #(
                       output     [63:0]                dqm_address      ,
                       output     [31:0]                mb_w             ,
                       output     [31:0]                mb_h             ,
-                      output     [09:0]                w1               ,
-                      output     [09:0]                w2               ,
-                      output     [09:0]                h1               ,
+                      output reg [09:0]                w1               ,
+                      output reg [09:0]                w2               ,
+                      output reg [09:0]                h1               ,
                       //---- local status ----
                       input                            done_pulse       ,
                       input                            rd_error         ,
@@ -237,9 +237,6 @@ module axi_lite_slave #(
      else
          REG_user_control[0] <= 1'b0;
 
- reg [9:0]w1;
- reg [9:0]w2;
- reg [9:0]h1;
  always@(posedge clk or negedge rst_n)
    if(~rst_n)
      begin
@@ -321,7 +318,7 @@ always @(posedge clk or negedge rst_n) begin
     else if(soft_reset) begin
        snap_idle_q <= 0;
     end
-    else if(done_pusle) begin   //finish
+    else if(done_pulse) begin   //finish
        snap_idle_q <= 1;
     end
 end
