@@ -163,6 +163,8 @@ wire              UV_fifo_wr         ;
 wire              Y0_fifo_empty      ;
 wire              Y1_fifo_empty      ;
 wire              UV_fifo_empty      ;
+wire  [1023:0]    Yin                ;
+wire  [2047:0]    UVin               ;
 wire              Y0_fifo_rd         ;
 wire              Y1_fifo_rd         ;
 wire              UV_fifo_rd         ;
@@ -338,7 +340,7 @@ fifo_1024_in fifo_uv_in (
 WebPEncode U_WEBPENCODE(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
-    .start                          ( start                         ),
+    .start                          ( start_pulse                   ),
     .w1                             ( w1                            ),
     .w2                             ( w2                            ),
     .h1                             ( h1                            ),
@@ -376,7 +378,7 @@ WebPEncode U_WEBPENCODE(
     .fifo_rd_uv                     ( UV_fifo_rd                    ),
     .fifo_wr                        ( fifo_wr                       ),
     .data_out                       ( data_out                      ),
-    .done                           ( done                          )
+    .done                           (                               )
 );
 
 fifo_1024_out fifo_out (
