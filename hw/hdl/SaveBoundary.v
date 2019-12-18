@@ -83,14 +83,15 @@ top_ram U_TOP_UV_RAM (
     .addrb                          ( top_uv_raddr                  ),
     .doutb                          ( top_uv_r                      )
 );
-assign top_y_wen    <= load;
-assign top_y_wea    <= load;
-assign top_y_waddr  <= x;
-assign top_y_w      <= Yin[2047:1920];
-assign top_uv_wen   <= load;
-assign top_uv_wea   <= load;
-assign top_uv_waddr <= x;
-assign top_uv_w     <= UVin[1023:896];
+
+assign top_y_wen    = load;
+assign top_y_wea    = load;
+assign top_y_waddr  = x;
+assign top_y_w      = Yin[2047:1920];
+assign top_uv_wen   = load;
+assign top_uv_wea   = load;
+assign top_uv_waddr = x;
+assign top_uv_w     = UVin[1023:896];
 
 reg [3:0] cstate;
 reg [3:0] nstate;
