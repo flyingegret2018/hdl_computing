@@ -25,8 +25,8 @@ module DC4#(
 ,output     [BIT_WIDTH * BLOCK_SIZE * BLOCK_SIZE - 1 : 0]   dst
 );
 
-reg [BIT_WIDTH + SHIFT : 0] temp1;
-reg [BIT_WIDTH - 1 : 0] temp2;
+wire[BIT_WIDTH + SHIFT : 0] temp1;
+wire[BIT_WIDTH - 1 : 0] temp2;
 
 assign temp1 =  top[7  : 0 ] + left[7  : 0 ] +
                 top[15 : 8 ] + left[15 : 8 ] +
