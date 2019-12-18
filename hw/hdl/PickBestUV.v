@@ -219,7 +219,7 @@ always @ * begin
         PRED:
             nstate = WAIT;
         WAIT:
-            if(count == 2'b11)
+            if(count == 2'b10)
                 if(uv == 'b1)
                     nstate = FIRSTSCORE;
                 else
@@ -315,15 +315,11 @@ always @ (posedge clk or negedge rst_n)begin
         if(rec_done)
             count <= 'b0;
         else
-            case({sse_done,disto_done,cost_done})
-                3'b111:count <= count + 2'b11;
-                3'b110:count <= count + 2'b10;
-                3'b101:count <= count + 2'b10;
-                3'b011:count <= count + 2'b10;
-                3'b001:count <= count + 2'b01;
-                3'b010:count <= count + 2'b01;
-                3'b100:count <= count + 2'b01;
-                3'b000:count <= count + 2'b00;
+            case({sse_done,cost_done})
+                2'b11:count <= count + 2'b10;
+                2'b10:count <= count + 2'b01;
+                2'b01:count <= count + 2'b01;
+                2'b00:count <= count + 2'b00;
             endcase
     end
 end
