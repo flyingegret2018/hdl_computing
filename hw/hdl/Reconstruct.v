@@ -36,7 +36,7 @@ module Reconstruct#(
 ,output     [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] Yout
 ,output     [16 * BLOCK_SIZE              - 1 : 0] Y_dc_levels
 ,output     [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] Y_ac_levels
-,output     [31                           - 1 : 0] nz
+,output     [32                           - 1 : 0] nz
 ,output                                            done
 );
 
@@ -79,8 +79,8 @@ FTransform U_FDCT(
      .clk                           ( clk                           )
     ,.rst_n                         ( rst_n                         )
     ,.start                         ( start                         )
-    ,.src                           ( Ysrc[i]                       )
-    ,.ref                           ( YPred[i]                      )
+    ,.src                           ( Ysrc_i[i]                     )
+    ,.ref                           ( YPred_i[i]                    )
     ,.out                           ( FDCT_o[i]                     )
     ,.done                          ( FDCT_done                     )
     );
@@ -180,7 +180,7 @@ QuantizeBlock U_QBAC(
 );
 end
 
-assign nz = {'b0,QBDC_nz,8'b0,QBAC_nz};
+assign nz = {7'b0,QBDC_nz,8'b0,QBAC_nz};
 
 wire IWHT_done;
 wire [16 * BLOCK_SIZE - 1 : 0]IWHT_out;

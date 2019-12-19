@@ -196,7 +196,7 @@ assign ac_levels = ac_tmp;
 assign dc_levels = dc_tmp;
 assign nz = nz_tmp;
 assign out = Yout_tmp;
-assign mode_i16 = {'b0,mode};
+assign mode_i16 = {30'b0,mode};
 
 parameter IDLE        = 'h1;
 parameter PRED        = 'h2;

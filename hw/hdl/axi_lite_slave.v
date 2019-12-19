@@ -353,7 +353,7 @@ always@(posedge clk or negedge rst_n)
    else if (done_pulse)
      done_q <= 1;
 
-assign REG_user_status     = {'d0, rd_error_q, wr_error_q, done_q};
+assign REG_user_status     = {29'd0, rd_error_q, wr_error_q, done_q};
 assign REG_snap_control_rd = {REG_snap_control[31:4], 1'b1, snap_idle_q, 1'b0, snap_start_q};
 //Address: 0x000
 //  31..8  RO: Reserved

@@ -163,8 +163,8 @@ wire              UV_fifo_wr         ;
 wire              Y0_fifo_empty      ;
 wire              Y1_fifo_empty      ;
 wire              UV_fifo_empty      ;
-wire  [1023:0]    Yin                ;
-wire  [2047:0]    UVin               ;
+wire  [2047:0]    Yin                ;
+wire  [1023:0]    UVin               ;
 wire              Y0_fifo_rd         ;
 wire              Y1_fifo_rd         ;
 wire              UV_fifo_rd         ;
@@ -414,12 +414,12 @@ U_AXI_MASTER_WR(
     .m_axi_awlen                    ( m_axi_snap_awlen              ),
     .m_axi_awsize                   ( m_axi_snap_awsize             ),
     .m_axi_awburst                  ( m_axi_snap_awburst            ),
-    .m_axi_awuser                   ( m_axi_snap_awcache            ),
-    .m_axi_awcache                  ( m_axi_snap_awlock             ),
-    .m_axi_awlock                   ( m_axi_snap_awprot             ),
-    .m_axi_awprot                   ( m_axi_snap_awqos              ),
-    .m_axi_awqos                    ( m_axi_snap_awregion           ),
-    .m_axi_awregion                 ( m_axi_snap_awuser             ),
+    .m_axi_awuser                   ( m_axi_snap_awuser             ),
+    .m_axi_awcache                  ( m_axi_snap_awcache            ),
+    .m_axi_awlock                   ( m_axi_snap_awlock             ),
+    .m_axi_awprot                   ( m_axi_snap_awprot             ),
+    .m_axi_awqos                    ( m_axi_snap_awqos              ),
+    .m_axi_awregion                 ( m_axi_snap_awregion           ),
     .m_axi_awvalid                  ( m_axi_snap_awvalid            ),
     .m_axi_awready                  ( m_axi_snap_awready            ),
     .m_axi_wdata                    ( m_axi_snap_wdata              ),

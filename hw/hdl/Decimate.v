@@ -58,7 +58,7 @@ module Decimate#(
 ,input             [32 * 16              - 1 : 0] uv_zthresh
 ,input             [16 * 16              - 1 : 0] uv_sharpen
 ,output reg        [ 8 * 16 * BLOCK_SIZE - 1 : 0] Yout
-,output            [ 8 * 16 * BLOCK_SIZE - 1 : 0] UVout
+,output            [ 8 *  8 * BLOCK_SIZE - 1 : 0] UVout
 ,output            [32                   - 1 : 0] mode_i16
 ,output            [ 8 * 16              - 1 : 0] mode_i4
 ,output            [32                   - 1 : 0] mode_uv
@@ -66,7 +66,7 @@ module Decimate#(
 ,output reg        [16 * 16 * BLOCK_SIZE - 1 : 0] ac_levels
 ,output            [16 *  8 * BLOCK_SIZE - 1 : 0] uv_levels
 ,output reg        [ 8                   - 1 : 0] skipped
-,output reg        [ 8                   - 1 : 0] mbtype
+,output            [ 8                   - 1 : 0] mbtype
 ,output reg        [32                   - 1 : 0] nz
 ,output            [32                   - 1 : 0] max_edgeo
 ,output reg                                       done
@@ -76,6 +76,9 @@ wire[  63:0]Yscore;
 wire[  31:0]Ynz;
 wire[4095:0]ac_levels0;
 wire[2047:0]Yout16;
+reg         mbtype_i;
+assign mbtype = {7'b0,mbtype_i};
+
 PickBestIntra U_PICKBESTINTRA(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
@@ -90,7 +93,7 @@ PickBestIntra U_PICKBESTINTRA(
     .reload                         ( reload                        ),
     .Ysrc                           ( Yin                           ),
     .top_left                       ( top_left_y                    ),
-    .top                            ( top_y                         ),
+    .top                            ( top_y[127:0]                  ),
     .left                           ( left_y                        ),
     .q1                             ( y1_q                          ),
     .iq1                            ( y1_iq                         ),
@@ -173,7 +176,7 @@ always @ (posedge clk or negedge rst_n)begin
         done      <= 'b0;
         ac_levels <= 'b0;
         Yout      <= 'b0;
-        mbtype    <= 'b0;
+        mbtype_i  <= 'b0;
         nz        <= 'b0;
         skipped   <= 'b0;
     end
@@ -183,16 +186,16 @@ always @ (posedge clk or negedge rst_n)begin
             if(Yscore4 >= Yscore)begin
                 ac_levels <= ac_levels0;
                 Yout      <= Yout16;
-                mbtype    <= 'b1;
-                nz        <= {'b0,Ynz[24],UVnz[23:16],Ynz[15:0]};
-                skipped   <= {'b0,Ynz[24],UVnz[23:16],Ynz[15:0]} == 'b0;
+                mbtype_i  <= 1'b1;
+                nz        <= {7'b0,Ynz[24],UVnz[23:16],Ynz[15:0]};
+                skipped   <= {Ynz[24],UVnz[23:16],Ynz[15:0]} == 'b0;
             end
             else begin
                 ac_levels <= ac_levels1;
                 Yout      <= Yout4;
-                mbtype    <= 'b0;
-                nz        <= {'b0,UVnz[23:16],Ynz4[15:0]};
-                skipped   <= {'b0,UVnz[23:16],Ynz4[15:0]} == 'b0;
+                mbtype_i  <= 1'b0;
+                nz        <= {8'b0,UVnz[23:16],Ynz4[15:0]};
+                skipped   <= {UVnz[23:16],Ynz4[15:0]} == 'b0;
             end
         end
         else begin

@@ -45,10 +45,10 @@ module DC_Pred_UV#(
     reg  [5:0] cstate;
     reg  [5:0] nstate;
 
-    wire[BIT_WIDTH - 1 : 0] top_u_i  [SHIFT - 2 : 0];
-    wire[BIT_WIDTH - 1 : 0] top_v_i  [SHIFT - 2 : 0];
-    wire[BIT_WIDTH - 1 : 0] left_u_i [SHIFT - 2 : 0];
-    wire[BIT_WIDTH - 1 : 0] left_v_i [SHIFT - 2 : 0];
+    wire[BIT_WIDTH - 1 : 0] top_u_i  [BLOCK_SIZE - 1 : 0];
+    wire[BIT_WIDTH - 1 : 0] top_v_i  [BLOCK_SIZE - 1 : 0];
+    wire[BIT_WIDTH - 1 : 0] left_u_i [BLOCK_SIZE - 1 : 0];
+    wire[BIT_WIDTH - 1 : 0] left_v_i [BLOCK_SIZE - 1 : 0];
     reg [BIT_WIDTH + SHIFT : 0] temp1_u;
     reg [BIT_WIDTH + SHIFT : 0] temp1_v;
     reg [BIT_WIDTH - 1 : 0] temp2_u;

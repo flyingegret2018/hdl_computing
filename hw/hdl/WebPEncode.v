@@ -339,7 +339,7 @@ always @ (posedge clk or negedge rst_n)begin
                 'd3: data_out <= ac_levels[4095:3072];
                 'd4: data_out <= uv_levels[1023:   0];
                 'd5: data_out <= uv_levels[2047:1024];
-                'd6: data_out <= {'b0,max_edgeo,16'b0,skipped,mbtype,416'b0,
+                'd6: data_out <= {64'b0,max_edgeo,16'b0,skipped,mbtype,416'b0,
                                   nz,mode_uv,mode_i4,mode_i16,dc_levels};
                 default:;
             endcase 

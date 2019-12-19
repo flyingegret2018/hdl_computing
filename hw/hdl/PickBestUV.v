@@ -186,7 +186,7 @@ reg [   1:0]mode;
 assign levels = levels_tmp;
 assign nz = nz_tmp;
 assign out = UVout_tmp;
-assign mode_uv = {'b0,mode};
+assign mode_uv = {30'b0,mode};
 
 reg [7:0] cstate;
 reg [7:0] nstate;

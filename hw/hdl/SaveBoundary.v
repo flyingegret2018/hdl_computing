@@ -27,7 +27,7 @@ module SaveBoundary#(
 ,input             [10                   - 1 : 0] w2
 ,input             [10                   - 1 : 0] h1
 ,input             [ 8 * 16 * BLOCK_SIZE - 1 : 0] Yin
-,input             [ 8 * 16 * BLOCK_SIZE - 1 : 0] UVin
+,input             [ 8 *  8 * BLOCK_SIZE - 1 : 0] UVin
 ,input             [ 8 * 20              - 1 : 0] top_y_i
 ,input             [ 8 *  8              - 1 : 0] top_u_i
 ,input             [ 8 *  8              - 1 : 0] top_v_i

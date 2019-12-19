@@ -126,7 +126,7 @@ raddr_channel U_RADDR_CHANNEL(
 );
 
 rdata_channel #(
-    .ID_WIDTH                       ( 2                             ))
+    .ID_WIDTH                       ( ID_WIDTH                      ))
 U_RDATA_CHANNEL(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),

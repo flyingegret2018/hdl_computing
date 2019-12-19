@@ -26,7 +26,7 @@ module Disto4x4#(
 ,input             [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] inb
 ,input             [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] w
 ,output     signed [31                               : 0] sum
-,output reg                                               done
+,output                                                   done
 );
 
 wire signed[31:0]suma,sumb;

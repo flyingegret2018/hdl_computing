@@ -42,8 +42,8 @@ module DC_Pred#(
     reg  [5:0] cstate;
     reg  [5:0] nstate;
 
-    wire[BIT_WIDTH - 1 : 0] top_i  [SHIFT - 2 : 0];
-    wire[BIT_WIDTH - 1 : 0] left_i [SHIFT - 2 : 0];
+    wire[BIT_WIDTH - 1 : 0] top_i  [BLOCK_SIZE - 1 : 0];
+    wire[BIT_WIDTH - 1 : 0] left_i [BLOCK_SIZE - 1 : 0];
     reg [BIT_WIDTH + SHIFT : 0] temp1;
     reg [BIT_WIDTH - 1 : 0] temp2;
     reg [SHIFT - 1 : 0]count;

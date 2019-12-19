@@ -92,7 +92,7 @@ TM4 U_TM4(
 
 VE4 U_VE4(
     .top_left                       ( top_left_i                    ),
-    .top_right                      ( top_right_i                   ),
+    .top_right                      ( top_right_i[7:0]              ),
     .top                            ( top_i                         ),
     .dst                            ( pred[2]                       )
 );
@@ -113,7 +113,7 @@ RD4 U_RD4(
 VR4 U_VR4(
     .top_left                       ( top_left_i                    ),
     .top                            ( top_i                         ),
-    .left                           ( left_i                        ),
+    .left                           ( left_i[23:0]                  ),
     .dst                            ( pred[5]                       )
 );
 
@@ -131,7 +131,7 @@ VL4 U_VL4(
 
 HD4 U_HD4(
     .top_left                       ( top_left_i                    ),
-    .top                            ( top_i                         ),
+    .top                            ( top_i[23:0]                   ),
     .left                           ( left_i                        ),
     .dst                            ( pred[8]                       )
 );
@@ -163,7 +163,7 @@ reg [  31:0]SD_tmp;
 reg [  31:0]H_tmp;
 reg [  31:0]R_tmp;
 reg [  63:0]score_tmp;
-reg [   7:0]mode;
+reg [   3:0]mode;
 reg [ 127:0]o_tmp;
 
 
@@ -250,7 +250,7 @@ RDScore U_RDSCORE(
     .tlambda                        ( tlambda                       ),
     .D                              ( sse[i]                        ),
     .SD                             ( disto[i]                      ),
-    .H                              ( FixedCost[i]                  ),
+    .H                              ( {16'b0,FixedCost[i]}          ),
     .R                              ( sum[i]                        ),
     .score                          ( score[i]                      )
 );
@@ -450,7 +450,7 @@ always @ (posedge clk or negedge rst_n)begin
                 mode         <= bestmode;
             end
             STORE:begin
-                mode_i[i4]   <= {'b0,mode};
+                mode_i[i4]   <= {4'b0,mode};
                 Yout_i[i4]   <= dst[mode];
                 levels_i[i4] <= YLevels[mode];
                 nz[i4]       <= nz_i[mode];

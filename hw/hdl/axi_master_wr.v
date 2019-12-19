@@ -37,7 +37,7 @@ module axi_master_wr #(
                        output wire [0007:0]               m_axi_awlen       ,  
                        output wire [0002:0]               m_axi_awsize      ,  
                        output wire [0001:0]               m_axi_awburst     ,  
-                       output wire [ARUSER_WIDTH - 1:0]   m_axi_awuser      , 
+                       output wire [AWUSER_WIDTH - 1:0]   m_axi_awuser      , 
                        output wire [0003:0]               m_axi_awcache     , 
                        output wire [0001:0]               m_axi_awlock      ,  
                        output wire [0002:0]               m_axi_awprot      , 
@@ -83,7 +83,7 @@ module axi_master_wr #(
  assign m_axi_awsize   = 3'b111; // (2^7) * 8=1024
  assign m_axi_awburst  = 2'd1; // INCR mode for memory access
  assign m_axi_awcache  = 4'd3; // Normal Non-cacheable Bufferable
- assign m_axi_awuser   = i_snap_context[ARUSER_WIDTH - 1:0]; 
+ assign m_axi_awuser   = i_snap_context[AWUSER_WIDTH - 1:0]; 
  assign m_axi_awprot   = 3'd0;
  assign m_axi_awqos    = 4'd0;
  assign m_axi_awregion = 4'd0; //?

@@ -36,20 +36,20 @@ assign vals[5] = (left[23:16] + (left[31:24] << 1) + left[31:24] + 2) >> 2;
 assign vals[6] = left[31:24];
 
 assign dst [7  :0  ] = vals[0]; //00
-assign dst [15 :8  ] = vals[6]; //01
-assign dst [23 :16 ] = vals[5]; //02
+assign dst [15 :8  ] = vals[3]; //01
+assign dst [23 :16 ] = vals[1]; //02
 assign dst [31 :24 ] = vals[4]; //03
 assign dst [39 :32 ] = vals[1]; //04
-assign dst [47 :40 ] = vals[7]; //05
-assign dst [55 :48 ] = vals[0]; //06
-assign dst [63 :56 ] = vals[6]; //07
+assign dst [47 :40 ] = vals[4]; //05
+assign dst [55 :48 ] = vals[2]; //06
+assign dst [63 :56 ] = vals[5]; //07
 assign dst [71 :64 ] = vals[2]; //08
-assign dst [79 :72 ] = vals[8]; //09
-assign dst [87 :80 ] = vals[1]; //10
-assign dst [95 :88 ] = vals[7]; //11
-assign dst [103:96 ] = vals[3]; //12
-assign dst [111:104] = vals[9]; //13
-assign dst [119:112] = vals[2]; //14
-assign dst [127:120] = vals[8]; //15
+assign dst [79 :72 ] = vals[5]; //09
+assign dst [87 :80 ] = vals[6]; //10
+assign dst [95 :88 ] = vals[6]; //11
+assign dst [103:96 ] = vals[6]; //12
+assign dst [111:104] = vals[6]; //13
+assign dst [119:112] = vals[6]; //14
+assign dst [127:120] = vals[6]; //15
 
 endmodule

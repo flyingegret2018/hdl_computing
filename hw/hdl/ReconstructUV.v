@@ -93,8 +93,8 @@ FTransform U_FDCT(
      .clk                           ( clk                           )
     ,.rst_n                         ( rst_n                         )
     ,.start                         ( start                         )
-    ,.src                           ( UVsrc[i]                      )
-    ,.ref                           ( UVPred[i]                     )
+    ,.src                           ( UVsrc_i[i]                    )
+    ,.ref                           ( UVPred_i[i]                   )
     ,.out                           ( FDCT_o[i]                     )
     ,.done                          ( FDCT_done                     )
     );
@@ -149,7 +149,7 @@ for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
                       {4'b0,FDCT_o[i][ 47: 36]},
                       {4'b0,FDCT_o[i][ 35: 24]},
                       {4'b0,FDCT_o[i][ 23: 12]},
-                      CDCV_o[16 * (i + 1) : 16 * i]};
+                      CDCV_o[16 * (i + 1) - 1: 16 * i]};
 end
 
 wire [7:0]QB_nz;
@@ -173,7 +173,7 @@ QuantizeBlock U_QB(
 );
 end
 
-assign nz = {'b0,QB_nz,16'b0};
+assign nz = {8'b0,QB_nz,16'b0};
 
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
 ITransform U_IDCT(

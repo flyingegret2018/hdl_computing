@@ -35,6 +35,7 @@ module Reconstruct4#(
 );
 
 wire [12 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0]FDCT_out;
+wire FDCT_done;
 FTransform U_FDCT(
      .clk                           (clk                            )
     ,.rst_n                         (rst_n                          )

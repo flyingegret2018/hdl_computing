@@ -28,12 +28,12 @@ module rdata_channel #(
                        input [ID_WIDTH-1:0]            m_axi_rid         ,  
                        input                           m_axi_rlast       , 
                        input                           m_axi_rvalid      ,
-                       input      [001:0]              m_axi_rresp       ,
+                       input      [0001:0]             m_axi_rresp       ,
                        output wire                     m_axi_rready      , 
 
                        //---- local control ----
                        input                           start_pulse       ,
-                       output reg [001:0]              rd_error          ,
+                       output reg                      rd_error          ,
 
                        output reg [0031:0]             lambda_i16        ,
                        output reg [0031:0]             lambda_i4         ,
