@@ -252,9 +252,12 @@ module axi_lite_slave #(
     end
    else if(s_axi_wvalid & s_axi_wready)
      case(write_address)
-       ADDR_MB_W: w1 <= regw_mb_w - 1'd1;
-       ADDR_MB_W: w2 <= regw_mb_w - 2'd2;
-       ADDR_MB_H: h1 <= regw_mb_h - 1'd1;
+       ADDR_MB_W:begin
+         w1 <= regw_mb_w - 1'd1;
+         w2 <= regw_mb_w - 2'd2;
+       end
+       ADDR_MB_H:
+         h1 <= regw_mb_h - 1'd1;
        default :;
      endcase
 
