@@ -194,6 +194,7 @@ ITransformWHT U_IWHT(
 );
 
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
+wire [15:0]IDCT_done;
 wire [255:0] tmp;
 assign tmp = {QBAC_Rout[i][255:16],IWHT_out[16 * (i + 1) - 1 : 16 * i]};
 ITransform U_IDCT(
@@ -203,10 +204,12 @@ ITransform U_IDCT(
     .src                            ( tmp                           ),
     .ref                            ( YPred_i[i]                    ),
     .out                            ( Yout_i[i]                     ),
-    .done                           ( done                          )
+    .done                           ( IDCT_done[i]                  )
 );
 end
 
 endgenerate
+
+assign done = IDCT_done[0];
 
 endmodule

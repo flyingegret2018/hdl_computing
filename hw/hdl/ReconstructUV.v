@@ -176,6 +176,7 @@ end
 assign nz = {8'b0,QB_nz,16'b0};
 
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
+wire [7:0]IDCT_done;
 ITransform U_IDCT(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
@@ -183,10 +184,12 @@ ITransform U_IDCT(
     .src                            ( QB_Rout[i]                    ),
     .ref                            ( UVPred_i[i]                   ),
     .out                            ( UVout_i[i]                    ),
-    .done                           ( done                          )
+    .done                           ( IDCT_done[i]                  )
 );
 end
 
 endgenerate
+
+assign done = IDCT_done[0];
 
 endmodule

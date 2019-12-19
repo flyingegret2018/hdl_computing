@@ -274,7 +274,7 @@ QuantizeSingle U_QSV(
 
 assign derr[ 7: 0] = uerr1;
 assign derr[15: 8] = uerr2;
-assign derr[23:15] = uerr;
+assign derr[23:16] = uerr;
 assign derr[31:24] = verr1;
 assign derr[39:32] = verr2;
 assign derr[47:40] = verr;
