@@ -258,7 +258,7 @@ end
 
 endgenerate
 
-wire[ 7:0]bestmode;
+wire[ 3:0]bestmode;
 BestScore U_BESTSCORE(
     .score0                         ( score[0]                      ),
     .score1                         ( score[1]                      ),
