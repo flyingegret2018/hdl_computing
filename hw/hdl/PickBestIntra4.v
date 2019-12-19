@@ -143,7 +143,7 @@ HU4 U_HU4(
 
 reg rec_start;
 reg [ 127:0]src;
-reg [ 127:0]dst[9:0];
+wire[ 127:0]dst[9:0];
 wire[ 255:0]YLevels[9:0];
 wire[   9:0]nz_i;
 wire[   9:0]rec_done;
@@ -342,7 +342,7 @@ always @ * begin
         ROTATE:
             nstate = REINIT;
         REINIT:
-            if(i4 >= 'd15)
+            if(i4 >= 'd16)
                 nstate = DONE;
             else
                 nstate = PRED;
@@ -355,6 +355,7 @@ end
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)begin
+        src          <= 'b0;
         left_i       <= 'b0;
         top_left_i   <= 'b0;
         top_i        <= 'b0;
@@ -427,6 +428,7 @@ always @ (posedge clk or negedge rst_n)begin
                 done         <= 1'b0;
             end
             INIT:begin
+                src          <= Ysrc_i[0];
                 left_i       <= left;
                 top_left_i   <= top_left;
                 top_i        <= top[31:0];
@@ -464,15 +466,16 @@ always @ (posedge clk or negedge rst_n)begin
                 load         <= 1'b1;
                 score_tmp    <= ((R_tmp << 10) + H_tmp) * lambda_mode +
                              'd256 * (D_tmp + ((SD_tmp * tlambda + 'd128) >> 8));
+                i4           <= i4 + 1'b1;
             end
             REINIT:begin
                 load         <= 1'b0;
                 Score        <= Score + score_tmp;
+                src          <= Ysrc_i[i4];
                 left_i       <= left_w;
                 top_left_i   <= top_left_w;
                 top_i        <= top_w;
                 top_right_i  <= top_right_w;
-                i4           <= i4 + 1'b1;
             end
             DONE:begin
                 done         <= 1'b1;
