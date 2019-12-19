@@ -267,6 +267,7 @@ end
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)begin
         rec_start <= 'b0;
+        YPred     <= 'b0;
         dc_tmp    <= 'b0;
         ac_tmp    <= 'b0;
         nz_tmp    <= 'b0;

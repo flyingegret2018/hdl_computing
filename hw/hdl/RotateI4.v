@@ -153,6 +153,12 @@ always @ *begin
             top_i       = 'b0;
             top_right_i = 'b0;
         end
+        default: begin
+            left_i      = 'b0;
+            top_left_i  = 'b0;
+            top_i       = 'b0;
+            top_right_i = 'b0;
+        end
     endcase
 end
 

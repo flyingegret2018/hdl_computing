@@ -251,6 +251,7 @@ end
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)begin
         rec_start  <= 'b0;
+        UVPred     <= 'b0;
         SDE_start  <= 'b0;
         levels_tmp <= 'b0;
         nz_tmp     <= 'b0;
