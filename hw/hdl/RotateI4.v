@@ -33,23 +33,26 @@ module RotateI4(
 reg [127:0]mem;
 
 always @ (posedge clk or negedge rst_n)begin
-    if(load)begin
-        case(i4)
-            'h0: mem[ 31: 0] <= Yin[127:96];
-            'h1: mem[ 63:32] <= Yin[127:96];
-            'h2: mem[ 95:64] <= Yin[127:96];
-            'h3: mem[127:96] <= Yin[127:96];
-            'h4: mem[ 31: 0] <= Yin[127:96];
-            'h5: mem[ 63:32] <= Yin[127:96];
-            'h6: mem[ 95:64] <= Yin[127:96];
-            'h7: mem[127:96] <= Yin[127:96];
-            'h8: mem[ 31: 0] <= Yin[127:96];
-            'h9: mem[ 63:32] <= Yin[127:96];
-            'ha: mem[ 95:64] <= Yin[127:96];
-            'hb: mem[127:96] <= Yin[127:96];
-            default:;
-        endcase
-    end
+    if(~rst_n)
+        mem <= 'b0;
+    else
+        if(load)begin
+            case(i4)
+                'h0: mem[ 31: 0] <= Yin[127:96];
+                'h1: mem[ 63:32] <= Yin[127:96];
+                'h2: mem[ 95:64] <= Yin[127:96];
+                'h3: mem[127:96] <= Yin[127:96];
+                'h4: mem[ 31: 0] <= Yin[127:96];
+                'h5: mem[ 63:32] <= Yin[127:96];
+                'h6: mem[ 95:64] <= Yin[127:96];
+                'h7: mem[127:96] <= Yin[127:96];
+                'h8: mem[ 31: 0] <= Yin[127:96];
+                'h9: mem[ 63:32] <= Yin[127:96];
+                'ha: mem[ 95:64] <= Yin[127:96];
+                'hb: mem[127:96] <= Yin[127:96];
+                default:;
+            endcase
+        end
 end
 
 always @ *begin
