@@ -175,8 +175,8 @@ end
 
 assign nz = {8'b0,QB_nz,16'b0};
 
-for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
 wire [7:0]IDCT_done;
+for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
 ITransform U_IDCT(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),

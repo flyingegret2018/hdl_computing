@@ -193,8 +193,8 @@ ITransformWHT U_IWHT(
     .done                           ( IWHT_done                     )
 );
 
-for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
 wire [15:0]IDCT_done;
+for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
 wire [255:0] tmp;
 assign tmp = {QBAC_Rout[i][255:16],IWHT_out[16 * (i + 1) - 1 : 16 * i]};
 ITransform U_IDCT(
