@@ -70,7 +70,6 @@ for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
     assign sharpen_i[i] = sharpen[16 * (i + 1) - 1 : 16 * i];
 
     assign Rout[16 * (i + 1) - 1 : 16 * i] = Rout_i[i];
-    assign out [16 * (i + 1) - 1 : 16 * i] = out_i [i];
 end
 
 for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
