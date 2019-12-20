@@ -27,16 +27,13 @@ module GetCostLuma4#(
 ,output reg                                               done
 );
 
-reg [1:0]shift;
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)begin
         done  <= 'b0;
-        shift <= 'b0;
     end
     else begin
-        shift[0] <= start;
-        done  <= shift[0];
+        done  <= start;
     end
 end
 
@@ -45,8 +42,6 @@ always @ (posedge clk or negedge rst_n)begin
         sum <= 'b0;
     else
         if(start)
-            sum <= 'b0;
-        else if(shift[0])
             sum <= levels[ 15:  0] * levels[ 15:  0] +
                    levels[ 31: 16] * levels[ 31: 16] +
                    levels[ 47: 32] * levels[ 47: 32] +
