@@ -29,7 +29,7 @@ module GetCostLuma#(
 );
 
 reg [3:0]count;
-reg [15:0]shift;
+reg [14:0]shift;
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)begin
@@ -38,8 +38,8 @@ always @ (posedge clk or negedge rst_n)begin
     end
     else begin
         shift[0] <= start;
-        shift[15:1] <= shift[14:0];
-        done  <= shift[15];
+        shift[14:1] <= shift[13:0];
+        done  <= shift[14];
     end
 end
 
@@ -47,7 +47,7 @@ always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
         count <= 'b0;
     else
-        if(shift[0] | count != 'b0)
+        if(start | count != 'b0)
             count <= count + 1'b1;
 end
 
@@ -69,9 +69,9 @@ always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
         sum <= 'b0;
     else
-        if(start)
+        if(done)
             sum <= 'b0;
-        else if(shift[0] | count != 'b0)
+        else if(start | count != 'b0)
             sum <= tmp_ac[count][ 15:  0] * tmp_ac[count][ 15:  0] +
                    tmp_ac[count][ 31: 16] * tmp_ac[count][ 31: 16] +
                    tmp_ac[count][ 47: 32] * tmp_ac[count][ 47: 32] +
