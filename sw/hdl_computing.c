@@ -15399,6 +15399,10 @@ char device[64];
 struct snap_card *card = NULL;
 struct snap_action *action = NULL;
 
+uint32_t total_pic = 0;
+uint32_t fpga_pic = 0;
+uint32_t WebP_pic = 0;
+
 struct timeval endtime, starttime;
 
 static void *FPGAEncode(void *tid) {
@@ -15462,6 +15466,8 @@ static void *FPGAEncode(void *tid) {
 		}
 		cnt ++;
 	} while (cnt < timeout * 1000);
+
+	action_write(card, REG_SOFT_RESET, 0x00000001);
 	
 	if (rc != 0) {
   		fprintf(stderr, "time out %d: %s!\n", rc, strerror(errno));
@@ -15478,6 +15484,7 @@ static void *FPGAEncode(void *tid) {
 	
 	sem_post(&binSem);
 
+	fpga_pic++;
 	if(buffer_cnt >= BUFFER_LEN - 1) buffer_cnt = 0;
 	else buffer_cnt++;
 
@@ -15586,6 +15593,7 @@ static void *WebPEncode(void *tid) {
 
 	gettimeofday(&endtime, NULL);
 
+	WebP_pic++;
     if(buffer_cnt >= BUFFER_LEN - 1) buffer_cnt = 0;
 	else buffer_cnt++;
   }
@@ -15924,6 +15932,7 @@ int main(int argc, const char *argv[]) {
 	  }
 
       return_value = 0;
+	  total_pic ++;
 	  if(buffer_cnt >= BUFFER_LEN - 1) buffer_cnt = 0;
 	  else buffer_cnt++;
 
@@ -15931,14 +15940,11 @@ int main(int argc, const char *argv[]) {
   }
 
   closedir(dir); 
-  int value1, value2;
+
   while(1){
-	sem_getvalue(&binSem, &value1);
-	sem_getvalue(&FPGASem, &value2);
-	if(value1 == 0 && value2 == 0)break;
+	if(fpga_pic >= total_pic && WebP_pic >= total_pic)break;
 	sleep(1);
   }
-  sleep(1);
     
   fprintf(stdout, "All picture coding took %lld usec\n", (long long)timediff_usec(&endtime, &starttime));
   
