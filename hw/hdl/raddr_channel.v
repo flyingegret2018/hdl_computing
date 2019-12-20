@@ -68,7 +68,7 @@ always @ * begin
         DQM_ADDR:
             nstate = SEND;
         YUV_ADDR:
-            if(x > w1 && y >= h1)
+            if(x >= w1 && y > h1)
                 nstate = IDLE;
             else
                 nstate = SEND;
