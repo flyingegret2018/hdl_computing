@@ -70,7 +70,7 @@ for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
      Yout[8*((i/4)*64+(i%4)*4+ 4)-1:8*((i/4)*64+(i%4)*4+ 0)]}
      = Yout_i[i];
 
-    assign Y_ac_levels[256 * (i + 1) : 256 * i] = Yac_i[i];
+    assign Y_ac_levels[256 * (i + 1) - 1 : 256 * i] = Yac_i[i];
 end
 
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin:FDCT
