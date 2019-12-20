@@ -78,14 +78,14 @@ genvar i;
 
 generate
 
-assign UVlevels[ 15 :   0] = UVlevels_i[0];
-assign UVlevels[ 31 :  16] = UVlevels_i[1];
-assign UVlevels[ 47 :  32] = UVlevels_i[4];
-assign UVlevels[ 63 :  48] = UVlevels_i[5];
-assign UVlevels[ 79 :  64] = UVlevels_i[2];
-assign UVlevels[ 95 :  80] = UVlevels_i[3];
-assign UVlevels[111 :  96] = UVlevels_i[6];
-assign UVlevels[127 : 112] = UVlevels_i[7];
+assign UVlevels[ 255:   0] = UVlevels_i[0];
+assign UVlevels[ 511: 256] = UVlevels_i[1];
+assign UVlevels[ 767: 512] = UVlevels_i[4];
+assign UVlevels[1023: 768] = UVlevels_i[5];
+assign UVlevels[1279:1024] = UVlevels_i[2];
+assign UVlevels[1535:1280] = UVlevels_i[3];
+assign UVlevels[1791:1536] = UVlevels_i[6];
+assign UVlevels[2047:1792] = UVlevels_i[7];
 
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin:FDCT
     wire FDCT_done;

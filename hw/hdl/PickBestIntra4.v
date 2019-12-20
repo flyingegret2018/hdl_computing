@@ -66,7 +66,7 @@ for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
 
      assign mode_i4[8 * (i + 1) - 1 : 8 * i] = mode_i[i];
 
-     assign levels[16 * (i + 1) - 1 : 16 * i] = levels_i[i];
+     assign levels[256 * (i + 1) - 1 : 256 * i] = levels_i[i];
 end
 
 endgenerate
