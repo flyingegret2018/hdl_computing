@@ -63,7 +63,7 @@ always @ * begin
             else
                 nstate = IDLE;
         ADDR:
-            if(x >= w1 && y > h1)
+            if(y > h1)
                 nstate = IDLE;
             else
                 nstate = SEND;
