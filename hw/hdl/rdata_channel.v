@@ -146,14 +146,13 @@ always @ (posedge clk or negedge rst_n)begin
                 end
                 'd3:begin
                     y2_zthresh[511:256] <= m_axi_rdata[ 255:  0];
-                    uv_q                <= m_axi_rdata[ 511:256];
-                    uv_iq               <= m_axi_rdata[ 767:512];
-                    uv_bias[255:  0]    <= m_axi_rdata[1023:768];
+                    y2_sharpen          <= m_axi_rdata[ 511:256];
+                    uv_q                <= m_axi_rdata[ 767:512];
+                    uv_iq               <= m_axi_rdata[1023:768];
                 end
                 'd4:begin
-                    uv_bias[511:256]    <= m_axi_rdata[ 255:  0];
-                    y2_sharpen          <= m_axi_rdata[ 767:256];
-                    uv_zthresh          <= m_axi_rdata[1023:768];
+                    uv_bias             <= m_axi_rdata[ 511:  0];
+                    uv_zthresh          <= m_axi_rdata[1023:512];
                 end
                 'd5:begin
                     uv_sharpen          <= m_axi_rdata[ 255:  0];
