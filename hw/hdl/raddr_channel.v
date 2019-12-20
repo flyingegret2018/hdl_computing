@@ -38,17 +38,15 @@ module raddr_channel
  reg [ 9:0]x;
  reg [ 9:0]y;
  reg [63:0]address;
- reg [ 7:0]length;
- reg [ 3:0]cstate;
- reg [ 3:0]nstate;
+ reg [ 2:0]cstate;
+ reg [ 2:0]nstate;
 
-parameter IDLE     = 'h1;
-parameter DQM_ADDR = 'h2;
-parameter YUV_ADDR = 'h4; 
-parameter SEND     = 'h8;
+parameter IDLE = 'h1;
+parameter ADDR = 'h2; 
+parameter SEND = 'h4;
 
  assign m_axi_araddr   = address;
- assign m_axi_arlen    = length;
+ assign m_axi_arlen    = 8'd2;
  assign m_axi_arvalid  = (cstate == SEND);
 
 always @ (posedge clk or negedge rst_n)begin
@@ -62,19 +60,17 @@ always @ * begin
     case(cstate)
         IDLE:
             if(start_pulse)
-                nstate = DQM_ADDR;
+                nstate = ADDR;
             else
                 nstate = IDLE;
-        DQM_ADDR:
-            nstate = SEND;
-        YUV_ADDR:
+        ADDR:
             if(y > h1)
                 nstate = IDLE;
             else
                 nstate = SEND;
         SEND:
             if(m_axi_arready)
-                nstate = YUV_ADDR;
+                nstate = ADDR;
             else
                 nstate = SEND;
         default:
@@ -85,7 +81,6 @@ end
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)begin
         address <= 'b0;
-        length  <= 'b0;
         x       <= 'b0;
         y       <= 'b0;
     end
@@ -95,13 +90,8 @@ always @ (posedge clk or negedge rst_n)begin
                 x       <= 'b0;
                 y       <= 'b0;
             end
-            DQM_ADDR:begin
-                address <= dqm_address;
-                length  <= 8'd5;
-            end
             YUV_ADDR:begin
                 address <= (x == 10'b0 && y == 10'b0) ? source_address : (address + 'd384);
-                length  <= 8'd2;
                 x       <= (x >= w1) ? 10'b0 : (x + 1'b1);
                 y       <= (x >= w1) ? (y + 1'b1) : y;
             end

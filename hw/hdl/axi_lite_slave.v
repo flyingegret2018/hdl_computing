@@ -50,7 +50,6 @@ module axi_lite_slave #(
                       output                           start_pulse      ,
                       output     [63:0]                source_address   ,
                       output     [63:0]                target_address   ,
-                      output     [63:0]                dqm_address      ,
                       output     [31:0]                mb_w             ,
                       output     [31:0]                mb_h             ,
                       output reg [09:0]                w1               ,
@@ -81,7 +80,6 @@ module axi_lite_slave #(
  wire[63:0] regw_target_address;
  wire[31:0] regw_mb_w;
  wire[31:0] regw_mb_h;
- wire[63:0] regw_dqm_address;
  wire[31:0] regw_soft_reset;
 
  reg [31:0] write_address;
@@ -102,7 +100,6 @@ module axi_lite_slave #(
  /**/   reg [31:0] REG_user_control          ;  /**/
  /**/   reg [63:0] REG_source_address        ;  /**/
  /**/   reg [63:0] REG_target_address        ;  /**/
- /**/   reg [63:0] REG_dqm_address           ;  /**/
  /**/   reg [31:0] REG_mb_w                  ;  /**/
  /**/   reg [31:0] REG_mb_h                  ;  /**/
  /**/   reg [31:0] REG_soft_reset            ;  /**/
@@ -126,18 +123,15 @@ module axi_lite_slave #(
            ADDR_SOURCE_ADDRESS_H    = 32'h3C,
            ADDR_TARGET_ADDRESS_L    = 32'h40,
            ADDR_TARGET_ADDRESS_H    = 32'h44,
-           ADDR_DQM_ADDRESS_L       = 32'h48,
-           ADDR_DQM_ADDRESS_H       = 32'h4C,
-           ADDR_MB_W                = 32'h50,
-           ADDR_MB_H                = 32'h54,
-           ADDR_SOFT_RESET          = 32'h58;
+           ADDR_MB_W                = 32'h48,
+           ADDR_MB_H                = 32'h4C,
+           ADDR_SOFT_RESET          = 32'h50;
 
  
 
 //---- local controlling signals assignments ----
  assign source_address = REG_source_address;
  assign target_address = REG_target_address;
- assign dqm_address    = REG_dqm_address;
  assign mb_w           = REG_mb_w;
  assign mb_h           = REG_mb_h;
  assign o_snap_context = REG_snap_context;
@@ -181,7 +175,6 @@ module axi_lite_slave #(
  assign regw_control         = {(s_axi_wdata&wr_mask)|(~wr_mask&REG_user_control)};
  assign regw_source_address  = {(s_axi_wdata&wr_mask)|(~wr_mask&REG_source_address)};
  assign regw_target_address  = {(s_axi_wdata&wr_mask)|(~wr_mask&REG_target_address)};
- assign regw_dqm_address     = {(s_axi_wdata&wr_mask)|(~wr_mask&REG_dqm_address)};
  assign regw_mb_w            = {(s_axi_wdata&wr_mask)|(~wr_mask&REG_mb_w)};
  assign regw_mb_h            = {(s_axi_wdata&wr_mask)|(~wr_mask&REG_mb_h)};
  assign regw_soft_reset      = {(s_axi_wdata&wr_mask)|(~wr_mask&REG_soft_reset)};
@@ -196,7 +189,6 @@ module axi_lite_slave #(
        REG_user_control    <= 32'd0;
        REG_source_address  <= 64'd0;
        REG_target_address  <= 64'd0;
-       REG_dqm_address     <= 64'd0;
        REG_mb_w            <= 32'd0;
        REG_mb_h            <= 32'd0;
        REG_soft_reset      <= 32'd0;
@@ -209,7 +201,6 @@ module axi_lite_slave #(
        REG_user_control    <= 32'd0;
        REG_source_address  <= 64'd0;
        REG_target_address  <= 64'd0;
-       REG_dqm_address     <= 64'd0;
        REG_mb_w            <= 32'd0;
        REG_mb_h            <= 32'd0;
        REG_soft_reset      <= 32'd0;
@@ -226,8 +217,6 @@ module axi_lite_slave #(
        ADDR_SOURCE_ADDRESS_L : REG_source_address  <= {REG_source_address[63:32],regw_source_address};
        ADDR_TARGET_ADDRESS_H : REG_target_address  <= {regw_target_address,REG_target_address[31:00]};
        ADDR_TARGET_ADDRESS_L : REG_target_address  <= {REG_target_address[63:32],regw_target_address};
-       ADDR_DQM_ADDRESS_H    : REG_dqm_address     <= {regw_dqm_address,REG_dqm_address[31:00]};
-       ADDR_DQM_ADDRESS_L    : REG_dqm_address     <= {REG_dqm_address[63:32],regw_dqm_address};
        ADDR_MB_W             : REG_mb_w            <= regw_mb_w;
        ADDR_MB_H             : REG_mb_h            <= regw_mb_h;
 
@@ -390,8 +379,6 @@ assign REG_snap_control_rd = {REG_snap_control[31:4], 1'b1, snap_idle_q, 1'b0, s
        ADDR_SOURCE_ADDRESS_H    : s_axi_rdata <= REG_source_address[63  : 32];
        ADDR_TARGET_ADDRESS_L    : s_axi_rdata <= REG_target_address[31  :  0];
        ADDR_TARGET_ADDRESS_H    : s_axi_rdata <= REG_target_address[63  : 32];
-       ADDR_DQM_ADDRESS_L       : s_axi_rdata <= REG_dqm_address[31  :  0];
-       ADDR_DQM_ADDRESS_H       : s_axi_rdata <= REG_dqm_address[63  : 32];
        ADDR_MB_W                : s_axi_rdata <= REG_mb_w;
        ADDR_MB_H                : s_axi_rdata <= REG_mb_h;
        ADDR_SOFT_RESET          : s_axi_rdata <= REG_soft_reset;

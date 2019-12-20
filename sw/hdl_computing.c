@@ -15387,7 +15387,6 @@ VP8Encoder* enc[BUFFER_LEN];
 VP8EncIterator* it[BUFFER_LEN];
 uint8_t* mem_output[BUFFER_LEN];
 uint8_t* mem_input[BUFFER_LEN];
-uint8_t* mem_dqm_g[BUFFER_LEN];
 WebPPicture* picture[BUFFER_LEN];
 int card_no = 0;
 uint32_t timeout = 60;
@@ -15432,7 +15431,6 @@ static void *FPGAEncode(void *tid) {
 	sem_wait(&FPGASem);
 
 	uint8_t* mem_in = mem_input[buffer_cnt];
-	uint8_t* mem_dqm = mem_dqm_g[buffer_cnt];
 	uint8_t* mem_out = mem_output[buffer_cnt];
 	FILE *out = enc[buffer_cnt]->pic_->custom_ptr;
 	int mb_w_ = enc[buffer_cnt]->mb_w_;
@@ -15445,9 +15443,6 @@ static void *FPGAEncode(void *tid) {
 	  
 	action_write(card, REG_TARGET_ADDRESS_L, (uint32_t) (((uint64_t) mem_out) & 0xffffffff));
 	action_write(card, REG_TARGET_ADDRESS_H, (uint32_t) ((((uint64_t) mem_out) >> 32) & 0xffffffff));
-	  
-	action_write(card, REG_DQM_ADDRESS_L, (uint32_t) (((uint64_t) mem_dqm) & 0xffffffff));
-	action_write(card, REG_DQM_ADDRESS_H, (uint32_t) ((((uint64_t) mem_dqm) >> 32) & 0xffffffff));
 	  
 	action_write(card, REG_MB_W, mb_w_);
 	action_write(card, REG_MB_H, mb_h_);
@@ -15475,14 +15470,14 @@ static void *FPGAEncode(void *tid) {
 		WebPSafeFree(picture[buffer_cnt]);
 		DeleteVP8Encoder(enc[buffer_cnt]);
 		WebPSafeFree(it[buffer_cnt]);
-		__free(mem_out); 		
-        __free(mem_dqm);
+		__free(mem_out); 
         __free(mem_in);
 		fclose(out);
 		return tid;
 	}
 	
 	sem_post(&binSem);
+	__free(mem_in);
 
 	fpga_pic++;
 	if(buffer_cnt >= BUFFER_LEN - 1) buffer_cnt = 0;
@@ -15891,22 +15886,6 @@ int main(int argc, const char *argv[]) {
 		  }
 	  }
 	  
-	  uint8_t * mem_dqm = NULL;
-	  mem_dqm_g[buffer_cnt] = (uint8_t*)alloc_mem(4096, 768);
-	  mem_dqm = mem_dqm_g[buffer_cnt];
-	  if (mem_dqm == NULL){
-	  	fprintf(stderr, "mem_dqm malloc failed!\n");
-		WebPPictureFree(picture[buffer_cnt]);
-		WebPSafeFree(picture[buffer_cnt]);
-		DeleteVP8Encoder(enc[buffer_cnt]);
-	  	WebPSafeFree(it[buffer_cnt]);
-		__free(mem_in);
-		__free(mem_dqm);
-	  	fclose(out);
-		return -1;
-	  }
-	  memcpy(mem_dqm, &enc[buffer_cnt]->dqm_[0], sizeof(VP8SegmentInfo));
-	  
 	  uint8_t * mem_out = NULL;
 	  mem_output[buffer_cnt] = (uint8_t*)alloc_mem(4096,sizeof(DATA_O) * mb_w_ * mb_h_);
 	  mem_out = mem_output[buffer_cnt];
@@ -15917,7 +15896,6 @@ int main(int argc, const char *argv[]) {
 		DeleteVP8Encoder(enc[buffer_cnt]);
 	  	WebPSafeFree(it[buffer_cnt]);
 		__free(mem_in);
-		__free(mem_dqm);
 		__free(mem_out);
 		fclose(out);
 		return -1;

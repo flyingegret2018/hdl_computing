@@ -35,27 +35,6 @@ module rdata_channel #(
                        input                           start_pulse       ,
                        output reg                      rd_error          ,
 
-                       output reg [0031:0]             lambda_i16        ,
-                       output reg [0031:0]             lambda_i4         ,
-                       output reg [0031:0]             lambda_uv         ,
-                       output reg [0031:0]             tlambda           ,
-                       output reg [0031:0]             lambda_mode       ,
-                       output reg [0031:0]             min_disto         ,
-                       output reg [0255:0]             y1_q              ,
-                       output reg [0255:0]             y1_iq             ,
-                       output reg [0511:0]             y1_bias           ,
-                       output reg [0511:0]             y1_zthresh        ,
-                       output reg [0255:0]             y1_sharpen        ,
-                       output reg [0255:0]             y2_q              ,
-                       output reg [0255:0]             y2_iq             ,
-                       output reg [0511:0]             y2_bias           ,
-                       output reg [0511:0]             y2_zthresh        ,
-                       output reg [0255:0]             y2_sharpen        ,
-                       output reg [0255:0]             uv_q              ,
-                       output reg [0255:0]             uv_iq             ,
-                       output reg [0511:0]             uv_bias           ,
-                       output reg [0511:0]             uv_zthresh        ,
-                       output reg [0255:0]             uv_sharpen        ,
                        output reg [1023:0]             Y0_fifo_din       ,
                        output reg [1023:0]             Y1_fifo_din       ,
                        output     [1023:0]             UV_fifo_din       ,
@@ -71,7 +50,7 @@ module rdata_channel #(
  reg       fifo_wr;
  reg [ 3:0]count;
 
- assign m_axi_rready   = ~Y0_fifo_full | count != 'd6;
+ assign m_axi_rready   = ~Y0_fifo_full | count != 'd0;
  assign data_receive   = m_axi_rvalid && m_axi_rready;
  assign Y0_fifo_wr     = fifo_wr;
  assign Y1_fifo_wr     = fifo_wr;
@@ -86,8 +65,8 @@ always @ (posedge clk or negedge rst_n)begin
         if(start_pulse)
             count <= 'b0;
         else if(data_receive)
-            if(count >= 'd8)
-                count <= 'd6;
+            if(count >= 'd2)
+                count <= 'b0;
             else
                 count <= count + 1'b1;
     end
@@ -95,80 +74,26 @@ end
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)begin
-        lambda_i16    <= 'b0;
-        lambda_i4     <= 'b0;
-        lambda_uv     <= 'b0;
-        tlambda       <= 'b0;
-        lambda_mode   <= 'b0;
-        min_disto     <= 'b0;
-        y1_q          <= 'b0;
-        y1_iq         <= 'b0;
-        y1_bias       <= 'b0;
-        y1_zthresh    <= 'b0;
-        y1_sharpen    <= 'b0;
-        y2_q          <= 'b0;
-        y2_iq         <= 'b0;
-        y2_bias       <= 'b0;
-        y2_zthresh    <= 'b0;
-        y2_sharpen    <= 'b0;
-        uv_q          <= 'b0;
-        uv_iq         <= 'b0;
-        uv_bias       <= 'b0;
-        uv_zthresh    <= 'b0;
-        uv_sharpen    <= 'b0;
         Y0_fifo_din   <= 'b0;
         Y1_fifo_din   <= 'b0;
         fifo_wr       <= 'b0;
     end
     else begin
         fifo_wr       <= 'b0;
-        if(data_receive)
+        if(data_receive)begin
             case(count)
                 'd0:begin
-                    y1_q                <= m_axi_rdata[ 255:  0];
-                    y1_iq               <= m_axi_rdata[ 511:256];
-                    y1_bias             <= m_axi_rdata[1023:512];
-                end
-                'd1:begin
-                    y1_zthresh          <= m_axi_rdata[ 511:  0];
-                    y1_sharpen          <= m_axi_rdata[ 767:512];
-                    y2_q                <= m_axi_rdata[1023:768];
-                end
-                'd2:begin
-                    y2_iq               <= m_axi_rdata[ 255:  0];
-                    y2_bias             <= m_axi_rdata[ 767:256];
-                    y2_zthresh[255:  0] <= m_axi_rdata[1023:768];
-                end
-                'd3:begin
-                    y2_zthresh[511:256] <= m_axi_rdata[ 255:  0];
-                    y2_sharpen          <= m_axi_rdata[ 511:256];
-                    uv_q                <= m_axi_rdata[ 767:512];
-                    uv_iq               <= m_axi_rdata[1023:768];
-                end
-                'd4:begin
-                    uv_bias             <= m_axi_rdata[ 511:  0];
-                    uv_zthresh          <= m_axi_rdata[1023:512];
-                end
-                'd5:begin
-                    uv_sharpen          <= m_axi_rdata[ 255:  0];
-                    min_disto           <= m_axi_rdata[ 447:416];
-                    lambda_i16          <= m_axi_rdata[ 479:448];
-                    lambda_i4           <= m_axi_rdata[ 511:480];
-                    lambda_uv           <= m_axi_rdata[ 543:512];
-                    lambda_mode         <= m_axi_rdata[ 575:544];
-                    tlambda             <= m_axi_rdata[ 639:608];
-                end
-                'd6:begin
                     Y0_fifo_din         <= m_axi_rdata;
                 end
-                'd7:begin
+                'd1:begin
                     Y1_fifo_din         <= m_axi_rdata;
                 end
-                'd8:begin
+                'd2:begin
                     fifo_wr             <= 1'b1;
                 end
                 default:;
             endcase
+        end
     end
 end
 
