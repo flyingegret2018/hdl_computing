@@ -47,11 +47,12 @@ module rdata_channel #(
                        );
 
  wire      data_receive;
- reg       fifo_wr;
+ wire      fifo_wr;
  reg [ 3:0]count;
 
  assign m_axi_rready   = ~Y0_fifo_full | count != 'd0;
  assign data_receive   = m_axi_rvalid && m_axi_rready;
+ assign fifo_wr        = m_axi_rvalid && m_axi_rready && m_axi_rlast;
  assign Y0_fifo_wr     = fifo_wr;
  assign Y1_fifo_wr     = fifo_wr;
  assign UV_fifo_wr     = fifo_wr;
@@ -76,10 +77,8 @@ always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)begin
         Y0_fifo_din   <= 'b0;
         Y1_fifo_din   <= 'b0;
-        fifo_wr       <= 'b0;
     end
     else begin
-        fifo_wr       <= 'b0;
         if(data_receive)begin
             case(count)
                 'd0:begin
@@ -89,7 +88,7 @@ always @ (posedge clk or negedge rst_n)begin
                     Y1_fifo_din         <= m_axi_rdata;
                 end
                 'd2:begin
-                    fifo_wr             <= 1'b1;
+                    ;
                 end
                 default:;
             endcase
