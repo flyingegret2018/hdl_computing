@@ -234,9 +234,10 @@ module axi_lite_slave #(
        ADDR_SOFT_RESET       : REG_soft_reset      <= regw_soft_reset;
        default :;
      endcase
-     else
+     else begin
          REG_user_control[0] <= 1'b0;
          REG_soft_reset[0]   <= 1'b0;
+     end
 
  always@(posedge clk or negedge rst_n)
    if(~rst_n)
