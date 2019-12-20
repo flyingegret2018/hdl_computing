@@ -126,8 +126,6 @@ Decimate U_DECIMATE(
     .tlambda                        ( tlambda                       ),
     .lambda_mode                    ( lambda_mode                   ),
     .min_disto                      ( min_disto                     ),
-    .max_edgei                      ( max_edgei                     ),
-    .reload                         ( reload                        ),
     .top_left_y                     ( top_left_y                    ),
     .top_left_u                     ( top_left_u                    ),
     .top_left_v                     ( top_left_v                    ),
