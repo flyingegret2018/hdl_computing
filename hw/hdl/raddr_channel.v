@@ -90,8 +90,9 @@ always @ (posedge clk or negedge rst_n)begin
                 x       <= 'b0;
                 y       <= 'b0;
             end
-            YUV_ADDR:begin
-                address <= (x == 10'b0 && y == 10'b0) ? source_address : (address + 'd384);
+            ADDR:begin
+                address <= (x == 10'b0 && y == 10'b0) ? 
+                           source_address : (address + 'd384);
                 x       <= (x >= w1) ? 10'b0 : (x + 1'b1);
                 y       <= (x >= w1) ? (y + 1'b1) : y;
             end
