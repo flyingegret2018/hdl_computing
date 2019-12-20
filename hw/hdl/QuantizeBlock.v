@@ -120,21 +120,21 @@ assign nz = t[ 0] | t[ 1] | t[ 2] | t[ 3] | t[ 4] | t[ 5] | t[ 6] | t[ 7] |
             t[ 8] | t[ 9] | t[10] | t[11] | t[12] | t[13] | t[14] | t[15];
 
 //zigzag
-assign out[ 0] = out_i[ 0];
-assign out[ 1] = out_i[ 1];
-assign out[ 2] = out_i[ 4];
-assign out[ 3] = out_i[ 8];
-assign out[ 4] = out_i[ 5];
-assign out[ 5] = out_i[ 2];
-assign out[ 6] = out_i[ 3];
-assign out[ 7] = out_i[ 6];
-assign out[ 8] = out_i[ 9];
-assign out[ 9] = out_i[12];
-assign out[10] = out_i[13];
-assign out[11] = out_i[10];
-assign out[12] = out_i[ 7];
-assign out[13] = out_i[11];
-assign out[14] = out_i[14];
-assign out[15] = out_i[15];
+assign out[ 15:  0] = out_i[ 0];
+assign out[ 31: 16] = out_i[ 1];
+assign out[ 47: 32] = out_i[ 4];
+assign out[ 63: 48] = out_i[ 8];
+assign out[ 79: 64] = out_i[ 5];
+assign out[ 95: 80] = out_i[ 2];
+assign out[111: 96] = out_i[ 3];
+assign out[127:112] = out_i[ 6];
+assign out[143:128] = out_i[ 9];
+assign out[159:144] = out_i[12];
+assign out[175:160] = out_i[13];
+assign out[191:176] = out_i[10];
+assign out[207:192] = out_i[ 7];
+assign out[223:208] = out_i[11];
+assign out[239:224] = out_i[14];
+assign out[255:240] = out_i[15];
 
 endmodule
