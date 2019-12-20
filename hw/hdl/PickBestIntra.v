@@ -27,8 +27,6 @@ module PickBestIntra#(
 ,input      signed [32                           - 1 : 0] tlambda
 ,input      signed [32                           - 1 : 0] lambda_mode
 ,input      signed [32                           - 1 : 0] min_disto
-,input      signed [32                           - 1 : 0] max_edgei
-,input                                                    reload
 ,input             [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] Ysrc
 ,input             [ 8                           - 1 : 0] top_left
 ,input             [ 8 * BLOCK_SIZE              - 1 : 0] top
@@ -46,7 +44,7 @@ module PickBestIntra#(
 ,output            [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] out
 ,output reg        [64                           - 1 : 0] Score
 ,output            [32                           - 1 : 0] mode_i16
-,output reg        [32                           - 1 : 0] max_edgeo
+,output reg        [32                           - 1 : 0] max_edge
 ,output            [16 * BLOCK_SIZE              - 1 : 0] dc_levels
 ,output            [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] ac_levels
 ,output            [32                           - 1 : 0] nz
@@ -372,17 +370,17 @@ assign v1 = (dc_tmp[47:32] < 'b0) ? ('b0 - dc_tmp[47:32]) : dc_tmp[47:32];
 assign v2 = (dc_tmp[79:64] < 'b0) ? ('b0 - dc_tmp[79:64]) : dc_tmp[79:64];
 wire[31:0]max0,max1;
 assign max0 = (v1 > v0) ? v1 : v0;
-assign max1 = (v2 > max_edgeo) ? v2 : max_edgeo;
+assign max1 = (v2 > max_edge) ? v2 : max_edge;
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)begin
-        max_edgeo <= 'b0;
+        max_edge <= 'b0;
     end
     else begin
-        if(reload)
-            max_edgeo <= max_edgei;
+        if(start)
+            max_edge <= 'b0;
         else if(flag)
-            max_edgeo <= (max0 > max1) ? max0 : max1;
+            max_edge <= (max0 > max1) ? max0 : max1;
     end
 end
 

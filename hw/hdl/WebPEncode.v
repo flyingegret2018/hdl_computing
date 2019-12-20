@@ -30,8 +30,6 @@ module WebPEncode#(
 ,input      signed [32                   - 1 : 0] tlambda
 ,input      signed [32                   - 1 : 0] lambda_mode
 ,input      signed [32                   - 1 : 0] min_disto
-,input      signed [32                   - 1 : 0] max_edgei
-,input                                            reload
 ,input             [16 * 16              - 1 : 0] y1_q
 ,input             [16 * 16              - 1 : 0] y1_iq
 ,input             [32 * 16              - 1 : 0] y1_bias
@@ -87,7 +85,7 @@ wire[2047:0]uv_levels;
 wire[   7:0]skipped;
 wire[   7:0]mbtype;
 wire[  31:0]nz;
-wire[  31:0]max_edgeo;
+wire[  31:0]max_edge;
 wire[   7:0]top_left_y_w;
 wire[   7:0]top_left_u_w;
 wire[   7:0]top_left_v_w;
@@ -165,7 +163,7 @@ Decimate U_DECIMATE(
     .skipped                        ( skipped                       ),
     .mbtype                         ( mbtype                        ),
     .nz                             ( nz                            ),
-    .max_edgeo                      ( max_edgeo                     ),
+    .max_edge                       ( max_edge                      ),
     .done                           ( D_done                        )
 );
 
@@ -339,7 +337,7 @@ always @ (posedge clk or negedge rst_n)begin
                 'd3: data_out <= ac_levels[4095:3072];
                 'd4: data_out <= uv_levels[1023:   0];
                 'd5: data_out <= uv_levels[2047:1024];
-                'd6: data_out <= {64'b0,max_edgeo,16'b0,skipped,mbtype,416'b0,
+                'd6: data_out <= {64'b0,max_edge,16'b0,skipped,mbtype,416'b0,
                                   nz,mode_uv,mode_i4,mode_i16,dc_levels};
                 default:;
             endcase 

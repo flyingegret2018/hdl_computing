@@ -41,8 +41,6 @@ module rdata_channel #(
                        output reg [0031:0]             tlambda           ,
                        output reg [0031:0]             lambda_mode       ,
                        output reg [0031:0]             min_disto         ,
-                       output reg [0031:0]             max_edge          ,
-                       output reg                      reload            ,
                        output reg [0255:0]             y1_q              ,
                        output reg [0255:0]             y1_iq             ,
                        output reg [0511:0]             y1_bias           ,
@@ -103,8 +101,6 @@ always @ (posedge clk or negedge rst_n)begin
         tlambda       <= 'b0;
         lambda_mode   <= 'b0;
         min_disto     <= 'b0;
-        max_edge      <= 'b0;
-        reload        <= 'b0;
         y1_q          <= 'b0;
         y1_iq         <= 'b0;
         y1_bias       <= 'b0;
@@ -125,7 +121,6 @@ always @ (posedge clk or negedge rst_n)begin
         fifo_wr       <= 'b0;
     end
     else begin
-        reload        <= 'b0;
         fifo_wr       <= 'b0;
         if(data_receive)
             case(count)
@@ -156,14 +151,12 @@ always @ (posedge clk or negedge rst_n)begin
                 end
                 'd5:begin
                     uv_sharpen          <= m_axi_rdata[ 255:  0];
-                    max_edge            <= m_axi_rdata[ 415:384];
                     min_disto           <= m_axi_rdata[ 447:416];
                     lambda_i16          <= m_axi_rdata[ 479:448];
                     lambda_i4           <= m_axi_rdata[ 511:480];
                     lambda_uv           <= m_axi_rdata[ 543:512];
                     lambda_mode         <= m_axi_rdata[ 575:544];
                     tlambda             <= m_axi_rdata[ 639:608];
-                    reload              <= 1'b1;
                 end
                 'd6:begin
                     Y0_fifo_din         <= m_axi_rdata;

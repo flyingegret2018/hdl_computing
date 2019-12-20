@@ -31,8 +31,6 @@ module Decimate#(
 ,input      signed [32                   - 1 : 0] tlambda
 ,input      signed [32                   - 1 : 0] lambda_mode
 ,input      signed [32                   - 1 : 0] min_disto
-,input      signed [32                   - 1 : 0] max_edgei
-,input                                            reload
 ,input             [ 8                   - 1 : 0] top_left_y
 ,input             [ 8                   - 1 : 0] top_left_u
 ,input             [ 8                   - 1 : 0] top_left_v
@@ -68,7 +66,7 @@ module Decimate#(
 ,output reg        [ 8                   - 1 : 0] skipped
 ,output            [ 8                   - 1 : 0] mbtype
 ,output reg        [32                   - 1 : 0] nz
-,output            [32                   - 1 : 0] max_edgeo
+,output            [32                   - 1 : 0] max_edge
 ,output reg                                       done
 );
 
@@ -89,8 +87,6 @@ PickBestIntra U_PICKBESTINTRA(
     .tlambda                        ( tlambda                       ),
     .lambda_mode                    ( lambda_mode                   ),
     .min_disto                      ( min_disto                     ),
-    .max_edgei                      ( max_edgei                     ),
-    .reload                         ( reload                        ),
     .Ysrc                           ( Yin                           ),
     .top_left                       ( top_left_y                    ),
     .top                            ( top_y[127:0]                  ),
@@ -108,7 +104,7 @@ PickBestIntra U_PICKBESTINTRA(
     .out                            ( Yout16                        ),
     .Score                          ( Yscore                        ),
     .mode_i16                       ( mode_i16                      ),
-    .max_edgeo                      ( max_edgeo                     ),
+    .max_edge                       ( max_edge                      ),
     .dc_levels                      ( dc_levels                     ),
     .ac_levels                      ( ac_levels0                    ),
     .nz                             ( Ynz                           ),
