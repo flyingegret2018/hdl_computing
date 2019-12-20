@@ -118,7 +118,6 @@ module DC_Pred#(
                 IDLE:begin
                     count <= 'b0;
                     temp1 <= 'b0;
-                    temp2 <= 'b0;
                     done  <= 'b0;
                 end
                 BOTH:begin

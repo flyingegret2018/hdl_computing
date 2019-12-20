@@ -129,9 +129,7 @@ module DC_Pred_UV#(
                 IDLE:begin
                     count   <= 'b0;
                     temp1_u <= 'b0;
-                    temp2_u <= 'b0;
                     temp1_v <= 'b0;
-                    temp2_v <= 'b0;
                     done    <= 'b0;
                 end
                 BOTH:begin
