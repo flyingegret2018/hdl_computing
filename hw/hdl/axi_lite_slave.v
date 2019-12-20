@@ -236,6 +236,7 @@ module axi_lite_slave #(
      endcase
      else
          REG_user_control[0] <= 1'b0;
+         REG_soft_reset[0]   <= 1'b0;
 
  always@(posedge clk or negedge rst_n)
    if(~rst_n)
