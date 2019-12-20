@@ -471,7 +471,7 @@ always @ (posedge clk or negedge rst_n)begin
             REINIT:begin
                 load         <= 1'b0;
                 Score        <= Score + score_tmp;
-                src          <= Ysrc_i[i4];
+                src          <= Ysrc_i[i4[3:0]];
                 left_i       <= left_w;
                 top_left_i   <= top_left_w;
                 top_i        <= top_w;
