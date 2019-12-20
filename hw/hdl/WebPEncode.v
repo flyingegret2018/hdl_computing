@@ -110,7 +110,7 @@ parameter DONE   = 'h80;
 assign fifo_rd_y0 = fifo_rd;
 assign fifo_rd_y1 = fifo_rd;
 assign fifo_rd_uv = fifo_rd;
-assign fifo_rd = (cstate == RDEN) && (cstate == REINIT);
+assign fifo_rd = (cstate == RDEN) | (cstate == REINIT);
 
 Decimate U_DECIMATE(
     .clk                            ( clk                           ),
