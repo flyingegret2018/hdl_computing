@@ -95,10 +95,10 @@ for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
     assign d3 = tmp[i + 0] - tmp[i + 12];
 
     wire signed [31 : 0] e0,e1,e2,e3;
-    assign c0 = d2 * 2217;
-    assign c1 = d3 * 5352;
-    assign c2 = d3 * 2217;
-    assign c3 = d2 * 5352;
+    assign e0 = d2 * 2217;
+    assign e1 = d3 * 5352;
+    assign e2 = d3 * 2217;
+    assign e3 = d2 * 5352;
 
     always @ (posedge clk or negedge rst_n)begin
         if(!rst_n)begin
