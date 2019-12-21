@@ -100,15 +100,11 @@ FTransform U_FDCT(
     );
 end
 
-wire [127:0]CDCV_i;
-assign CDCV_i = {{4'b0,FDCT_o[7][11:0]},
-                 {4'b0,FDCT_o[6][11:0]},
-                 {4'b0,FDCT_o[5][11:0]},
-                 {4'b0,FDCT_o[4][11:0]},
-                 {4'b0,FDCT_o[3][11:0]},
-                 {4'b0,FDCT_o[2][11:0]},
-                 {4'b0,FDCT_o[1][11:0]},
-                 {4'b0,FDCT_o[0][11:0]}};
+wire [96:0]CDCV_i;
+assign CDCV_i = {FDCT_o[7][11:0],FDCT_o[6][11:0],
+                 FDCT_o[5][11:0],FDCT_o[4][11:0],
+                 FDCT_o[3][11:0],FDCT_o[2][11:0],
+                 FDCT_o[1][11:0],FDCT_o[0][11:0]};
 
 wire CDCV_done;
 wire [127:0]CDCV_o;
@@ -134,21 +130,21 @@ CorrectDCValues U_CDCV(
 
 wire [255:0]QB_i[BLOCK_SIZE - 1 : 0];
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
-    assign QB_i[i] = {{4'b0,FDCT_o[i][191:180]},
-                      {4'b0,FDCT_o[i][179:168]},
-                      {4'b0,FDCT_o[i][167:156]},
-                      {4'b0,FDCT_o[i][155:144]},
-                      {4'b0,FDCT_o[i][143:132]},
-                      {4'b0,FDCT_o[i][131:120]},
-                      {4'b0,FDCT_o[i][119:108]},
-                      {4'b0,FDCT_o[i][107: 96]},
-                      {4'b0,FDCT_o[i][ 95: 84]},
-                      {4'b0,FDCT_o[i][ 83: 72]},
-                      {4'b0,FDCT_o[i][ 71: 60]},
-                      {4'b0,FDCT_o[i][ 59: 48]},
-                      {4'b0,FDCT_o[i][ 47: 36]},
-                      {4'b0,FDCT_o[i][ 35: 24]},
-                      {4'b0,FDCT_o[i][ 23: 12]},
+    assign QB_i[i] = {{{4{FDCT_o[i][191]}},FDCT_o[i][191:180]},
+                      {{4{FDCT_o[i][179]}},FDCT_o[i][179:168]},
+                      {{4{FDCT_o[i][167]}},FDCT_o[i][167:156]},
+                      {{4{FDCT_o[i][155]}},FDCT_o[i][155:144]},
+                      {{4{FDCT_o[i][143]}},FDCT_o[i][143:132]},
+                      {{4{FDCT_o[i][131]}},FDCT_o[i][131:120]},
+                      {{4{FDCT_o[i][119]}},FDCT_o[i][119:108]},
+                      {{4{FDCT_o[i][107]}},FDCT_o[i][107: 96]},
+                      {{4{FDCT_o[i][ 95]}},FDCT_o[i][ 95: 84]},
+                      {{4{FDCT_o[i][ 83]}},FDCT_o[i][ 83: 72]},
+                      {{4{FDCT_o[i][ 71]}},FDCT_o[i][ 71: 60]},
+                      {{4{FDCT_o[i][ 59]}},FDCT_o[i][ 59: 48]},
+                      {{4{FDCT_o[i][ 47]}},FDCT_o[i][ 47: 36]},
+                      {{4{FDCT_o[i][ 35]}},FDCT_o[i][ 35: 24]},
+                      {{4{FDCT_o[i][ 23]}},FDCT_o[i][ 23: 12]},
                       CDCV_o[16 * (i + 1) - 1: 16 * i]};
 end
 

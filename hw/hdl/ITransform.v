@@ -52,8 +52,8 @@ genvar i;
 generate
 
 for(i = 0; i < 16; i = i + 1)begin
-    assign src_i[i] = src [SRC_WIDTH * (i + 1) - 1 : SRC_WIDTH * i];
-    assign ref_i[i] = ref [REF_WIDTH * (i + 1) - 1 : REF_WIDTH * i];
+    assign src_i[i] = src[SRC_WIDTH * (i + 1) - 1 : SRC_WIDTH * i];
+    assign ref_i[i] = ref[REF_WIDTH * (i + 1) - 1 : REF_WIDTH * i];
     assign out[OUT_WIDTH * (i + 1) - 1 : OUT_WIDTH * i] = out_i[i];
 end
 
