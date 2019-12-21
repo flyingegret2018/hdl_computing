@@ -16,12 +16,13 @@
 `timescale 1ns/100ps
 
 module QuantizeBlock#(
- parameter BLOCK_SIZE   = 4
+ parameter BLOCK_SIZE   = 4,
+ parameter IW   = 16
 )(
  input                                             clk
 ,input                                             rst_n
 ,input                                             start
-,input      [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] in
+,input      [IW * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] in
 ,input      [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] q
 ,input      [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] iq
 ,input      [32 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] bias
@@ -33,7 +34,7 @@ module QuantizeBlock#(
 ,output reg                                        done
 );
 
-wire signed [15:0]in_i     [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+wire signed [IW:0]in_i     [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 wire        [15:0]q_i      [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 wire        [15:0]iq_i     [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 wire        [31:0]bias_i   [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
@@ -62,7 +63,7 @@ genvar i;
 generate
 
 for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
-    assign in_i     [i] = in     [16 * (i + 1) - 1 : 16 * i];
+    assign in_i     [i] = in     [IW * (i + 1) - 1 : IW * i];
     assign q_i      [i] = q      [16 * (i + 1) - 1 : 16 * i];
     assign iq_i     [i] = iq     [16 * (i + 1) - 1 : 16 * i];
     assign bias_i   [i] = bias   [31 * (i + 1) - 1 : 31 * i];
@@ -84,7 +85,7 @@ for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
             level[i] <= 'b0;
         end
         else begin
-            level[i] <= (coeff * iq_i[i] + bias_i[i]) >> 17;
+            level[i] <= (coeff * iq_i[i] + bias_i[i]) >>> 17;
         end
     end
     

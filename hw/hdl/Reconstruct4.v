@@ -46,31 +46,16 @@ FTransform U_FDCT(
     ,.done                          (FDCT_done                      )
     );
 
-wire [255:0]QB_i;
-assign QB_i = {{4'b0,FDCT_out[191:180]},
-               {4'b0,FDCT_out[179:168]},
-               {4'b0,FDCT_out[167:156]},
-               {4'b0,FDCT_out[155:144]},
-               {4'b0,FDCT_out[143:132]},
-               {4'b0,FDCT_out[131:120]},
-               {4'b0,FDCT_out[119:108]},
-               {4'b0,FDCT_out[107: 96]},
-               {4'b0,FDCT_out[ 95: 84]},
-               {4'b0,FDCT_out[ 83: 72]},
-               {4'b0,FDCT_out[ 71: 60]},
-               {4'b0,FDCT_out[ 59: 48]},
-               {4'b0,FDCT_out[ 47: 36]},
-               {4'b0,FDCT_out[ 35: 24]},
-               {4'b0,FDCT_out[ 23: 12]},
-               {4'b0,FDCT_out[ 11:  0]}};
-
 wire QB_done;
 wire [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0]QB_Rout;
-QuantizeBlock U_QB(
+QuantizeBlock #(
+    .BLOCK_SIZE                     ( 4                             ),
+    .IW                             ( 12                            ))
+U_QB(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
     .start                          ( FDCT_done                     ),
-    .in                             ( QB_i                          ),
+    .in                             ( FDCT_out                      ),
     .q                              ( q                             ),
     .iq                             ( iq                            ),
     .bias                           ( bias                          ),

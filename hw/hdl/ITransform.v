@@ -59,8 +59,8 @@ for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
     wire signed [17 : 0] a0,a1,a2,a3;
     assign a0 = src_i[i + 0] + src_i[i + 8];
     assign a1 = src_i[i + 0] - src_i[i + 8];
-    assign a2 = (src_i[i + 4] * 'd35468 >> 16) - (src_i[i + 12] * 'd85627 >> 16);
-    assign a3 = (src_i[i + 4] * 'd85627 >> 16) + (src_i[i + 12] * 'd35468 >> 16);
+    assign a2 = (src_i[i + 4] * 'd35468 >>> 16) - (src_i[i + 12] * 'd85627 >>> 16);
+    assign a3 = (src_i[i + 4] * 'd85627 >>> 16) + (src_i[i + 12] * 'd35468 >>> 16);
 
     always @ (posedge clk or negedge rst_n)begin
         if(!rst_n)begin
@@ -80,14 +80,14 @@ for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
     wire signed [20 : 0] b0,b1,b2,b3;
     assign b0 = tmp[i + 0] + tmp[i + 8] + 'd4;
     assign b1 = tmp[i + 0] - tmp[i + 8] + 'd4;
-    assign b2 = (tmp[i + 4] * 'd35468 >> 16) - (tmp[i + 12] * 'd85627 >> 16);
-    assign b3 = (tmp[i + 4] * 'd85627 >> 16) + (tmp[i + 12] * 'd35468 >> 16);
+    assign b2 = (tmp[i + 4] * 'd35468 >>> 16) - (tmp[i + 12] * 'd85627 >>> 16);
+    assign b3 = (tmp[i + 4] * 'd85627 >>> 16) + (tmp[i + 12] * 'd35468 >>> 16);
     
     wire signed [18 : 0] c0,c1,c2,c3;
-    assign c0 = ref_i[BLOCK_SIZE * i + 0] + (b0 + b3 >> 3);
-    assign c1 = ref_i[BLOCK_SIZE * i + 1] + (b1 + b2 >> 3);
-    assign c2 = ref_i[BLOCK_SIZE * i + 2] + (b1 - b2 >> 3);
-    assign c3 = ref_i[BLOCK_SIZE * i + 3] + (b0 - b3 >> 3);
+    assign c0 = ref_i[BLOCK_SIZE * i + 0] + (b0 + b3 >>> 3);
+    assign c1 = ref_i[BLOCK_SIZE * i + 1] + (b1 + b2 >>> 3);
+    assign c2 = ref_i[BLOCK_SIZE * i + 2] + (b1 - b2 >>> 3);
+    assign c3 = ref_i[BLOCK_SIZE * i + 3] + (b0 - b3 >>> 3);
     
     always @ (posedge clk or negedge rst_n)begin
         if(!rst_n)begin

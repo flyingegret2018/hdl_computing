@@ -103,32 +103,17 @@ FTransformWHT U_FWHT(
     ,.done                          ( FWHT_done                     )
 );
 
-wire [255:0]QBDC_i;
-assign QBDC_i = {{1'b0,dc_out[239:225]},
-                 {1'b0,dc_out[224:210]},
-                 {1'b0,dc_out[209:195]},
-                 {1'b0,dc_out[194:180]},
-                 {1'b0,dc_out[179:165]},
-                 {1'b0,dc_out[164:150]},
-                 {1'b0,dc_out[149:135]},
-                 {1'b0,dc_out[134:120]},
-                 {1'b0,dc_out[119:105]},
-                 {1'b0,dc_out[104: 90]},
-                 {1'b0,dc_out[ 89: 75]},
-                 {1'b0,dc_out[ 74: 60]},
-                 {1'b0,dc_out[ 59: 45]},
-                 {1'b0,dc_out[ 44: 30]},
-                 {1'b0,dc_out[ 29: 15]},
-                 {1'b0,dc_out[ 14:  0]}};
-
 wire QBDC_done;
 wire QBDC_nz;
 wire [16 * BLOCK_SIZE - 1 : 0]QBDC_Rout;
-QuantizeBlock U_QBDC(
+QuantizeBlock #(
+    .BLOCK_SIZE                     ( 4                             ),
+    .IW                             ( 15                            ))
+U_QBDC(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
     .start                          ( FWHT_done                     ),
-    .in                             ( QBDC_i                        ),
+    .in                             ( dc_out                        ),
     .q                              ( q2                            ),
     .iq                             ( iq2                           ),
     .bias                           ( bias2                         ),
@@ -140,34 +125,17 @@ QuantizeBlock U_QBDC(
     .done                           ( QBDC_done                     )
 );
 
-wire [16 * BLOCK_SIZE - 1 : 0]QBAC_i[BLOCK_SIZE - 1 : 0];
-for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
-    assign QBAC_i[i] = {{4'b0,FDCT_o[i][191:180]},
-                        {4'b0,FDCT_o[i][179:168]},
-                        {4'b0,FDCT_o[i][167:156]},
-                        {4'b0,FDCT_o[i][155:144]},
-                        {4'b0,FDCT_o[i][143:132]},
-                        {4'b0,FDCT_o[i][131:120]},
-                        {4'b0,FDCT_o[i][119:108]},
-                        {4'b0,FDCT_o[i][107: 96]},
-                        {4'b0,FDCT_o[i][ 95: 84]},
-                        {4'b0,FDCT_o[i][ 83: 72]},
-                        {4'b0,FDCT_o[i][ 71: 60]},
-                        {4'b0,FDCT_o[i][ 59: 48]},
-                        {4'b0,FDCT_o[i][ 47: 36]},
-                        {4'b0,FDCT_o[i][ 35: 24]},
-                        {4'b0,FDCT_o[i][ 23: 12]},
-                        16'b0};
-end
-
 wire [15:0]QBAC_nz;
 wire [16 * BLOCK_SIZE - 1 : 0]QBAC_Rout[BLOCK_SIZE - 1 : 0];
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
-QuantizeBlock U_QBAC(
+QuantizeBlock #(
+    .BLOCK_SIZE                     ( 4                             ),
+    .IW                             ( 12                            ))
+U_QBAC(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
     .start                          ( FWHT_done                     ),
-    .in                             ( QBAC_i[i]                     ),
+    .in                             ( {FDCT_o[i],12'b0}             ),
     .q                              ( q1                            ),
     .iq                             ( iq1                           ),
     .bias                           ( bias1                         ),
