@@ -32,15 +32,15 @@ wire        [ 7 : 0]ref_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//8b
 reg  signed [13 : 0]tmp  [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//14b
 reg  signed [11 : 0]out_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//12b
 
-wire signed [31:0]c0;
-wire signed [31:0]c1;
-wire signed [31:0]c2;
-wire signed [31:0]c3;
-
-assign c0 = 32'd2217;
-assign c1 = 32'd5352;
-assign c2 = 32'd12000;
-assign c3 = 32'd51000;
+//wire signed [31:0]c0;
+//wire signed [31:0]c1;
+//wire signed [31:0]c2;
+//wire signed [31:0]c3;
+//
+//assign c0 = 32'd2217;
+//assign c1 = 32'd5352;
+//assign c2 = 32'd12000;
+//assign c3 = 32'd51000;
 
 reg shift;
 
@@ -93,11 +93,17 @@ for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
         end
     end
     
-    wire signed [31 : 0] b0,b1,b2,b3;//15b
+    wire signed [14 : 0] b0,b1,b2,b3;//15b
     assign b0 = tmp[i + 0] + tmp[i + 12];
     assign b1 = tmp[i + 4] + tmp[i +  8];
     assign b2 = tmp[i + 4] - tmp[i +  8];
     assign b3 = tmp[i + 0] - tmp[i + 12];
+    
+    wire signed [31 : 0] c0,c1,c2,c3;//15b
+    assign c0 = (b0 + b1 + 7) >>> 4;
+    assign c1 = (b2 * 'd2217 + b3 * 'd5352 + 'd12000 >>> 16) + (b3 != 0);
+    assign c2 = (b0 - b1 + 7) >>> 4;
+    assign c3 = (b3 * 'd2217 - b2 * 'd5352 + 'd51000 >>> 16);
     
     always @ (posedge clk or negedge rst_n)begin
         if(!rst_n)begin
@@ -107,12 +113,16 @@ for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
             out_i[i + 12] <= 'd0;
         end
         else begin
-            out_i[i +  0] <= (b0 + b1 + 7) >>> 4;
-            out_i[i +  4] <= (b2 * c0 + b3 * c1 + c2 >>> 16) + (b3 != 0);
+            out_i[i +  0] <= c0;
+            out_i[i +  4] <= c1;
+            out_i[i +  8] <= c2;
+            out_i[i + 12] <= c3;
+            //out_i[i +  0] <= (b0 + b1 + 7) >>> 4;
             //out_i[i +  4] <= (b2 * 'd2217 + b3 * 'd5352 + 'd12000 >>> 16) + (b3 != 0);
-            out_i[i +  8] <= (b0 - b1 + 7) >>> 4;
-            out_i[i + 12] <= (b3 * c0 - b2 * c1 + c3 >>> 16);
+            //out_i[i +  8] <= (b0 - b1 + 7) >>> 4;
             //out_i[i + 12] <= (b3 * 'd2217 - b2 * 'd5352 + 'd51000 >>> 16);
+            //out_i[i +  4] <= (b2 * c0 + b3 * c1 + c2 >>> 16) + (b3 != 0);
+            //out_i[i + 12] <= (b3 * c0 - b2 * c1 + c3 >>> 16);
         end
     end
 end
