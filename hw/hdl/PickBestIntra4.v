@@ -165,6 +165,7 @@ reg [  31:0]R_tmp;
 reg [  63:0]score_tmp;
 reg [   3:0]mode;
 reg [ 127:0]o_tmp;
+reg [ 127:0]pred_r[9:0];
 
 
 assign FixedCost[0] = 'd40;
@@ -202,7 +203,7 @@ Reconstruct4 U_RECONSTRUCT4(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
     .start                          ( rec_start                     ),
-    .YPred                          ( pred[i]                       ),
+    .YPred                          ( pred_r[i]                     ),
     .Ysrc                           ( src                           ),
     .q                              ( q                             ),
     .iq                             ( iq                            ),
@@ -372,6 +373,16 @@ always @ (posedge clk or negedge rst_n)begin
         o_tmp        <= 'b0;
         load         <= 'b0;
         nz           <= 'b0;
+        pred_r[0]    <= 'b0;
+        pred_r[1]    <= 'b0;
+        pred_r[2]    <= 'b0;
+        pred_r[3]    <= 'b0;
+        pred_r[4]    <= 'b0;
+        pred_r[5]    <= 'b0;
+        pred_r[6]    <= 'b0;
+        pred_r[7]    <= 'b0;
+        pred_r[8]    <= 'b0;
+        pred_r[9]    <= 'b0;
         mode_i[ 0]   <= 'b0;
         mode_i[ 1]   <= 'b0;
         mode_i[ 2]   <= 'b0;
@@ -440,6 +451,16 @@ always @ (posedge clk or negedge rst_n)begin
                 ;
             end
             RECO:begin
+                pred_r[0]    <= pred[0];
+                pred_r[1]    <= pred[1];
+                pred_r[2]    <= pred[2];
+                pred_r[3]    <= pred[3];
+                pred_r[4]    <= pred[4];
+                pred_r[5]    <= pred[5];
+                pred_r[6]    <= pred[6];
+                pred_r[7]    <= pred[7];
+                pred_r[8]    <= pred[8];
+                pred_r[9]    <= pred[9];
                 rec_start    <= 1'b1;
             end
             CALC:begin
