@@ -32,15 +32,15 @@ wire        [ 7 : 0]ref_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//8b
 reg  signed [13 : 0]tmp  [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//14b
 reg  signed [11 : 0]out_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//12b
 
-wire signed [15:0]c0;
-wire signed [15:0]c1;
-wire signed [15:0]c2;
-wire signed [15:0]c3;
+wire signed [16:0]c0;
+wire signed [16:0]c1;
+wire signed [16:0]c2;
+wire signed [16:0]c3;
 
-assign c0 = 16'd2217;
-assign c1 = 16'd5352;
-assign c2 = 16'd12000;
-assign c3 = 16'd51000;
+assign c0 = 17'd2217;
+assign c1 = 17'd5352;
+assign c2 = 17'd12000;
+assign c3 = 17'd51000;
 
 reg shift;
 
