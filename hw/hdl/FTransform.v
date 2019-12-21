@@ -75,7 +75,7 @@ for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
     assign d2 = src_i[BLOCK_SIZE * i + 2] - ref_i[BLOCK_SIZE * i + 2];
     assign d3 = src_i[BLOCK_SIZE * i + 3] - ref_i[BLOCK_SIZE * i + 3];
 
-    wire signed [9 : 0] a0,a1,a2,a3;//10b
+    wire signed [31 : 0] a0,a1,a2,a3;//10b
     assign a0 = d0 + d3;
     assign a1 = d1 + d2;
     assign a2 = d1 - d2;
@@ -96,7 +96,7 @@ for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
         end
     end
     
-    wire signed [14 : 0] b0,b1,b2,b3;//15b
+    wire signed [31 : 0] b0,b1,b2,b3;//15b
     assign b0 = tmp[i + 0] + tmp[i + 12];
     assign b1 = tmp[i + 4] + tmp[i +  8];
     assign b2 = tmp[i + 4] - tmp[i +  8];
