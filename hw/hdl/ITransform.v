@@ -16,21 +16,23 @@
 `timescale 1ns/100ps
 
 module ITransform#(
- parameter BLOCK_SIZE   = 4
+ parameter SRC_WIDTH = 16,
+ parameter REF_WIDTH =  8,
+ parameter OUT_WIDTH =  8
 )(
- input                                             clk
-,input                                             rst_n
-,input                                             start
-,input      [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] src
-,input      [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] ref
-,output     [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] out
-,output reg                                        done
+ input                               clk
+,input                               rst_n
+,input                               start
+,input      [SRC_WIDTH * 16 - 1 : 0] src
+,input      [REF_WIDTH * 16 - 1 : 0] ref
+,output     [OUT_WIDTH * 16 - 1 : 0] out
+,output reg                          done
 );
 
-wire signed [15 : 0]src_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-wire        [ 8 : 0]ref_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-reg         [ 8 : 0]out_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-reg  signed [18 : 0]tmp  [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+wire signed [SRC_WIDTH - 1 : 0]src_i[15:0];
+wire        [REF_WIDTH - 1 : 0]ref_i[15:0];
+reg         [OUT_WIDTH - 1 : 0]out_i[15:0];
+reg  signed [18            : 0]tmp  [15:0];
 
 reg shift;
 
@@ -49,58 +51,70 @@ genvar i;
 
 generate
 
-for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
-    assign src_i[i] = src [16 * (i + 1) - 1 : 16 * i];
-    assign ref_i[i] = ref [ 8 * (i + 1) - 1 :  8 * i];
-    assign out[ 8 * (i + 1) - 1 :  8 * i] = out_i[i];
+for(i = 0; i < 16; i = i + 1)begin
+    assign src_i[i] = src [SRC_WIDTH * (i + 1) - 1 : SRC_WIDTH * i];
+    assign ref_i[i] = ref [REF_WIDTH * (i + 1) - 1 : REF_WIDTH * i];
+    assign out[OUT_WIDTH * (i + 1) - 1 : OUT_WIDTH * i] = out_i[i];
 end
 
-for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
+for(i = 0; i < 4; i = i + 1)begin
+    wire signed [31 : 0] d0,d1,d2,d3;
+    assign d0 = src_i[i +  4] * 35468;
+    assign d1 = src_i[i + 12] * 85627;
+    assign d2 = src_i[i +  4] * 85627;
+    assign d3 = src_i[i + 12] * 35468;
+
     wire signed [17 : 0] a0,a1,a2,a3;
     assign a0 = src_i[i + 0] + src_i[i + 8];
     assign a1 = src_i[i + 0] - src_i[i + 8];
-    assign a2 = (src_i[i + 4] * 'd35468 >>> 16) - (src_i[i + 12] * 'd85627 >>> 16);
-    assign a3 = (src_i[i + 4] * 'd85627 >>> 16) + (src_i[i + 12] * 'd35468 >>> 16);
+    assign a2 = (d0 >>> 16) - (d1 >>> 16);
+    assign a3 = (d2 >>> 16) + (d3 >>> 16);
 
     always @ (posedge clk or negedge rst_n)begin
         if(!rst_n)begin
-            tmp[BLOCK_SIZE * i + 0] <= 'd0;
-            tmp[BLOCK_SIZE * i + 1] <= 'd0;
-            tmp[BLOCK_SIZE * i + 2] <= 'd0;
-            tmp[BLOCK_SIZE * i + 3] <= 'd0;
+            tmp[4 * i + 0] <= 'd0;
+            tmp[4 * i + 1] <= 'd0;
+            tmp[4 * i + 2] <= 'd0;
+            tmp[4 * i + 3] <= 'd0;
         end
         else begin
-            tmp[BLOCK_SIZE * i + 0] <= a0 + a3;
-            tmp[BLOCK_SIZE * i + 1] <= a1 + a2;
-            tmp[BLOCK_SIZE * i + 2] <= a1 - a2;
-            tmp[BLOCK_SIZE * i + 3] <= a0 - a3;
+            tmp[4 * i + 0] <= a0 + a3;
+            tmp[4 * i + 1] <= a1 + a2;
+            tmp[4 * i + 2] <= a1 - a2;
+            tmp[4 * i + 3] <= a0 - a3;
         end
     end
     
+    wire signed [31 : 0] e0,e1,e2,e3;
+    assign e0 = tmp[i +  4] * 35468;
+    assign e1 = tmp[i + 12] * 85627;
+    assign e2 = tmp[i +  4] * 85627;
+    assign e3 = tmp[i + 12] * 35468;
+
     wire signed [20 : 0] b0,b1,b2,b3;
     assign b0 = tmp[i + 0] + tmp[i + 8] + 'd4;
     assign b1 = tmp[i + 0] - tmp[i + 8] + 'd4;
-    assign b2 = (tmp[i + 4] * 'd35468 >>> 16) - (tmp[i + 12] * 'd85627 >>> 16);
-    assign b3 = (tmp[i + 4] * 'd85627 >>> 16) + (tmp[i + 12] * 'd35468 >>> 16);
+    assign b2 = (e0 >>> 16) - (e1 >>> 16);
+    assign b3 = (e2 >>> 16) + (e3 >>> 16);
     
-    wire signed [18 : 0] c0,c1,c2,c3;
-    assign c0 = ref_i[BLOCK_SIZE * i + 0] + (b0 + b3 >>> 3);
-    assign c1 = ref_i[BLOCK_SIZE * i + 1] + (b1 + b2 >>> 3);
-    assign c2 = ref_i[BLOCK_SIZE * i + 2] + (b1 - b2 >>> 3);
-    assign c3 = ref_i[BLOCK_SIZE * i + 3] + (b0 - b3 >>> 3);
+    wire signed [19 : 0] c0,c1,c2,c3;
+    assign c0 = ref_i[4 * i + 0] + (b0 + b3 >>> 3);
+    assign c1 = ref_i[4 * i + 1] + (b1 + b2 >>> 3);
+    assign c2 = ref_i[4 * i + 2] + (b1 - b2 >>> 3);
+    assign c3 = ref_i[4 * i + 3] + (b0 - b3 >>> 3);
     
     always @ (posedge clk or negedge rst_n)begin
         if(!rst_n)begin
-            out_i[BLOCK_SIZE * i + 0] <= 'd0;
-            out_i[BLOCK_SIZE * i + 1] <= 'd0;
-            out_i[BLOCK_SIZE * i + 2] <= 'd0;
-            out_i[BLOCK_SIZE * i + 3] <= 'd0;
+            out_i[4 * i + 0] <= 'd0;
+            out_i[4 * i + 1] <= 'd0;
+            out_i[4 * i + 2] <= 'd0;
+            out_i[4 * i + 3] <= 'd0;
         end
         else begin
-            out_i[BLOCK_SIZE * i + 0] <=  (c0 > 'hff) ? 'hff : (c0 < 'h0) ? 'h0 : c0;
-            out_i[BLOCK_SIZE * i + 1] <=  (c1 > 'hff) ? 'hff : (c1 < 'h0) ? 'h0 : c0;
-            out_i[BLOCK_SIZE * i + 2] <=  (c2 > 'hff) ? 'hff : (c2 < 'h0) ? 'h0 : c0;
-            out_i[BLOCK_SIZE * i + 3] <=  (c3 > 'hff) ? 'hff : (c3 < 'h0) ? 'h0 : c0;
+            out_i[4 * i + 0] <=  (c0 > 'hff) ? 'hff : (c0 < 'h0) ? 'h0 : c0;
+            out_i[4 * i + 1] <=  (c1 > 'hff) ? 'hff : (c1 < 'h0) ? 'h0 : c0;
+            out_i[4 * i + 2] <=  (c2 > 'hff) ? 'hff : (c2 < 'h0) ? 'h0 : c0;
+            out_i[4 * i + 3] <=  (c3 > 'hff) ? 'hff : (c3 < 'h0) ? 'h0 : c0;
         end
     end
 end
