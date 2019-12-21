@@ -32,15 +32,15 @@ wire        [ 7 : 0]ref_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//8b
 reg  signed [13 : 0]tmp  [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//14b
 reg  signed [11 : 0]out_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//12b
 
-wire signed [16:0]c0;
-wire signed [16:0]c1;
-wire signed [16:0]c2;
-wire signed [16:0]c3;
+wire signed [31:0]c0;
+wire signed [31:0]c1;
+wire signed [31:0]c2;
+wire signed [31:0]c3;
 
-assign c0 = 17'd2217;
-assign c1 = 17'd5352;
-assign c2 = 17'd12000;
-assign c3 = 17'd51000;
+assign c0 = 32'd2217;
+assign c1 = 32'd5352;
+assign c2 = 32'd12000;
+assign c3 = 32'd51000;
 
 reg shift;
 
@@ -93,7 +93,7 @@ for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
         end
     end
     
-    wire signed [14 : 0] b0,b1,b2,b3;//15b
+    wire signed [31 : 0] b0,b1,b2,b3;//15b
     assign b0 = tmp[i + 0] + tmp[i + 12];
     assign b1 = tmp[i + 4] + tmp[i +  8];
     assign b2 = tmp[i + 4] - tmp[i +  8];
