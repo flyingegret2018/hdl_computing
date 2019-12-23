@@ -15586,9 +15586,9 @@ static void *WebPEncode(void *tid) {
 	__free(mem_out);
 	fclose(out);
 
-	gettimeofday(&endtime, NULL);
-
 	WebP_pic++;
+	if(WebP_pic >= total_pic)gettimeofday(&endtime, NULL);
+	
     if(buffer_cnt >= BUFFER_LEN - 1) buffer_cnt = 0;
 	else buffer_cnt++;
   }
