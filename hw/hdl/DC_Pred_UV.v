@@ -107,7 +107,7 @@ module DC_Pred_UV#(
                 else
                     nstate = DONE;
             NONE:
-                nstate = DONE;
+                nstate = IDLE;
             DONE:
                 nstate = IDLE;
             default:
@@ -148,13 +148,14 @@ module DC_Pred_UV#(
                     temp1_v <= (left_v_i[count] << 1) + temp1_v;
                 end
                 NONE:begin
-                    temp1_u <= 'h80 << SHIFT;
-                    temp1_v <= 'h80 << SHIFT;
+                    temp2_u <= 'h80;
+                    temp2_v <= 'h80;
+                    done    <= 'b1;
                 end
                 DONE:begin
                     temp2_u <= (temp1_u + BLOCK_SIZE) >> SHIFT;
                     temp2_v <= (temp1_v + BLOCK_SIZE) >> SHIFT;
-                    done  <= 1'b1;
+                    done    <= 1'b1;
                 end
             endcase
         end

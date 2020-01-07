@@ -98,7 +98,7 @@ module DC_Pred#(
                 else
                     nstate = DONE;
             NONE:
-                nstate = DONE;
+                nstate = IDLE;
             DONE:
                 nstate = IDLE;
             default:
@@ -133,7 +133,8 @@ module DC_Pred#(
                     temp1 <= (left_i[count] << 1) + temp1;
                 end
                 NONE:begin
-                    temp1 <= 'h80 << SHIFT;
+                    temp2 <= 'h80;
+                    done  <= 'b1;
                 end
                 DONE:begin
                     temp2 <= (temp1 + BLOCK_SIZE) >> SHIFT;
