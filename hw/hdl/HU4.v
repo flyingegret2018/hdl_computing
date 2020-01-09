@@ -29,9 +29,9 @@ assign vals[0] = (left[ 7: 0] + left[15: 8] + 1) >> 1;
 assign vals[1] = (left[15: 8] + left[23:16] + 1) >> 1;
 assign vals[2] = (left[23:16] + left[31:24] + 1) >> 1;
 
-assign vals[3] = (left[ 7: 0] + (left[15: 8] << 1) + left[23:16] + 2) >> 2;
-assign vals[4] = (left[15: 8] + (left[23:16] << 1) + left[31:24] + 2) >> 2;
-assign vals[5] = (left[23:16] + (left[31:24] << 1) + left[31:24] + 2) >> 2;
+assign vals[3] = (left[ 7: 0] + {left[15: 8],1'b0} + left[23:16] + 2) >> 2;
+assign vals[4] = (left[15: 8] + {left[23:16],1'b0} + left[31:24] + 2) >> 2;
+assign vals[5] = (left[23:16] + {left[31:24],1'b0} + left[31:24] + 2) >> 2;
 
 assign vals[6] = left[31:24];
 

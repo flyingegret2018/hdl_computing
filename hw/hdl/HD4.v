@@ -32,12 +32,12 @@ assign vals[1] = (left[15: 8] + left[ 7: 0] + 1) >> 1;
 assign vals[2] = (left[23:16] + left[15: 8] + 1) >> 1;
 assign vals[3] = (left[31:24] + left[23:16] + 1) >> 1;
 
-assign vals[4] = (top [ 7: 0] + (top [15: 8] << 1) + top [23:16] + 2) >> 2;
-assign vals[5] = (top_left    + (top [ 7: 0] << 1) + top [15: 8] + 2) >> 2;
-assign vals[6] = (left[ 7: 0] + (top_left    << 1) + top [ 7: 0] + 2) >> 2;
-assign vals[7] = (left[15: 8] + (left[ 7: 0] << 1) + top_left    + 2) >> 2;
-assign vals[8] = (left[23:16] + (left[15: 8] << 1) + left[ 7: 0] + 2) >> 2;
-assign vals[9] = (left[31:24] + (left[23:16] << 1) + left[15: 8] + 2) >> 2;
+assign vals[4] = (top [ 7: 0] + {top [15: 8],1'b0} + top [23:16] + 2) >> 2;
+assign vals[5] = (top_left    + {top [ 7: 0],1'b0} + top [15: 8] + 2) >> 2;
+assign vals[6] = (left[ 7: 0] + {top_left   ,1'b0} + top [ 7: 0] + 2) >> 2;
+assign vals[7] = (left[15: 8] + {left[ 7: 0],1'b0} + top_left    + 2) >> 2;
+assign vals[8] = (left[23:16] + {left[15: 8],1'b0} + left[ 7: 0] + 2) >> 2;
+assign vals[9] = (left[31:24] + {left[23:16],1'b0} + left[15: 8] + 2) >> 2;
 
 assign dst [7  :0  ] = vals[0]; //00
 assign dst [15 :8  ] = vals[6]; //01

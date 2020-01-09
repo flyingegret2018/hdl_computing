@@ -27,10 +27,10 @@ module VE4#(
 
 wire [BIT_WIDTH - 1 : 0] vals [BLOCK_SIZE - 1 : 0];
 
-assign vals[0] = (top_left   + (top[ 7: 0] << 1) + top[15: 8] + 2) >> 2;
-assign vals[1] = (top[ 7: 0] + (top[15: 8] << 1) + top[23:16] + 2) >> 2;
-assign vals[2] = (top[15: 8] + (top[23:16] << 1) + top[31:24] + 2) >> 2;
-assign vals[3] = (top[23:16] + (top[31:24] << 1) + top_right  + 2) >> 2;
+assign vals[0] = (top_left   + {top[ 7: 0],1'b0} + top[15: 8] + 2) >> 2;
+assign vals[1] = (top[ 7: 0] + {top[15: 8],1'b0} + top[23:16] + 2) >> 2;
+assign vals[2] = (top[15: 8] + {top[23:16],1'b0} + top[31:24] + 2) >> 2;
+assign vals[3] = (top[23:16] + {top[31:24],1'b0} + top_right  + 2) >> 2;
 
 genvar i,j;
 
