@@ -25,7 +25,7 @@ module StoreDiffusionErrors(
 ,output reg          [ 31 : 0] top_derr
 ,output reg                    top_derr_en
 ,output reg                    top_derr_wea
-,output reg          [  9 : 0] top_derr_addr
+,output              [  9 : 0] top_derr_addr
 );
 
     wire signed[7:0]derr_i[5:0];
@@ -52,25 +52,25 @@ module StoreDiffusionErrors(
     assign top[2] = derr_i[1];
     assign top[3] = derr_i[5] - left[3];
 
+    assign top_derr_addr = x;
+
     always @ (posedge clk or negedge rst_n)begin
         if(~rst_n)begin
-            top_derr_en   <= 'b0;
-            top_derr_wea  <= 'b0;
-            top_derr_addr <= 'b0;
-            top_derr      <= 'b0;
-            left_derr     <= 'b0;
+            top_derr_en  <= 'b0;
+            top_derr_wea <= 'b0;
+            top_derr     <= 'b0;
+            left_derr    <= 'b0;
         end
         else begin
             if(start)begin
-                top_derr_en   <= 1'b1;
-                top_derr_wea  <= 1'b1;
-                top_derr_addr <= x;
-                top_derr      <= {top[3],top[2],top[1],top[0]};
-                left_derr     <= {left[3],left[2],left[1],left[0]};
+                top_derr_en  <= 1'b1;
+                top_derr_wea <= 1'b1;
+                top_derr     <= {top [3],top [2],top [1],top [0]};
+                left_derr    <= {left[3],left[2],left[1],left[0]};
             end
             else begin
-                top_derr_en   <= 'b0;
-                top_derr_wea  <= 'b0;
+                top_derr_en  <= 'b0;
+                top_derr_wea <= 'b0;
             end
         end
     end
