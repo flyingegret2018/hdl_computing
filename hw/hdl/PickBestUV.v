@@ -54,20 +54,8 @@ DC_Pred_UV U_DC_PRED_UV(
     .top_v                          ( top_v                         ),
     .left_u                         ( left_u                        ),
     .left_v                         ( left_v                        ),
-    .dst                            ( pred[3]                       ),
+    .dst                            ( pred[0]                       ),
     .done                           (                               )
-);
-
-Vertical_Pred_UV U_VERTICAL_PRED_UV(
-    .top_u                          ( top_u                         ),
-    .top_v                          ( top_v                         ),
-    .dst                            ( pred[0]                       )
-);
-
-Horizontal_Pred_UV U_HORIZONTAL_PRED_UV(
-    .left_u                         ( left_u                        ),
-    .left_v                         ( left_v                        ),
-    .dst                            ( pred[1]                       )
 );
 
 True_Motion_Pred_UV U_TRUE_MOTION_PRED_UV(
@@ -77,7 +65,19 @@ True_Motion_Pred_UV U_TRUE_MOTION_PRED_UV(
     .top_v                          ( top_v                         ),
     .left_u                         ( left_u                        ),
     .left_v                         ( left_v                        ),
+    .dst                            ( pred[1]                       )
+);
+
+Vertical_Pred_UV U_VERTICAL_PRED_UV(
+    .top_u                          ( top_u                         ),
+    .top_v                          ( top_v                         ),
     .dst                            ( pred[2]                       )
+);
+
+Horizontal_Pred_UV U_HORIZONTAL_PRED_UV(
+    .left_u                         ( left_u                        ),
+    .left_v                         ( left_v                        ),
+    .dst                            ( pred[3]                       )
 );
 
 wire        rec_done;
@@ -180,25 +180,25 @@ reg [  31:0]nz_tmp;
 reg [1023:0]UVout_tmp;
 reg [  63:0]Score;
 reg [  63:0]score_tmp;
-reg [   1:0]uv;
+reg [   2:0]uv;
 reg [   1:0]mode;
+reg [   1:0]mode_tmp;
 
 assign levels = levels_tmp;
 assign nz = nz_tmp;
 assign out = UVout_tmp;
 assign mode_uv = {30'b0,mode};
 
-reg [7:0] cstate;
-reg [7:0] nstate;
+reg [6:0] cstate;
+reg [6:0] nstate;
 
 parameter IDLE       = 'h1;
 parameter PRED       = 'h2;
 parameter WAIT       = 'h4; 
-parameter FIRSTSCORE = 'h8;
-parameter SCORE      = 'h10;
-parameter COMP       = 'h20;
-parameter STORE      = 'h40;
-parameter DONE       = 'h80;
+parameter SCORE      = 'h8;
+parameter COMP       = 'h10;
+parameter STORE      = 'h20;
+parameter DONE       = 'h40;
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
@@ -218,26 +218,21 @@ always @ * begin
             nstate = WAIT;
         WAIT:
             if(count == 2'b10)
-                if(uv == 'b1)
-                    nstate = FIRSTSCORE;
-                else
-                    nstate = SCORE;
+                nstate = SCORE;
             else
                 nstate = WAIT;
-        FIRSTSCORE:
-            nstate = PRED;
         SCORE:
             nstate = COMP;
         COMP:
-            if(Score > score_tmp)
+            if(Score >= score_tmp)
                 nstate = STORE;
             else
-                if(uv == 'd0)
+                if(uv == 3'b111)
                     nstate = DONE;
                 else
                     nstate = PRED;
         STORE:
-            if(uv == 'd0)
+            if(uv == 3'b111)
                 nstate = DONE;
             else
                 nstate = PRED;
@@ -259,40 +254,35 @@ always @ (posedge clk or negedge rst_n)begin
         score_tmp  <= 'b0;
         UVout_tmp  <= 'b0;
         mode       <= 'b0;
+        mode_tmp   <= 'b0;
         uv         <= 'b0;
         done       <= 'b0;
     end
     else begin
         case(cstate)
             IDLE:begin
-                uv         <= 2'b0;
+                uv         <= 2'd3;
+                Score      <= {64{1'b1}};
                 SDE_start  <= 1'b0;
                 done       <= 1'b0;
             end
             PRED:begin
                 rec_start  <= 1'b1;
                 UVPred     <= pred[uv];
-                uv         <= uv + 1'b1;
+                mode_tmp   <= uv;
+                uv         <= uv - 1'b1;
             end
             WAIT:begin
                 rec_start  <= 1'b0;
             end
-            FIRSTSCORE:begin
-                Score      <= ((sum << 10) + FixedCost[1]) * lambda_uv + 'd256 * sse;
-                mode       <= 2'b1;
-                uv         <= 2'b1;
-                levels_tmp <= UVlevels;
-                UVout_tmp  <= UVout;
-                nz_tmp     <= nz_i;
-            end
             SCORE:begin
-                score_tmp  <= ((sum << 10) + FixedCost[uv]) * lambda_uv + 'd256 * sse;
+                score_tmp  <= ((sum << 10) + FixedCost[mode_tmp]) * lambda_uv + 'd256 * sse;
             end
             COMP:begin
                 ;
             end
             STORE:begin
-                mode       <= uv;
+                mode       <= mode_tmp;
                 levels_tmp <= UVlevels;
                 UVout_tmp  <= UVout;
                 nz_tmp     <= nz_i;

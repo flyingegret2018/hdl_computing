@@ -60,25 +60,25 @@ DC_Pred U_DC_PRED(
     .y                              ( y                             ),
     .top                            ( top                           ),
     .left                           ( left                          ),
-    .dst                            ( pred[3]                       ),
+    .dst                            ( pred[0]                       ),
     .done                           (                               )
-);
-
-Vertical_Pred U_VERTICAL_PRED(
-    .top                            ( top                           ),
-    .dst                            ( pred[0]                       )
-);
-
-Horizontal_Pred U_HORIZONTAL_PRED(
-    .left                           ( left                          ),
-    .dst                            ( pred[1]                       )
 );
 
 True_Motion_Pred U_TRUE_MOTION_PRED(
     .top_left                       ( top_left                      ),
     .top                            ( top                           ),
     .left                           ( left                          ),
+    .dst                            ( pred[1]                       )
+);
+
+Vertical_Pred U_VERTICAL_PRED(
+    .top                            ( top                           ),
     .dst                            ( pred[2]                       )
+);
+
+Horizontal_Pred U_HORIZONTAL_PRED(
+    .left                           ( left                          ),
+    .dst                            ( pred[3]                       )
 );
 
 wire        rec_done;
@@ -173,8 +173,8 @@ GetCostLuma U_GETCOSTLUMA(
     .done                           ( cost_done                     )
 );
 
-reg [9:0] cstate;
-reg [9:0] nstate;
+reg [6:0] cstate;
+reg [6:0] nstate;
 
 reg [   1:0]count;
 reg [ 255:0]dc_tmp;
@@ -186,8 +186,9 @@ reg [  31:0]D_tmp;
 reg [  31:0]SD_tmp;
 reg [  31:0]H_tmp;
 reg [  31:0]R_tmp;
-reg [   1:0]i16;
+reg [   2:0]i16;
 reg [   1:0]mode;
+reg [   1:0]mode_tmp;
 reg         flag;
 
 assign ac_levels = ac_tmp;
@@ -196,16 +197,13 @@ assign nz = nz_tmp;
 assign out = Yout_tmp;
 assign mode_i16 = {30'b0,mode};
 
-parameter IDLE        = 'h1;
-parameter PRED        = 'h2;
-parameter WAIT        = 'h4; 
-parameter FIRSTSCORE  = 'h8;
-parameter SCORE       = 'h10;
-parameter COMP        = 'h20;
-parameter STORE       = 'h40;
-parameter LASTSCORE   = 'h80;
-parameter STORE_DELTA = 'h100;
-parameter DONE        = 'h200;
+parameter IDLE  = 'h1;
+parameter PRED  = 'h2;
+parameter WAIT  = 'h4; 
+parameter SCORE = 'h8;
+parameter COMP  = 'h10;
+parameter STORE = 'h20;
+parameter DONE  = 'h40;
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
@@ -225,36 +223,24 @@ always @ * begin
             nstate = WAIT;
         WAIT:
             if(count == 2'b11)
-                if(i16 == 'b1)
-                    nstate = FIRSTSCORE;
-                else
-                    nstate = SCORE;
+                nstate = SCORE;
             else
                 nstate = WAIT;
-        FIRSTSCORE:
-            nstate = PRED;
         SCORE:
             nstate = COMP;
         COMP:
-            if(Score > score_tmp)
+            if(Score >= score_tmp)
                 nstate = STORE;
             else
-                if(i16 == 'd0)
-                    nstate = LASTSCORE;
+                if(i16 == 3'b111)
+                    nstate = DONE;
                 else
                     nstate = PRED;
         STORE:
-            if(i16 == 'd0)
-                nstate = LASTSCORE;
+            if(i16 == 3'b111)
+                nstate = DONE;
             else
                 nstate = PRED;
-        LASTSCORE:
-            if(((nz_tmp & 'h100ffff) == 'h1000000) && (D_tmp > min_disto))
-                nstate = STORE_DELTA;
-            else
-                nstate = DONE;
-        STORE_DELTA:
-            nstate = DONE;
         DONE:
             nstate = IDLE;
         default:
@@ -265,59 +251,47 @@ end
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)begin
         rec_start <= 'b0;
+        i16       <= 'b0;
         YPred     <= 'b0;
+        Score     <= 'b0;
+        mode      <= 'b0;
         dc_tmp    <= 'b0;
         ac_tmp    <= 'b0;
         nz_tmp    <= 'b0;
-        Score     <= 'b0;
         score_tmp <= 'b0;
         Yout_tmp  <= 'b0;
-        mode      <= 'b0;
+        mode_tmp  <= 'b0;
         D_tmp     <= 'b0;
         SD_tmp    <= 'b0;
         H_tmp     <= 'b0;
         R_tmp     <= 'b0;
-        flag      <= 'b0;
-        i16       <= 'b0;
         done      <= 'b0;
     end
     else begin
         case(cstate)
             IDLE:begin
-                i16       <= 2'b0;
+                i16       <= 2'd3;
+                Score     <= {64{1'b1}};
                 done      <= 1'b0;
             end
             PRED:begin
                 rec_start <= 1'b1;
                 YPred     <= pred[i16];
-                i16       <= i16 + 1'b1;
+                i16       <= i16 - 1'b1;
+                mode_tmp  <= i16;
             end
             WAIT:begin
                 rec_start <= 1'b0;
             end
-            FIRSTSCORE:begin
-                Score     <= ((sum << 10) + FixedCost[1]) * lambda_i16 +
-                             'd256 * (sse + ((disto * tlambda + 'd128) >> 8));
-                mode      <= 2'b1;
-                i16       <= 2'b1;
-                dc_tmp    <= Y_dc_levels;
-                ac_tmp    <= Y_ac_levels;
-                Yout_tmp  <= Yout;
-                nz_tmp    <= nz_i;
-                D_tmp     <= sse;
-                SD_tmp    <= disto;
-                H_tmp     <= FixedCost[1];
-                R_tmp     <= sum;
-            end
             SCORE:begin
-                score_tmp <= ((sum << 10) + FixedCost[i16]) * lambda_i16 +
+                score_tmp <= ((sum << 10) + FixedCost[mode_tmp]) * lambda_i16 +
                              'd256 * (sse + ((disto * tlambda + 'd128) >> 8));
             end
             COMP:begin
                 ;
             end
             STORE:begin
-                mode      <= i16;
+                mode      <= mode_tmp;
                 dc_tmp    <= Y_dc_levels;
                 ac_tmp    <= Y_ac_levels;
                 Yout_tmp  <= Yout;
@@ -325,19 +299,13 @@ always @ (posedge clk or negedge rst_n)begin
                 Score     <= score_tmp;
                 D_tmp     <= sse;
                 SD_tmp    <= disto;
-                H_tmp     <= FixedCost[i16];
+                H_tmp     <= FixedCost[mode_tmp];
                 R_tmp     <= sum;
             end
-            LASTSCORE:begin
+            DONE:begin
                 Score     <= ((R_tmp << 10) + H_tmp) * lambda_mode +
                              'd256 * (D_tmp + ((SD_tmp * tlambda + 'd128) >> 8));
-            end
-            STORE_DELTA:begin
-                flag      <= 1'b1;
-            end
-            DONE:begin
                 done      <= 1'b1;
-                flag      <= 1'b0;
             end
         endcase
     end
@@ -379,8 +347,9 @@ always @ (posedge clk or negedge rst_n)begin
     else begin
         if(start)
             max_edge <= 'b0;
-        else if(flag)
-            max_edge <= (max0 > max1) ? max0 : max1;
+        else if(done) 
+            if(((nz_tmp & 'h100ffff) == 'h1000000) && (D_tmp > min_disto))
+                max_edge <= (max0 > max1) ? max0 : max1;
     end
 end
 
