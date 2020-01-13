@@ -34,16 +34,16 @@ module QuantizeBlock#(
 ,output reg                                        done
 );
 
-wire signed [IW:0]in_i     [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-wire        [15:0]q_i      [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-wire        [15:0]iq_i     [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-wire        [31:0]bias_i   [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-wire        [31:0]zthresh_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-wire        [15:0]sharpen_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-reg  signed [31:0]level    [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-reg  signed [15:0]Rout_i   [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-reg  signed [15:0]out_i    [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-wire        [15:0]t;
+wire signed [IW - 1:0]in_i     [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+wire        [15    :0]q_i      [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+wire        [15    :0]iq_i     [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+wire        [31    :0]bias_i   [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+wire        [31    :0]zthresh_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+wire        [15    :0]sharpen_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+reg  signed [31    :0]level    [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+reg  signed [15    :0]Rout_i   [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+reg  signed [15    :0]out_i    [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+wire        [15    :0]t;
 
 reg shift;
 
@@ -75,7 +75,7 @@ end
 
 for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
     wire sign;
-    assign sign = in_i[i] < 'd0;
+    assign sign = in_i[i][IW - 1];
 
     wire[31:0]coeff;
     assign coeff = sign ? (sharpen_i[i] - in_i[i]) : (sharpen_i[i] + in_i[i]); 
