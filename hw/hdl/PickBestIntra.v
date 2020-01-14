@@ -189,7 +189,6 @@ reg [  31:0]R_tmp;
 reg [   2:0]i16;
 reg [   1:0]mode;
 reg [   1:0]mode_tmp;
-reg         flag;
 
 assign ac_levels = ac_tmp;
 assign dc_levels = dc_tmp;
