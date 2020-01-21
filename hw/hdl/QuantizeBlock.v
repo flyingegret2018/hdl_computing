@@ -73,10 +73,10 @@ for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
     assign Rout[16 * (i + 1) - 1 : 16 * i] = Rout_i[i];
 end
 
-for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
     wire sign;
-    assign sign = in_i[i] < 0;
+    assign sign = in_i[0] < 0;
 
+for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
     wire[31:0]coeff;
     assign coeff = in_i[i][IW - 1] ? (sharpen_i[i] - in_i[i]) : (sharpen_i[i] + in_i[i]); 
     
