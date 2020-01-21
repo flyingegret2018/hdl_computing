@@ -66,8 +66,8 @@ for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
     assign in_i     [i] = in     [IW * (i + 1) - 1 : IW * i];
     assign q_i      [i] = q      [16 * (i + 1) - 1 : 16 * i];
     assign iq_i     [i] = iq     [16 * (i + 1) - 1 : 16 * i];
-    assign bias_i   [i] = bias   [31 * (i + 1) - 1 : 31 * i];
-    assign zthresh_i[i] = zthresh[31 * (i + 1) - 1 : 31 * i];
+    assign bias_i   [i] = bias   [32 * (i + 1) - 1 : 32 * i];
+    assign zthresh_i[i] = zthresh[32 * (i + 1) - 1 : 32 * i];
     assign sharpen_i[i] = sharpen[16 * (i + 1) - 1 : 16 * i];
 
     assign Rout[16 * (i + 1) - 1 : 16 * i] = Rout_i[i];
@@ -80,12 +80,15 @@ for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
     wire[31:0]coeff;
     assign coeff = sign ? (sharpen_i[i] - in_i[i]) : (sharpen_i[i] + in_i[i]); 
     
+    wire[31:0]mul_tmp;
+    assign mul_tmp = coeff * iq_i[i];
+
     always @ (posedge clk or negedge rst_n)begin
         if(!rst_n)begin
             level[i] <= 'b0;
         end
         else begin
-            level[i] <= (coeff * iq_i[i] + bias_i[i]) >>> 17;
+            level[i] <= (mul_tmp + bias_i[i]) >>> 17;
         end
     end
     
