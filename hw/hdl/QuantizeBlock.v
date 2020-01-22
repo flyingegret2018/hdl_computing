@@ -35,11 +35,11 @@ module QuantizeBlock#(
 );
 
 wire signed [IW - 1:0]in_i     [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-wire        [15    :0]q_i      [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-wire        [15    :0]iq_i     [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-wire        [31    :0]bias_i   [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-wire        [31    :0]zthresh_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-wire        [15    :0]sharpen_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+wire signed [15    :0]q_i      [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+wire signed [15    :0]iq_i     [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+wire signed [31    :0]bias_i   [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+wire signed [31    :0]zthresh_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+wire signed [15    :0]sharpen_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 reg  signed [31    :0]level    [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 reg  signed [15    :0]Rout_i   [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 reg  signed [15    :0]out_i    [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
@@ -72,9 +72,6 @@ for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
 
     assign Rout[16 * (i + 1) - 1 : 16 * i] = Rout_i[i];
 end
-
-    wire sign1;
-    assign sign1 = in_i[0] < 0;
 
 for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
     wire sign;

@@ -74,10 +74,10 @@ for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
             out_i[BLOCK_SIZE * i + 3] <= 'd0;
         end
         else begin
-            out_i[BLOCK_SIZE * i + 0] <= (b0 + b1) >> 3;
-            out_i[BLOCK_SIZE * i + 1] <= (b3 + b2) >> 3;
-            out_i[BLOCK_SIZE * i + 2] <= (b0 - b1) >> 3;
-            out_i[BLOCK_SIZE * i + 3] <= (b3 - b2) >> 3;
+            out_i[BLOCK_SIZE * i + 0] <= (b0 + b1) >>> 3;
+            out_i[BLOCK_SIZE * i + 1] <= (b3 + b2) >>> 3;
+            out_i[BLOCK_SIZE * i + 2] <= (b0 - b1) >>> 3;
+            out_i[BLOCK_SIZE * i + 3] <= (b3 - b2) >>> 3;
         end
     end
 end
