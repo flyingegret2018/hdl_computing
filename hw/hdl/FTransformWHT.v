@@ -75,10 +75,10 @@ for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
             out_i[i + 12] <= 'd0;
         end
         else begin
-            out_i[i +  0] <= (b0 + b1) >> 1;
-            out_i[i +  4] <= (b3 + b2) >> 1;
-            out_i[i +  8] <= (b3 - b2) >> 1;
-            out_i[i + 12] <= (b0 - b1) >> 1;
+            out_i[i +  0] <= (b0 + b1) >>> 1;
+            out_i[i +  4] <= (b3 + b2) >>> 1;
+            out_i[i +  8] <= (b3 - b2) >>> 1;
+            out_i[i + 12] <= (b0 - b1) >>> 1;
         end
     end
 end

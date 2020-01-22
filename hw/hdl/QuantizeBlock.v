@@ -76,12 +76,12 @@ end
     wire sign1;
     assign sign1 = in_i[0] < 0;
 
-    wire sign2;
-    assign sign2 = in_i[0] > 0;
-
 for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
+    wire sign;
+    assign sign = in_i[i][IW - 1];
+
     wire[31:0]coeff;
-    assign coeff = in_i[i][14] ? (sharpen_i[i] - in_i[i]) : (sharpen_i[i] + in_i[i]); 
+    assign coeff = sign ? (sharpen_i[i] - in_i[i]) : (sharpen_i[i] + in_i[i]); 
     
     wire[31:0]mul_tmp;
     assign mul_tmp = coeff * iq_i[i];
@@ -99,7 +99,7 @@ for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
     assign level1 = (level[i] > 'd2047) ? 'd2047 : level[i];
     
     wire signed [31:0]level2;
-    assign level2 = in_i[i][14] ? ('d0 - level1) : level1;
+    assign level2 = sign ? ('d0 - level1) : level1;
     
     always @ (posedge clk or negedge rst_n)begin
         if(!rst_n)begin
