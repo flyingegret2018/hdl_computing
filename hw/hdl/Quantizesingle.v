@@ -20,10 +20,10 @@ module QuantizeSingle(
 ,input                        rst_n
 ,input                        start
 ,input      signed   [15 : 0] in
-,input               [15 : 0] q
-,input               [15 : 0] iq
-,input               [31 : 0] bias
-,input               [31 : 0] zthresh
+,input      signed   [15 : 0] q
+,input      signed   [15 : 0] iq
+,input      signed   [31 : 0] bias
+,input      signed   [31 : 0] zthresh
 ,output reg signed   [15 : 0] out
 ,output reg signed   [ 7 : 0] err
 ,output reg                   done
@@ -39,13 +39,16 @@ always @ (posedge clk or negedge rst_n)begin
 end
 
 wire sign;
-assign sign = in < 'd0;
+assign sign = in[15];
 
 wire signed [15:0]V;
 assign V = sign ? ('d0 - in) : in;
 
+wire signed [31:0]mul_tmp;
+assign mul_tmp = V * iq;
+
 wire signed [31:0]qV;
-assign qV = ((V * iq + bias) >> 17) * q;
+assign qV = (mul_tmp + bias >>> 17) * q;
 
 wire signed [31:0]err_tmp;
 assign err_tmp = V - qV;
@@ -58,11 +61,11 @@ always @ (posedge clk or negedge rst_n)begin
     else begin
         if(V > zthresh)begin
             out <= sign ? ('d0 - qV) : qV;
-            err <= (sign ? ('d0 - err) : err) >> 1;
+            err <= (sign ? ('d0 - err) : err) >>> 1;
         end
         else begin
             out <= 'b0;
-            err <= in >> 1;
+            err <= in >>> 1;
         end
     end
 end
