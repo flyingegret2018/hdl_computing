@@ -96,7 +96,7 @@ for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
     assign level1 = (level[i] > 'd2047) ? 'd2047 : level[i];
     
     wire signed [31:0]level2;
-    assign level2 = sign ? ('d0 - level1) : level1;
+    assign level2 = sign ? ($signed('d0) - level1) : level1;
     
     always @ (posedge clk or negedge rst_n)begin
         if(!rst_n)begin

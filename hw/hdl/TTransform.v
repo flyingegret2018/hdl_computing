@@ -57,7 +57,7 @@ for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
         if(!rst_n)
             tmp2[i] <= 'b0;
         else
-            tmp2[i] <= (tmp1[i] < 'b0) ? ('b0 - tmp1[i]) : tmp1[i];
+            tmp2[i] <= (tmp1[i] < 'b0) ? ($signed('d0) - tmp1[i]) : tmp1[i];
     end
 end
 

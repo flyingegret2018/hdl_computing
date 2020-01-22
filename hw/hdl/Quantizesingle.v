@@ -42,7 +42,7 @@ wire sign;
 assign sign = in[15];
 
 wire signed [15:0]V;
-assign V = sign ? ('d0 - in) : in;
+assign V = sign ? ($signed('d0) - in) : in;
 
 wire signed [31:0]mul_tmp;
 assign mul_tmp = V * iq;
@@ -60,8 +60,8 @@ always @ (posedge clk or negedge rst_n)begin
     end
     else begin
         if(V > zthresh)begin
-            out <= sign ? ('d0 - qV) : qV;
-            err <= (sign ? ('d0 - err) : err) >>> 1;
+            out <= (sign ? ($signed('d0) -  qV) :  qV);
+            err <= (sign ? ($signed('d0) - err) : err) >>> 1;
         end
         else begin
             out <= 'b0;
