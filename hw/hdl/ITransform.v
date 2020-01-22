@@ -59,10 +59,10 @@ end
 
 for(i = 0; i < 4; i = i + 1)begin
     wire signed [31 : 0] d0,d1,d2,d3;
-    assign d0 = src_i[i +  4] * 35468;
-    assign d1 = src_i[i + 12] * 85627;
-    assign d2 = src_i[i +  4] * 85627;
-    assign d3 = src_i[i + 12] * 35468;
+    assign d0 = src_i[i +  4] * $signed(35468);
+    assign d1 = src_i[i + 12] * $signed(85627);
+    assign d2 = src_i[i +  4] * $signed(85627);
+    assign d3 = src_i[i + 12] * $signed(35468);
 
     wire signed [17 : 0] a0,a1,a2,a3;
     assign a0 = src_i[i + 0] + src_i[i + 8];
@@ -86,14 +86,14 @@ for(i = 0; i < 4; i = i + 1)begin
     end
     
     wire signed [31 : 0] e0,e1,e2,e3;
-    assign e0 = tmp[i +  4] * 35468;
-    assign e1 = tmp[i + 12] * 85627;
-    assign e2 = tmp[i +  4] * 85627;
-    assign e3 = tmp[i + 12] * 35468;
+    assign e0 = tmp[i +  4] * $signed(35468);
+    assign e1 = tmp[i + 12] * $signed(85627);
+    assign e2 = tmp[i +  4] * $signed(85627);
+    assign e3 = tmp[i + 12] * $signed(35468);
 
     wire signed [20 : 0] b0,b1,b2,b3;
-    assign b0 = tmp[i + 0] + tmp[i + 8] + 'd4;
-    assign b1 = tmp[i + 0] - tmp[i + 8] + 'd4;
+    assign b0 = tmp[i + 0] + tmp[i + 8] + $signed('d4);
+    assign b1 = tmp[i + 0] - tmp[i + 8] + $signed('d4);
     assign b2 = (e0 >>> 16) - (e1 >>> 16);
     assign b3 = (e2 >>> 16) + (e3 >>> 16);
     

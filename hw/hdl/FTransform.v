@@ -69,10 +69,10 @@ for(i = 0; i < 4; i = i + 1)begin
     assign b3 = a0 - a3;
     
     wire signed [31 : 0] c0,c1,c2,c3;
-    assign c0 = b2 * 2217;
-    assign c1 = b3 * 5352;
-    assign c2 = b3 * 2217;
-    assign c3 = b2 * 5352;
+    assign c0 = b2 * $signed(2217);
+    assign c1 = b3 * $signed(5352);
+    assign c2 = b3 * $signed(2217);
+    assign c3 = b2 * $signed(5352);
 
     always @ (posedge clk or negedge rst_n)begin
         if(!rst_n)begin
@@ -82,10 +82,10 @@ for(i = 0; i < 4; i = i + 1)begin
             tmp[4 * i + 3] <= 'd0;
         end
         else begin
-            tmp[4 * i + 0] <= (b0 + b1        <<< 3);
-            tmp[4 * i + 1] <= (c0 + c1 + 1812 >>> 9);
-            tmp[4 * i + 2] <= (b0 - b1        <<< 3);
-            tmp[4 * i + 3] <= (c2 - c3 + 0937 >>> 9);
+            tmp[4 * i + 0] <= (b0 + b1                 <<< 3);
+            tmp[4 * i + 1] <= (c0 + c1 + $signed(1812) >>> 9);
+            tmp[4 * i + 2] <= (b0 - b1                 <<< 3);
+            tmp[4 * i + 3] <= (c2 - c3 + $signed(0937) >>> 9);
         end
     end
     
@@ -96,10 +96,10 @@ for(i = 0; i < 4; i = i + 1)begin
     assign d3 = tmp[i + 0] - tmp[i + 12];
 
     wire signed [31 : 0] e0,e1,e2,e3;
-    assign e0 = d2 * 2217;
-    assign e1 = d3 * 5352;
-    assign e2 = d3 * 2217;
-    assign e3 = d2 * 5352;
+    assign e0 = d2 * $signed(2217);
+    assign e1 = d3 * $signed(5352);
+    assign e2 = d3 * $signed(2217);
+    assign e3 = d2 * $signed(5352);
 
     always @ (posedge clk or negedge rst_n)begin
         if(!rst_n)begin
@@ -109,10 +109,10 @@ for(i = 0; i < 4; i = i + 1)begin
             out_i[i + 12] <= 'd0;
         end
         else begin
-            out_i[i +  0] <= (d0 + d1 +     7 >>>  4);
-            out_i[i +  4] <= (e0 + e1 + 12000 >>> 16) + (d3 != 0);
-            out_i[i +  8] <= (d0 - d1 +     7 >>>  4);
-            out_i[i + 12] <= (e2 - e3 + 51000 >>> 16);
+            out_i[i +  0] <= (d0 + d1 + $signed(    7) >>>  4);
+            out_i[i +  4] <= (e0 + e1 + $signed(12000) >>> 16) + $signed(d3 != 0);
+            out_i[i +  8] <= (d0 - d1 + $signed(    7) >>>  4);
+            out_i[i + 12] <= (e2 - e3 + $signed(51000) >>> 16);
         end
     end
 end
