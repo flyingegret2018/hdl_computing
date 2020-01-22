@@ -98,10 +98,10 @@ for(i = 0; i < 4; i = i + 1)begin
     assign b3 = (e2 >>> 16) + (e3 >>> 16);
     
     wire signed [19 : 0] c0,c1,c2,c3;
-    assign c0 = $signed(ref_i[4 * i + 0]) + (b0 + b3 >>> 3);
-    assign c1 = $signed(ref_i[4 * i + 1]) + (b1 + b2 >>> 3);
-    assign c2 = $signed(ref_i[4 * i + 2]) + (b1 - b2 >>> 3);
-    assign c3 = $signed(ref_i[4 * i + 3]) + (b0 - b3 >>> 3);
+    assign c0 = $signed({1'b0,ref_i[4 * i + 0]}) + (b0 + b3 >>> 3);
+    assign c1 = $signed({1'b0,ref_i[4 * i + 1]}) + (b1 + b2 >>> 3);
+    assign c2 = $signed({1'b0,ref_i[4 * i + 2]}) + (b1 - b2 >>> 3);
+    assign c3 = $signed({1'b0,ref_i[4 * i + 3]}) + (b0 - b3 >>> 3);
     
     always @ (posedge clk or negedge rst_n)begin
         if(!rst_n)begin
