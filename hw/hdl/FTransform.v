@@ -110,7 +110,7 @@ for(i = 0; i < 4; i = i + 1)begin
         end
         else begin
             out_i[i +  0] <= (d0 + d1 + $signed(    7) >>>  4);
-            out_i[i +  4] <= (e0 + e1 + $signed(12000) >>> 16) + $signed(d3 != 0);
+            out_i[i +  4] <= (e0 + e1 + $signed(12000) >>> 16) + $signed({1'b0,d3 != 0});
             out_i[i +  8] <= (d0 - d1 + $signed(    7) >>>  4);
             out_i[i + 12] <= (e2 - e3 + $signed(51000) >>> 16);
         end
