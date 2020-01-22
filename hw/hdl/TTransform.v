@@ -54,10 +54,6 @@ for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
     assign in_i[i] = in   [ 8 * (i + 1) - 1 :  8 * i];
     assign w_i [i] = w    [16 * (i + 1) - 1 : 16 * i];
 
-    wire sign1;
-    assign sign1 = tmp1[i] < $signed(2'b0);
-    wire sign2;
-    assign sign2 = tmp1[i] >= $signed(2'b0);
     always @ (posedge clk or negedge rst_n)begin
         if(!rst_n)
             tmp2[i] <= 'b0;
