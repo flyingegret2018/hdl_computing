@@ -53,11 +53,16 @@ generate
 for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
     assign in_i[i] = in   [ 8 * (i + 1) - 1 :  8 * i];
     assign w_i [i] = w    [16 * (i + 1) - 1 : 16 * i];
+
+    wire sign;
+    assign sign = tmp1[i] < 'b0;
+    wire [31:0] test;
+    assign test = $signed('d0) - tmp1[i];
     always @ (posedge clk or negedge rst_n)begin
         if(!rst_n)
             tmp2[i] <= 'b0;
         else
-            tmp2[i] <= (tmp1[i] < 'b0) ? ($signed('d0) - tmp1[i]) : tmp1[i];
+            tmp2[i] <= sign ? ($signed('d0) - tmp1[i]) : tmp1[i];
     end
 end
 

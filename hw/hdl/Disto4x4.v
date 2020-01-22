@@ -51,11 +51,9 @@ TTransform U_TT_B(
     .done                           (                               )
 );
 
-wire signed[31:0]tmp;
-wire [31:0]tmp1;
+wire [31:0]tmp;
 
-assign tmp = sumb - suma;
-assign tmp1 = (tmp < 'b0) ? ('b0 - tmp) : tmp;
-assign sum = tmp1 >> 5;
+assign tmp = (sumb > suma) ? (sumb - suma) : (suma - sumb);
+assign sum = tmp >> 5;
 
 endmodule
