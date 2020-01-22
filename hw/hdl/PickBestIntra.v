@@ -315,7 +315,7 @@ always @ (posedge clk or negedge rst_n)begin
         count <= 'b0;
     end
     else begin
-        if(rec_done)
+        if(cstate == SCORE)
             count <= 'b0;
         else
             case({sse_done,disto_done,cost_done})
