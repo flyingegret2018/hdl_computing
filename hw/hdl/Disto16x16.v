@@ -108,7 +108,7 @@ always @ (posedge clk or negedge rst_n)begin
             sum <= sum + sum4;
 end
 
-reg [15:0]shift;
+reg [17:0]shift;
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)begin
         done  <= 'b0;
@@ -116,8 +116,8 @@ always @ (posedge clk or negedge rst_n)begin
     end
     else begin
         shift[0] <= start;
-        shift[15:1] <= shift[14:0];
-        done  <= shift[15];
+        shift[17:1] <= shift[16:0];
+        done  <= shift[17];
     end
 end
 
