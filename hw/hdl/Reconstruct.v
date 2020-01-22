@@ -135,7 +135,7 @@ U_QBAC(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
     .start                          ( FWHT_done                     ),
-    .in                             ( {FDCT_o[i],12'b0}             ),
+    .in                             ( {FDCT_o[i][191:12],12'b0}     ),
     .q                              ( q1                            ),
     .iq                             ( iq1                           ),
     .bias                           ( bias1                         ),
