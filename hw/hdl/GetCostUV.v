@@ -66,7 +66,7 @@ always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
         sum <= 'b0;
     else
-        if(done)
+        if(start)
             sum <= 'b0;
         else if(shift[0] | count != 'b0)
             sum <= $signed(tmp[count][ 15:  0]) * $signed(tmp[count][ 15:  0]) +
