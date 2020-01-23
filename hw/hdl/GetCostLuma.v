@@ -72,23 +72,23 @@ always @ (posedge clk or negedge rst_n)begin
         if(done)
             sum <= 'b0;
         else if(start | count != 'b0)
-            sum <= tmp_ac[count][ 15:  0] * tmp_ac[count][ 15:  0] +
-                   tmp_ac[count][ 31: 16] * tmp_ac[count][ 31: 16] +
-                   tmp_ac[count][ 47: 32] * tmp_ac[count][ 47: 32] +
-                   tmp_ac[count][ 63: 48] * tmp_ac[count][ 63: 48] +
-                   tmp_ac[count][ 79: 64] * tmp_ac[count][ 79: 64] +
-                   tmp_ac[count][ 95: 80] * tmp_ac[count][ 95: 80] +
-                   tmp_ac[count][111: 96] * tmp_ac[count][111: 96] +
-                   tmp_ac[count][127:112] * tmp_ac[count][127:112] +
-                   tmp_ac[count][143:128] * tmp_ac[count][143:128] +
-                   tmp_ac[count][159:144] * tmp_ac[count][159:144] +
-                   tmp_ac[count][175:160] * tmp_ac[count][175:160] +
-                   tmp_ac[count][191:176] * tmp_ac[count][191:176] +
-                   tmp_ac[count][207:192] * tmp_ac[count][207:192] +
-                   tmp_ac[count][223:208] * tmp_ac[count][223:208] +
-                   tmp_ac[count][239:224] * tmp_ac[count][239:224] +
-                   tmp_ac[count][255:240] * tmp_ac[count][255:240] +
-                   tmp_dc[count] * tmp_dc[count] + sum;
+            sum <= $signed(tmp_ac[count][ 15:  0]) * $signed(tmp_ac[count][ 15:  0]) +
+                   $signed(tmp_ac[count][ 31: 16]) * $signed(tmp_ac[count][ 31: 16]) +
+                   $signed(tmp_ac[count][ 47: 32]) * $signed(tmp_ac[count][ 47: 32]) +
+                   $signed(tmp_ac[count][ 63: 48]) * $signed(tmp_ac[count][ 63: 48]) +
+                   $signed(tmp_ac[count][ 79: 64]) * $signed(tmp_ac[count][ 79: 64]) +
+                   $signed(tmp_ac[count][ 95: 80]) * $signed(tmp_ac[count][ 95: 80]) +
+                   $signed(tmp_ac[count][111: 96]) * $signed(tmp_ac[count][111: 96]) +
+                   $signed(tmp_ac[count][127:112]) * $signed(tmp_ac[count][127:112]) +
+                   $signed(tmp_ac[count][143:128]) * $signed(tmp_ac[count][143:128]) +
+                   $signed(tmp_ac[count][159:144]) * $signed(tmp_ac[count][159:144]) +
+                   $signed(tmp_ac[count][175:160]) * $signed(tmp_ac[count][175:160]) +
+                   $signed(tmp_ac[count][191:176]) * $signed(tmp_ac[count][191:176]) +
+                   $signed(tmp_ac[count][207:192]) * $signed(tmp_ac[count][207:192]) +
+                   $signed(tmp_ac[count][223:208]) * $signed(tmp_ac[count][223:208]) +
+                   $signed(tmp_ac[count][239:224]) * $signed(tmp_ac[count][239:224]) +
+                   $signed(tmp_ac[count][255:240]) * $signed(tmp_ac[count][255:240]) +
+                   $signed(tmp_dc[count]         ) * $signed(tmp_dc[count]         ) + $signed(sum);
 end
 
 endmodule
