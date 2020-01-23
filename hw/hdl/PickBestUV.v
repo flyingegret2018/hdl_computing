@@ -224,7 +224,7 @@ always @ * begin
         SCORE:
             nstate = COMP;
         COMP:
-            if(Score >= score_tmp)
+            if((Score >= score_tmp) | (mode_tmp == 2'b11))
                 nstate = STORE;
             else
                 if(uv == 3'b111)
@@ -262,7 +262,6 @@ always @ (posedge clk or negedge rst_n)begin
         case(cstate)
             IDLE:begin
                 uv         <= 2'd3;
-                Score      <= {64{1'b1}};
                 SDE_start  <= 1'b0;
                 done       <= 1'b0;
             end
