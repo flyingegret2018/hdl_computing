@@ -69,23 +69,23 @@ always @ (posedge clk or negedge rst_n)begin
         if(done)
             sum <= 'b0;
         else if(start | count != 'b0)
-            sum <= tmp[count][ 15:  0] * tmp[count][ 15:  0] +
-                   tmp[count][ 31: 16] * tmp[count][ 31: 16] +
-                   tmp[count][ 47: 32] * tmp[count][ 47: 32] +
-                   tmp[count][ 63: 48] * tmp[count][ 63: 48] +
-                   tmp[count][ 79: 64] * tmp[count][ 79: 64] +
-                   tmp[count][ 95: 80] * tmp[count][ 95: 80] +
-                   tmp[count][111: 96] * tmp[count][111: 96] +
-                   tmp[count][127:112] * tmp[count][127:112] +
-                   tmp[count][143:128] * tmp[count][143:128] +
-                   tmp[count][159:144] * tmp[count][159:144] +
-                   tmp[count][175:160] * tmp[count][175:160] +
-                   tmp[count][191:176] * tmp[count][191:176] +
-                   tmp[count][207:192] * tmp[count][207:192] +
-                   tmp[count][223:208] * tmp[count][223:208] +
-                   tmp[count][239:224] * tmp[count][239:224] +
-                   tmp[count][255:240] * tmp[count][255:240] +
-                   sum;
+            sum <= $signed(tmp[count][ 15:  0]) * $signed(tmp[count][ 15:  0]) +
+                   $signed(tmp[count][ 31: 16]) * $signed(tmp[count][ 31: 16]) +
+                   $signed(tmp[count][ 47: 32]) * $signed(tmp[count][ 47: 32]) +
+                   $signed(tmp[count][ 63: 48]) * $signed(tmp[count][ 63: 48]) +
+                   $signed(tmp[count][ 79: 64]) * $signed(tmp[count][ 79: 64]) +
+                   $signed(tmp[count][ 95: 80]) * $signed(tmp[count][ 95: 80]) +
+                   $signed(tmp[count][111: 96]) * $signed(tmp[count][111: 96]) +
+                   $signed(tmp[count][127:112]) * $signed(tmp[count][127:112]) +
+                   $signed(tmp[count][143:128]) * $signed(tmp[count][143:128]) +
+                   $signed(tmp[count][159:144]) * $signed(tmp[count][159:144]) +
+                   $signed(tmp[count][175:160]) * $signed(tmp[count][175:160]) +
+                   $signed(tmp[count][191:176]) * $signed(tmp[count][191:176]) +
+                   $signed(tmp[count][207:192]) * $signed(tmp[count][207:192]) +
+                   $signed(tmp[count][223:208]) * $signed(tmp[count][223:208]) +
+                   $signed(tmp[count][239:224]) * $signed(tmp[count][239:224]) +
+                   $signed(tmp[count][255:240]) * $signed(tmp[count][255:240]) +
+                   $signed(sum);
 end
 
 endmodule

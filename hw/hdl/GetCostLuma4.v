@@ -42,22 +42,22 @@ always @ (posedge clk or negedge rst_n)begin
         sum <= 'b0;
     else
         if(start)
-            sum <= levels[ 15:  0] * levels[ 15:  0] +
-                   levels[ 31: 16] * levels[ 31: 16] +
-                   levels[ 47: 32] * levels[ 47: 32] +
-                   levels[ 63: 48] * levels[ 63: 48] +
-                   levels[ 79: 64] * levels[ 79: 64] +
-                   levels[ 95: 80] * levels[ 95: 80] +
-                   levels[111: 96] * levels[111: 96] +
-                   levels[127:112] * levels[127:112] +
-                   levels[143:128] * levels[143:128] +
-                   levels[159:144] * levels[159:144] +
-                   levels[175:160] * levels[175:160] +
-                   levels[191:176] * levels[191:176] +
-                   levels[207:192] * levels[207:192] +
-                   levels[223:208] * levels[223:208] +
-                   levels[239:224] * levels[239:224] +
-                   levels[255:240] * levels[255:240];
+            sum <= $signed(levels[ 15:  0]) * $signed(levels[ 15:  0]) +
+                   $signed(levels[ 31: 16]) * $signed(levels[ 31: 16]) +
+                   $signed(levels[ 47: 32]) * $signed(levels[ 47: 32]) +
+                   $signed(levels[ 63: 48]) * $signed(levels[ 63: 48]) +
+                   $signed(levels[ 79: 64]) * $signed(levels[ 79: 64]) +
+                   $signed(levels[ 95: 80]) * $signed(levels[ 95: 80]) +
+                   $signed(levels[111: 96]) * $signed(levels[111: 96]) +
+                   $signed(levels[127:112]) * $signed(levels[127:112]) +
+                   $signed(levels[143:128]) * $signed(levels[143:128]) +
+                   $signed(levels[159:144]) * $signed(levels[159:144]) +
+                   $signed(levels[175:160]) * $signed(levels[175:160]) +
+                   $signed(levels[191:176]) * $signed(levels[191:176]) +
+                   $signed(levels[207:192]) * $signed(levels[207:192]) +
+                   $signed(levels[223:208]) * $signed(levels[223:208]) +
+                   $signed(levels[239:224]) * $signed(levels[239:224]) +
+                   $signed(levels[255:240]) * $signed(levels[255:240]);
 end
 
 endmodule
