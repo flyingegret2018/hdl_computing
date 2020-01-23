@@ -245,17 +245,17 @@ end
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)begin
+        uv         <= 'b0;
         rec_start  <= 'b0;
-        UVPred     <= 'b0;
         SDE_start  <= 'b0;
-        levels_tmp <= 'b0;
-        nz_tmp     <= 'b0;
+        UVPred     <= 'b0;
         Score      <= 'b0;
         score_tmp  <= 'b0;
-        UVout_tmp  <= 'b0;
         mode       <= 'b0;
         mode_tmp   <= 'b0;
-        uv         <= 'b0;
+        UVout_tmp  <= 'b0;
+        levels_tmp <= 'b0;
+        nz_tmp     <= 'b0;
         done       <= 'b0;
     end
     else begin
@@ -266,10 +266,10 @@ always @ (posedge clk or negedge rst_n)begin
                 done       <= 1'b0;
             end
             PRED:begin
+                uv         <= uv - 1'b1;
                 rec_start  <= 1'b1;
                 UVPred     <= pred[uv];
                 mode_tmp   <= uv;
-                uv         <= uv - 1'b1;
             end
             WAIT:begin
                 rec_start  <= 1'b0;
@@ -281,15 +281,15 @@ always @ (posedge clk or negedge rst_n)begin
                 ;
             end
             STORE:begin
-                mode       <= mode_tmp;
-                levels_tmp <= UVlevels;
-                UVout_tmp  <= UVout;
-                nz_tmp     <= nz_i;
                 Score      <= score_tmp;
+                mode       <= mode_tmp;
+                UVout_tmp  <= UVout;
+                levels_tmp <= UVlevels;
+                nz_tmp     <= nz_i;
             end
             DONE:begin
-                done       <= 1'b1;
                 SDE_start  <= 1'b1;
+                done       <= 1'b1;
             end
         endcase
     end

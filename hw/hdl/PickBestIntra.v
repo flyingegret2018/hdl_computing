@@ -249,17 +249,17 @@ end
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)begin
-        rec_start <= 'b0;
         i16       <= 'b0;
+        rec_start <= 'b0;
         YPred     <= 'b0;
         Score     <= 'b0;
+        score_tmp <= 'b0;
         mode      <= 'b0;
+        mode_tmp  <= 'b0;
+        Yout_tmp  <= 'b0;
         dc_tmp    <= 'b0;
         ac_tmp    <= 'b0;
         nz_tmp    <= 'b0;
-        score_tmp <= 'b0;
-        Yout_tmp  <= 'b0;
-        mode_tmp  <= 'b0;
         D_tmp     <= 'b0;
         SD_tmp    <= 'b0;
         H_tmp     <= 'b0;
@@ -289,12 +289,12 @@ always @ (posedge clk or negedge rst_n)begin
                 ;
             end
             STORE:begin
+                Score     <= score_tmp;
                 mode      <= mode_tmp;
+                Yout_tmp  <= Yout;
                 dc_tmp    <= Y_dc_levels;
                 ac_tmp    <= Y_ac_levels;
-                Yout_tmp  <= Yout;
                 nz_tmp    <= nz_i;
-                Score     <= score_tmp;
                 D_tmp     <= sse;
                 SD_tmp    <= disto;
                 H_tmp     <= FixedCost[mode_tmp];

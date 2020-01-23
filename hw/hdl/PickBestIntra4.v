@@ -356,23 +356,23 @@ end
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)begin
-        src          <= 'b0;
+        i4           <= 'b0;
+        rec_start    <= 'b0;
         left_i       <= 'b0;
         top_left_i   <= 'b0;
         top_i        <= 'b0;
         top_right_i  <= 'b0;
-        rec_start    <= 'b0;
+        src          <= 'b0;
         Score        <= 'b0;
-        i4           <= 'b0;
+        score_tmp    <= 'b0;
+        mode         <= 'b0;
+        o_tmp        <= 'b0;
+        nz           <= 'b0;
         D_tmp        <= 'b0;
         SD_tmp       <= 'b0;
         H_tmp        <= 'b0;
         R_tmp        <= 'b0;
-        score_tmp    <= 'b0;
-        mode         <= 'b0;
-        o_tmp        <= 'b0;
         load         <= 'b0;
-        nz           <= 'b0;
         pred_r[0]    <= 'b0;
         pred_r[1]    <= 'b0;
         pred_r[2]    <= 'b0;
@@ -439,13 +439,13 @@ always @ (posedge clk or negedge rst_n)begin
                 done         <= 1'b0;
             end
             INIT:begin
-                src          <= Ysrc_i[0];
+                i4           <= 'b0;
                 left_i       <= left;
                 top_left_i   <= top_left;
                 top_i        <= top[31:0];
                 top_right_i  <= top[63:0];
+                src          <= Ysrc_i[0];
                 Score        <= 'd211 * lambda_mode;
-                i4           <= 'b0;
             end
             PRED:begin
                 ;
@@ -475,28 +475,28 @@ always @ (posedge clk or negedge rst_n)begin
             STORE:begin
                 mode_i[i4]   <= {4'b0,mode};
                 Yout_i[i4]   <= dst[mode];
+                o_tmp        <= dst[mode];
                 levels_i[i4] <= YLevels[mode];
                 nz[i4]       <= nz_i[mode];
-                o_tmp        <= dst[mode];
                 D_tmp        <= sse[mode];
                 SD_tmp       <= disto[mode];
                 H_tmp        <= FixedCost[mode];
                 R_tmp        <= sum[mode];
             end
             ROTATE:begin
-                load         <= 1'b1;
+                i4           <= i4 + 1'b1;
                 score_tmp    <= ((R_tmp << 10) + H_tmp) * lambda_mode +
                              'd256 * (D_tmp + ((SD_tmp * tlambda + 'd128) >> 8));
-                i4           <= i4 + 1'b1;
+                load         <= 1'b1;
             end
             REINIT:begin
-                load         <= 1'b0;
-                Score        <= Score + score_tmp;
-                src          <= Ysrc_i[i4[3:0]];
                 left_i       <= left_w;
                 top_left_i   <= top_left_w;
                 top_i        <= top_w;
                 top_right_i  <= top_right_w;
+                Score        <= Score + score_tmp;
+                src          <= Ysrc_i[i4[3:0]];
+                load         <= 1'b0;
             end
             DONE:begin
                 done         <= 1'b1;
