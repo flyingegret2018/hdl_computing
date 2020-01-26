@@ -156,7 +156,7 @@ wire[  31:0]sum[9:0];
 wire[   9:0]cost_done;
 wire[  15:0]FixedCost[9:0];
 wire[  63:0]score[9:0];
-reg [   4:0]i4;
+reg [   3:0]i4;
 reg [   1:0]count;
 reg [  31:0]D_tmp;
 reg [  31:0]SD_tmp;
@@ -294,19 +294,17 @@ RotateI4 U_ROTATEI4(
     .top_right_i                    ( top_right_w                   )
 );
 
-reg [9:0] cstate;
-reg [9:0] nstate;
+reg [7:0] cstate;
+reg [7:0] nstate;
 
 parameter IDLE        = 'h1;
 parameter PRED        = 'h2;
-parameter RECO        = 'h4;
-parameter CALC        = 'h8;
-parameter SCORE       = 'h10;
-parameter BEST        = 'h20;
-parameter STORE       = 'h40;
-parameter ROTATE      = 'h80;
-parameter REINIT      = 'h100;
-parameter DONE        = 'h200;
+parameter WAIT        = 'h4;
+parameter SCORE       = 'h8;
+parameter BEST        = 'h10;
+parameter STORE       = 'h20;
+parameter ROTATE      = 'h40;
+parameter DONE        = 'h80;
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
@@ -323,14 +321,12 @@ always @ * begin
             else
                 nstate = IDLE;
         PRED:
-            nstate = RECO;
-        RECO:
-            nstate = CALC;
-        CALC:
+            nstate = WAIT;
+        WAIT:
             if(count == 2'b11)
                 nstate = SCORE;
             else
-                nstate = CALC;
+                nstate = WAIT;
         SCORE:
             nstate = BEST;
         BEST:
@@ -338,8 +334,6 @@ always @ * begin
         STORE:
             nstate = ROTATE;
         ROTATE:
-            nstate = REINIT;
-        REINIT:
             if(i4 >= 'd15)
                 nstate = DONE;
             else
@@ -365,10 +359,6 @@ always @ (posedge clk or negedge rst_n)begin
         mode         <= 'b0;
         o_tmp        <= 'b0;
         nz           <= 'b0;
-        D_tmp        <= 'b0;
-        SD_tmp       <= 'b0;
-        H_tmp        <= 'b0;
-        R_tmp        <= 'b0;
         load         <= 'b0;
         pred_r[0]    <= 'b0;
         pred_r[1]    <= 'b0;
@@ -443,9 +433,6 @@ always @ (posedge clk or negedge rst_n)begin
                 done         <= 1'b0;
             end
             PRED:begin
-                ;
-            end
-            RECO:begin
                 pred_r[0]    <= pred[0];
                 pred_r[1]    <= pred[1];
                 pred_r[2]    <= pred[2];
@@ -458,7 +445,7 @@ always @ (posedge clk or negedge rst_n)begin
                 pred_r[9]    <= pred[9];
                 rec_start    <= 1'b1;
             end
-            CALC:begin
+            WAIT:begin
                 rec_start    <= 1'b0;
             end
             SCORE:begin
@@ -473,24 +460,18 @@ always @ (posedge clk or negedge rst_n)begin
                 o_tmp        <= dst[mode];
                 levels_i[i4] <= YLevels[mode];
                 nz[i4]       <= nz_i[mode];
-                D_tmp        <= sse[mode];
-                SD_tmp       <= disto[mode];
-                H_tmp        <= FixedCost[mode];
-                R_tmp        <= sum[mode];
-            end
-            ROTATE:begin
-                score_tmp    <= ((R_tmp << 10) + H_tmp) * lambda_mode +
-                             'd256 * (D_tmp + ((SD_tmp * tlambda + 'd128) >> 8));
+                score_tmp    <= ((sum[mode] << 10) + FixedCost[mode]) * lambda_mode +
+                             'd256 * (sse[mode] + ((disto[mode] * tlambda + 'd128) >> 8));
                 load         <= 1'b1;
             end
-            REINIT:begin
+            ROTATE:begin
                 i4           <= i4 + 1'b1;
                 left_i       <= left_w;
                 top_left_i   <= top_left_w;
                 top_i        <= top_w;
                 top_right_i  <= top_right_w;
+                src          <= Ysrc_i[i4 + 1'b1];
                 Score        <= Score + score_tmp;
-                src          <= Ysrc_i[i4[3:0]];
                 load         <= 1'b0;
             end
             DONE:begin
