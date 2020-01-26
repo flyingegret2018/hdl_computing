@@ -294,20 +294,19 @@ RotateI4 U_ROTATEI4(
     .top_right_i                    ( top_right_w                   )
 );
 
-reg [10:0] cstate;
-reg [10:0] nstate;
+reg [9:0] cstate;
+reg [9:0] nstate;
 
 parameter IDLE        = 'h1;
-parameter INIT        = 'h2;
-parameter PRED        = 'h4;
-parameter RECO        = 'h8;
-parameter CALC        = 'h10;
-parameter SCORE       = 'h20;
-parameter BEST        = 'h40;
-parameter STORE       = 'h80;
-parameter ROTATE      = 'h100;
-parameter REINIT      = 'h200;
-parameter DONE        = 'h400;
+parameter PRED        = 'h2;
+parameter RECO        = 'h4;
+parameter CALC        = 'h8;
+parameter SCORE       = 'h10;
+parameter BEST        = 'h20;
+parameter STORE       = 'h40;
+parameter ROTATE      = 'h80;
+parameter REINIT      = 'h100;
+parameter DONE        = 'h200;
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
@@ -320,11 +319,9 @@ always @ * begin
     case(cstate)
         IDLE:
             if(start)
-                nstate = INIT;
+                nstate = PRED;
             else
                 nstate = IDLE;
-        INIT:
-            nstate = PRED;
         PRED:
             nstate = RECO;
         RECO:
@@ -343,7 +340,7 @@ always @ * begin
         ROTATE:
             nstate = REINIT;
         REINIT:
-            if(i4 >= 'd16)
+            if(i4 >= 'd15)
                 nstate = DONE;
             else
                 nstate = PRED;
@@ -436,9 +433,6 @@ always @ (posedge clk or negedge rst_n)begin
     else begin
         case(cstate)
             IDLE:begin
-                done         <= 1'b0;
-            end
-            INIT:begin
                 i4           <= 'b0;
                 left_i       <= left;
                 top_left_i   <= top_left;
@@ -446,6 +440,7 @@ always @ (posedge clk or negedge rst_n)begin
                 top_right_i  <= top[63:0];
                 src          <= Ysrc_i[0];
                 Score        <= 'd211 * lambda_mode;
+                done         <= 1'b0;
             end
             PRED:begin
                 ;
@@ -484,12 +479,12 @@ always @ (posedge clk or negedge rst_n)begin
                 R_tmp        <= sum[mode];
             end
             ROTATE:begin
-                i4           <= i4 + 1'b1;
                 score_tmp    <= ((R_tmp << 10) + H_tmp) * lambda_mode +
                              'd256 * (D_tmp + ((SD_tmp * tlambda + 'd128) >> 8));
                 load         <= 1'b1;
             end
             REINIT:begin
+                i4           <= i4 + 1'b1;
                 left_i       <= left_w;
                 top_left_i   <= top_left_w;
                 top_i        <= top_w;
