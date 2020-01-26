@@ -21,6 +21,7 @@ module PickBestIntra#(
  input                                                    clk
 ,input                                                    rst_n
 ,input                                                    start
+,input                                                    clear
 ,input             [10                           - 1 : 0] x
 ,input             [10                           - 1 : 0] y
 ,input      signed [32                           - 1 : 0] lambda_i16
@@ -343,10 +344,10 @@ always @ (posedge clk or negedge rst_n)begin
         max_edge <= 'b0;
     end
     else begin
-        if(start)
+        if(clear)
             max_edge <= 'b0;
         else if(done) 
-            if(((nz_tmp & 'h100ffff) == 'h1000000) && (D_tmp > min_disto))
+            if((nz_tmp == 'h1000000) && (D_tmp > min_disto))
                 max_edge <= (max0 > max1) ? max0 : max1;
     end
 end

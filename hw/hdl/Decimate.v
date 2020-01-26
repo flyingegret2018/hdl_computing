@@ -21,6 +21,7 @@ module Decimate#(
  input                                            clk
 ,input                                            rst_n
 ,input                                            start
+,input                                            clear
 ,input             [10                   - 1 : 0] x
 ,input             [10                   - 1 : 0] y
 ,input             [ 8 * 16 * BLOCK_SIZE - 1 : 0] Yin
@@ -81,6 +82,7 @@ PickBestIntra U_PICKBESTINTRA(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
     .start                          ( start                         ),
+    .clear                          ( clear                         ),
     .x                              ( x                             ),
     .y                              ( y                             ),
     .lambda_i16                     ( lambda_i16                    ),

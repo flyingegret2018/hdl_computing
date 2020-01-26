@@ -116,6 +116,7 @@ Decimate U_DECIMATE(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
     .start                          ( D_start                       ),
+    .clear                          ( start                         ),
     .x                              ( x                             ),
     .y                              ( y                             ),
     .Yin                            ( Yin                           ),
