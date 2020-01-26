@@ -19,7 +19,7 @@ module RotateI4(
  input                           clk
 ,input                           rst_n
 ,input                           load
-,input         [ 5      - 1 : 0] i4
+,input         [ 4      - 1 : 0] i4
 ,input         [ 8 * 16 - 1 : 0] Yin
 ,input         [ 8      - 1 : 0] top_left
 ,input         [ 8 * 20 - 1 : 0] top

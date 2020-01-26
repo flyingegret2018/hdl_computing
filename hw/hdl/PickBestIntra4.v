@@ -141,11 +141,12 @@ HU4 U_HU4(
     .dst                            ( pred[9]                       )
 );
 
-reg rec_start;
+reg [   3:0]i4;
 reg [ 127:0]src;
 wire[ 127:0]dst[9:0];
 wire[ 255:0]YLevels[9:0];
 wire[   9:0]nz_i;
+reg         rec_start;
 wire[   9:0]rec_done;
 wire[ 255:0]kWeightY;
 wire[  31:0]sse[9:0];
@@ -156,13 +157,8 @@ wire[  31:0]sum[9:0];
 wire[   9:0]cost_done;
 wire[  15:0]FixedCost[9:0];
 wire[  63:0]score[9:0];
-reg [   3:0]i4;
-reg [   1:0]count;
-reg [  31:0]D_tmp;
-reg [  31:0]SD_tmp;
-reg [  31:0]H_tmp;
-reg [  31:0]R_tmp;
 reg [  63:0]score_tmp;
+reg [   1:0]count;
 reg [   3:0]mode;
 reg [ 127:0]o_tmp;
 reg [ 127:0]pred_r[9:0];
