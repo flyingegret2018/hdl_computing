@@ -157,7 +157,7 @@ wire[   9:0]cost_done;
 wire[  15:0]FixedCost[9:0];
 wire[  63:0]score[9:0];
 reg [   4:0]i4;
-reg [   1:0]flag;
+reg [   1:0]count;
 reg [  31:0]D_tmp;
 reg [  31:0]SD_tmp;
 reg [  31:0]H_tmp;
@@ -330,7 +330,7 @@ always @ * begin
         RECO:
             nstate = CALC;
         CALC:
-            if(flag == 2'b11)
+            if(count == 2'b11)
                 nstate = SCORE;
             else
                 nstate = CALC;
@@ -432,7 +432,7 @@ always @ (posedge clk or negedge rst_n)begin
         levels_i[14] <= 'b0;
         levels_i[15] <= 'b0;
         done         <= 'b0;
-     end
+    end
     else begin
         case(cstate)
             IDLE:begin
@@ -507,21 +507,21 @@ end
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)begin
-        flag <= 'b0;
+        count <= 'b0;
     end
     else begin
-        if(rec_done)
-            flag <= 'b0;
+        if(cstate == SCORE)
+            count <= 'b0;
         else
             case({sse_done[0],disto_done[0],cost_done[0]})
-                3'b111:flag <= flag + 2'b11;
-                3'b110:flag <= flag + 2'b10;
-                3'b101:flag <= flag + 2'b10;
-                3'b011:flag <= flag + 2'b10;
-                3'b001:flag <= flag + 2'b01;
-                3'b010:flag <= flag + 2'b01;
-                3'b100:flag <= flag + 2'b01;
-                3'b000:flag <= flag + 2'b00;
+                3'b111:count <= count + 2'b11;
+                3'b110:count <= count + 2'b10;
+                3'b101:count <= count + 2'b10;
+                3'b011:count <= count + 2'b10;
+                3'b001:count <= count + 2'b01;
+                3'b010:count <= count + 2'b01;
+                3'b100:count <= count + 2'b01;
+                3'b000:count <= count + 2'b00;
             endcase
     end
 end
