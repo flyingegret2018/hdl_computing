@@ -37,14 +37,14 @@ module StoreDiffusionErrors(
     assign derr_i[5] = derr[47:40];
 
     wire signed[9:0]mul_tmp[1:0];
-    assign mul_tmp[0] = derr_i[2] * 'd3;
-    assign mul_tmp[1] = derr_i[5] * 'd3;
+    assign mul_tmp[0] = derr_i[2] * $signed('d3);
+    assign mul_tmp[1] = derr_i[5] * $signed('d3);
 
     wire signed[7:0]left[3:0];
     assign left[0] = derr_i[0];
-    assign left[1] = mul_tmp[0] >> 2;
+    assign left[1] = mul_tmp[0] >>> 2;
     assign left[2] = derr_i[3];
-    assign left[3] = mul_tmp[1] >> 2;
+    assign left[3] = mul_tmp[1] >>> 2;
 
     wire signed[7:0]top[3:0];
     assign top[0] = derr_i[1];
