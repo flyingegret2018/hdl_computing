@@ -137,7 +137,7 @@ StoreDiffusionErrors U_STOREDIFFUSIONERRORS(
     .rst_n                          ( rst_n                         ),
     .start                          ( SDE_start                     ),
     .x                              ( x                             ),
-    .derr                           ( derr                          ),
+    .derr                           ( derr_tmp                      ),
     .left_derr                      ( left_derr                     ),
     .top_derr                       ( top_derr_w                    ),
     .top_derr_en                    ( top_derr_wen                  ),
@@ -175,19 +175,20 @@ assign FixedCost[2] = 'd439;
 assign FixedCost[3] = 'd642;
 
 reg [   1:0]count;
-reg [2047:0]levels_tmp;
-reg [  31:0]nz_tmp;
+reg [   2:0]uv;
 reg [1023:0]UVout_tmp;
+reg [2047:0]levels_tmp;
 reg [  63:0]Score;
 reg [  63:0]score_tmp;
-reg [   2:0]uv;
 reg [   1:0]mode;
 reg [   1:0]mode_tmp;
+reg [  31:0]nz_tmp;
+reg [  47:0]derr_tmp;
 
-assign levels = levels_tmp;
-assign nz = nz_tmp;
 assign out = UVout_tmp;
+assign levels = levels_tmp;
 assign mode_uv = {30'b0,mode};
+assign nz = nz_tmp;
 
 reg [6:0] cstate;
 reg [6:0] nstate;
@@ -249,13 +250,14 @@ always @ (posedge clk or negedge rst_n)begin
         rec_start  <= 'b0;
         SDE_start  <= 'b0;
         UVPred     <= 'b0;
+        UVout_tmp  <= 'b0;
+        levels_tmp <= 'b0;
         Score      <= 'b0;
         score_tmp  <= 'b0;
         mode       <= 'b0;
         mode_tmp   <= 'b0;
-        UVout_tmp  <= 'b0;
-        levels_tmp <= 'b0;
         nz_tmp     <= 'b0;
+        derr_tmp   <= 'b0;
         done       <= 'b0;
     end
     else begin
@@ -281,11 +283,12 @@ always @ (posedge clk or negedge rst_n)begin
                 ;
             end
             STORE:begin
-                Score      <= score_tmp;
-                mode       <= mode_tmp;
                 UVout_tmp  <= UVout;
                 levels_tmp <= UVlevels;
+                Score      <= score_tmp;
+                mode       <= mode_tmp;
                 nz_tmp     <= nz_i;
+                derr_tmp   <= derr;
             end
             DONE:begin
                 SDE_start  <= 1'b1;

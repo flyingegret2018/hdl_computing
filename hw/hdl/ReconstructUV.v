@@ -107,7 +107,7 @@ assign CDCV_i = {FDCT_o[7][11:0],FDCT_o[6][11:0],
                  FDCT_o[1][11:0],FDCT_o[0][11:0]};
 
 wire CDCV_done;
-wire [127:0]CDCV_o;
+wire [95:0]CDCV_o;
 CorrectDCValues U_CDCV(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
