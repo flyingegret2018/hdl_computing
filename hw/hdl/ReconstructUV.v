@@ -130,7 +130,7 @@ CorrectDCValues U_CDCV(
 
 wire [255:0]QB_i[BLOCK_SIZE - 1 : 0];
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
-    assign QB_i[i] = {FDCT_o[i][191: 12]},CDCV_o[12 * (i + 1) - 1: 12 * i]};
+    assign QB_i[i] = {FDCT_o[i][191: 12],CDCV_o[12 * (i + 1) - 1: 12 * i]};
 end
 
 wire [7:0]QB_nz;
