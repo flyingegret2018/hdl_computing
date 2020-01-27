@@ -95,17 +95,16 @@ wire[  63:0]top_v_w;
 wire[ 127:0]left_y_w;
 wire[  63:0]left_u_w;
 wire[  63:0]left_v_w;
-reg [   7:0]cstate;
-reg [   7:0]nstate;
+reg [   6:0]cstate;
+reg [   6:0]nstate;
 
 parameter IDLE   = 'h1;
-parameter INIT   = 'h2;
-parameter RDEN   = 'h4; 
-parameter DSTART = 'h8;
-parameter WAIT   = 'h10;
-parameter FULL   = 'h20;
-parameter REINIT = 'h40;
-parameter DONE   = 'h80;
+parameter RDEN   = 'h2; 
+parameter DSTART = 'h4;
+parameter WAIT   = 'h8;
+parameter FULL   = 'h10;
+parameter REINIT = 'h20;
+parameter DONE   = 'h40;
 
 assign fifo_rd_y0 = fifo_rd;
 assign fifo_rd_y1 = fifo_rd;
@@ -202,11 +201,9 @@ always @ * begin
     case(cstate)
         IDLE:
             if(start)
-                nstate = INIT;
+                nstate = RDEN;
             else
                 nstate = IDLE;
-        INIT:
-            nstate = RDEN;
         RDEN:
             if(Y0_fifo_empty)
                 nstate = RDEN;
@@ -264,9 +261,6 @@ always @ (posedge clk or negedge rst_n)begin
     else begin
         case(cstate)
             IDLE:begin
-                done       <= 1'b0;
-            end
-            INIT:begin
                 x          <= 'b0;
                 y          <= 'b0;
                 top_left_y <= 8'd127;
@@ -278,6 +272,7 @@ always @ (posedge clk or negedge rst_n)begin
                 left_y     <= {16{8'd129}};
                 left_u     <= { 8{8'd129}};
                 left_v     <= { 8{8'd129}};
+                done       <= 1'b0;
             end
             RDEN:begin
                 ;
