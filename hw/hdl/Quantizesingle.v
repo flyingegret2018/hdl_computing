@@ -60,8 +60,8 @@ always @ (posedge clk or negedge rst_n)begin
     end
     else begin
         if(V > zthresh)begin
-            out <= (sign ? (~ qV + 1'b1) :  qV);
-            err <= (sign ? (~err + 1'b1) : err) >>> 1;
+            out <= (sign ? (~qV + 1'b1) : qV);
+            err <= (sign ? (~err_tmp + 1'b1) : err_tmp) >>> 1;
         end
         else begin
             out <= 'b0;
