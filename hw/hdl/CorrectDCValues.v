@@ -17,7 +17,7 @@
 
 module CorrectDCValues#(
  parameter I_WIDTH = 12,
- parameter O_WIDTH = 16
+ parameter O_WIDTH = 12
 )(
  input                                     clk
 ,input                                     rst_n
@@ -38,19 +38,17 @@ module CorrectDCValues#(
 ,output reg                                done
 );
 
-wire [I_WIDTH - 1:0]in_i [ 7:0];
-wire [O_WIDTH - 1:0]out_i[15:0];
-
 reg  [12:0] cstate;
 reg  [12:0] nstate;
 
-reg  signed[31:0]tmp [5:0];
+wire signed[I_WIDTH - 1:0]in_i [7:0];
+wire signed[O_WIDTH - 1:0]out_i[7:0];
+reg  signed[15:0]tmp [5:0];
 reg  signed[ 7:0]top_tmp [1:0];
 reg  signed[ 7:0]left_tmp[1:0];
 reg  signed[15:0]utmp;
 reg  signed[15:0]vtmp;
 reg  signed[ 7:0]err [5:0];
-
 wire signed[ 7:0]uerr;
 wire signed[ 7:0]verr;
 wire signed[15:0]uout;
