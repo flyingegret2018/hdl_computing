@@ -49,7 +49,7 @@ module StoreDiffusionErrors(
     wire signed[7:0]top[3:0];
     assign top[0] = derr_i[1];
     assign top[1] = derr_i[2] - left[1];
-    assign top[2] = derr_i[1];
+    assign top[2] = derr_i[4];
     assign top[3] = derr_i[5] - left[3];
 
     assign top_derr_addr = x;
