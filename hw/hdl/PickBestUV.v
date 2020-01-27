@@ -80,8 +80,8 @@ Horizontal_Pred_UV U_HORIZONTAL_PRED_UV(
     .dst                            ( pred[3]                       )
 );
 
-wire        rec_done;
 reg         rec_start;
+wire        rec_done;
 reg [1023:0]UVPred;
 wire[1023:0]UVout;
 wire[2047:0]UVlevels;

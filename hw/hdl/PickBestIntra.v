@@ -82,8 +82,8 @@ Horizontal_Pred U_HORIZONTAL_PRED(
     .dst                            ( pred[3]                       )
 );
 
-wire        rec_done;
 reg         rec_start;
+wire        rec_done;
 reg [2047:0]YPred;
 wire[2047:0]Yout;
 wire[ 255:0]Y_dc_levels;
