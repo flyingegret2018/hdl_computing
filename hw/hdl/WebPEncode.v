@@ -219,10 +219,7 @@ always @ * begin
                     if(x >= w1 && y >= h1)
                         nstate = DONE;
                     else
-                        if(Y0_fifo_empty)
-                            nstate = RDEN;
-                        else
-                            nstate = DSTART;
+                        nstate = RDEN;
             else
                 nstate = WAIT;
         FULL:
@@ -232,10 +229,7 @@ always @ * begin
                 if(x >= w1 && y >= h1)
                     nstate = DONE;
                 else
-                    if(Y0_fifo_empty)
-                        nstate = RDEN;
-                    else
-                        nstate = DSTART;
+                    nstate = RDEN;
         DONE:
             nstate = IDLE;
         default:
