@@ -29,9 +29,9 @@ module TTransform#(
 );
 
 wire        [ 7 : 0]in_i [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-wire signed [ 9 : 0]tmp  [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-wire signed [11 : 0]tmp1 [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-reg  signed [11 : 0]tmp2 [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+wire signed [10 : 0]tmp  [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+wire signed [12 : 0]tmp1 [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+reg  signed [12 : 0]tmp2 [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 wire signed [15 : 0]w_i  [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 
 reg shift;
@@ -63,7 +63,7 @@ for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
 end
 
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
-    wire signed [8 : 0] a0,a1,a2,a3;
+    wire signed [9 : 0] a0,a1,a2,a3;
     assign a0 = in_i[BLOCK_SIZE * i + 0] + in_i[BLOCK_SIZE * i + 2];
     assign a1 = in_i[BLOCK_SIZE * i + 1] + in_i[BLOCK_SIZE * i + 3];
     assign a2 = in_i[BLOCK_SIZE * i + 1] - in_i[BLOCK_SIZE * i + 3];
@@ -74,7 +74,7 @@ for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
     assign tmp[BLOCK_SIZE * i + 2] = a3 - a2;
     assign tmp[BLOCK_SIZE * i + 3] = a0 - a1;
     
-    wire signed [10 : 0] b0,b1,b2,b3;
+    wire signed [11 : 0] b0,b1,b2,b3;
     assign b0 = tmp[0 + i] + tmp[ 8 + i];
     assign b1 = tmp[4 + i] + tmp[12 + i];
     assign b2 = tmp[4 + i] - tmp[12 + i];
