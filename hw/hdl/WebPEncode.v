@@ -108,7 +108,7 @@ parameter DONE   = 'h20;
 assign fifo_rd_y0 = fifo_rd;
 assign fifo_rd_y1 = fifo_rd;
 assign fifo_rd_uv = fifo_rd;
-assign fifo_rd = (cstate == RDEN) | (cstate == REINIT);
+assign fifo_rd = (cstate == RDEN);
 
 Decimate U_DECIMATE(
     .clk                            ( clk                           ),
@@ -219,7 +219,10 @@ always @ * begin
                     if(x >= w1 && y >= h1)
                         nstate = DONE;
                     else
-                        nstate = REINIT;
+                        if(Y0_fifo_empty)
+                            nstate = RDEN;
+                        else
+                            nstate = DSTART;
             else
                 nstate = WAIT;
         FULL:
