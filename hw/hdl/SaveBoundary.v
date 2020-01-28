@@ -28,9 +28,6 @@ module SaveBoundary#(
 ,input             [10                   - 1 : 0] h1
 ,input             [ 8 * 16 * BLOCK_SIZE - 1 : 0] Yin
 ,input             [ 8 *  8 * BLOCK_SIZE - 1 : 0] UVin
-,input             [ 8 * 20              - 1 : 0] top_y_i
-,input             [ 8 *  8              - 1 : 0] top_u_i
-,input             [ 8 *  8              - 1 : 0] top_v_i
 ,output reg        [ 8                   - 1 : 0] top_left_y
 ,output reg        [ 8                   - 1 : 0] top_left_u
 ,output reg        [ 8                   - 1 : 0] top_left_v
@@ -91,36 +88,6 @@ assign top_uv_wea   = load;
 assign top_uv_waddr = x;
 assign top_uv_w     = UVin[1023:896];
 
-reg [2:0] cstate;
-reg [2:0] nstate;
-
-parameter READ       = 'h1;
-parameter WAIT       = 'h2; 
-parameter STORE      = 'h4;
-
-always @ (posedge clk or negedge rst_n)begin
-    if(~rst_n)
-        cstate <= READ;
-    else
-        cstate <= nstate;
-end
-
-always @ * begin
-    case(cstate)
-        READ:
-            nstate = WAIT;
-        WAIT:
-            if(load)
-                nstate = STORE;
-            else
-                nstate = WAIT;
-        STORE:
-            nstate = READ;
-        default:
-            nstate = READ;
-    endcase
-end
-
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)begin
         top_y_ren    <= 'b0;
@@ -130,21 +97,17 @@ always @ (posedge clk or negedge rst_n)begin
         top_y_tmp    <= 'b0;
     end
     else begin
-        case(cstate)
-            READ:begin
-                top_y_ren    <= 1'b1;
-                top_uv_ren   <= 1'b1;
-                top_y_raddr  <= (x < w2) ? (x + 2'd2) : (x < w1) ? 'b0 : 'b1;
-                top_uv_raddr <= (x < w1) ? (x + 1'b1) : 'b0;
-            end
-            WAIT:begin
-                top_y_ren    <= 1'b0;
-                top_uv_ren   <= 1'b0;
-            end
-            STORE:begin
-                top_y_tmp    <= top_y_r;
-            end
-        endcase
+        if(load)begin
+            top_y_tmp    <= top_y_r;
+            top_y_ren    <= 1'b1;
+            top_uv_ren   <= 1'b1;
+            top_y_raddr  <= (x < w2) ? (x + 2'd2) : (x < w1) ? 'b0 : 'b1;
+            top_uv_raddr <= (x < w1) ? (x + 1'b1) : 'b0;
+        end
+        else begin
+            top_y_ren    <= 1'b0;
+            top_uv_ren   <= 1'b0;
+        end
     end
 end
 
@@ -183,7 +146,7 @@ always @ * begin
         top_u = top_uv_r[ 63: 0];
         top_v = top_uv_r[127:64];
         if(x == w2)begin
-            top_y[159:128] = {4{top_y_i[127:120]}};
+            top_y[159:128] = {4{top_y[127:120]}};
         end
         else begin
             top_y[159:128] = top_y_r[31:0];
