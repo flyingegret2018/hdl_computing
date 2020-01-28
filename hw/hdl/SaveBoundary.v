@@ -20,7 +20,8 @@ module SaveBoundary#(
 )(
  input                                            clk
 ,input                                            rst_n
-,input                                            load
+,input                                            write
+,input                                            read
 ,input             [10                   - 1 : 0] x
 ,input             [10                   - 1 : 0] y
 ,input             [10                   - 1 : 0] w1
@@ -82,12 +83,12 @@ top_ram U_TOP_UV_RAM (
     .doutb                          ( top_uv_r                      )
 );
 
-assign top_y_wen    = load;
-assign top_y_wea    = load;
+assign top_y_wen    = write;
+assign top_y_wea    = write;
 assign top_y_waddr  = x;
 assign top_y_w      = Yin[2047:1920];
-assign top_uv_wen   = load;
-assign top_uv_wea   = load;
+assign top_uv_wen   = write;
+assign top_uv_wea   = write;
 assign top_uv_waddr = x;
 assign top_uv_w     = UVin[1023:896];
 
@@ -100,7 +101,7 @@ always @ (posedge clk or negedge rst_n)begin
         top_y_tmp    <= 'b0;
     end
     else begin
-        if(load)begin
+        if(read)begin
             top_y_tmp    <= top_y_r;
             top_y_ren    <= 1'b1;
             top_uv_ren   <= 1'b1;

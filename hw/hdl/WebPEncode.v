@@ -95,16 +95,15 @@ wire[  63:0]top_v_w;
 wire[ 127:0]left_y_w;
 wire[  63:0]left_u_w;
 wire[  63:0]left_v_w;
-reg [   6:0]cstate;
-reg [   6:0]nstate;
+reg [   5:0]cstate;
+reg [   5:0]nstate;
 
 parameter IDLE   = 'h1;
 parameter RDEN   = 'h2; 
 parameter DSTART = 'h4;
 parameter WAIT   = 'h8;
 parameter FULL   = 'h10;
-parameter REINIT = 'h20;
-parameter DONE   = 'h40;
+parameter DONE   = 'h20;
 
 assign fifo_rd_y0 = fifo_rd;
 assign fifo_rd_y1 = fifo_rd;
@@ -168,7 +167,8 @@ Decimate U_DECIMATE(
 SaveBoundary U_SAVEBOUNDARY(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
-    .load                           ( D_done                        ),
+    .write                          ( D_done                        ),
+    .read                           ( D_start                       ),
     .x                              ( x                             ),
     .y                              ( y                             ),
     .w1                             ( w1                            ),
@@ -229,12 +229,10 @@ always @ * begin
                 if(x >= w1 && y >= h1)
                     nstate = DONE;
                 else
-                    nstate = REINIT;
-        REINIT:
-            if(Y0_fifo_empty)
-                nstate = RDEN;
-            else
-                nstate = DSTART;
+                    if(Y0_fifo_empty)
+                        nstate = RDEN;
+                    else
+                        nstate = DSTART;
         DONE:
             nstate = IDLE;
         default:
@@ -244,34 +242,12 @@ end
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)begin
-        done       <= 'b0;
-        x          <= 'b0;
-        y          <= 'b0;
-        top_left_y <= 'b0;
-        top_left_u <= 'b0;
-        top_left_v <= 'b0;
-        top_y      <= 'b0;
-        top_u      <= 'b0;
-        top_v      <= 'b0;
-        left_y     <= 'b0;
-        left_u     <= 'b0;
-        left_v     <= 'b0;
         D_start    <= 'b0;
+        done       <= 'b0;
     end
     else begin
         case(cstate)
             IDLE:begin
-                x          <= 'b0;
-                y          <= 'b0;
-                top_left_y <= 8'd127;
-                top_left_u <= 8'd127;
-                top_left_v <= 8'd127;
-                top_y      <= {20{8'd127}};
-                top_u      <= { 8{8'd127}};
-                top_v      <= { 8{8'd127}};
-                left_y     <= {16{8'd129}};
-                left_u     <= { 8{8'd129}};
-                left_v     <= { 8{8'd129}};
                 done       <= 1'b0;
             end
             RDEN:begin
@@ -286,23 +262,54 @@ always @ (posedge clk or negedge rst_n)begin
             FULL:begin
                 ;
             end
-            REINIT:begin
-                x          <= (x >= w1) ? 'b0 : (x + 1'b1);
-                y          <= (x >= w1) ? (y + 1'b1) : y;
-                top_left_y <= top_left_y_w;
-                top_left_u <= top_left_u_w;
-                top_left_v <= top_left_v_w;
-                top_y      <= top_y_w;
-                top_u      <= top_u_w;
-                top_v      <= top_v_w;
-                left_y     <= left_y_w;
-                left_u     <= left_u_w;
-                left_v     <= left_v_w;
-            end
             DONE:begin
                 done       <= 1'b1;
             end
         endcase
+    end
+end
+
+always @ (posedge clk or negedge rst_n)begin
+    if(~rst_n)begin
+        x          <= 'b0;
+        y          <= 'b0;
+        top_left_y <= 'b0;
+        top_left_u <= 'b0;
+        top_left_v <= 'b0;
+        top_y      <= 'b0;
+        top_u      <= 'b0;
+        top_v      <= 'b0;
+        left_y     <= 'b0;
+        left_u     <= 'b0;
+        left_v     <= 'b0;
+    end
+    else begin
+        if(cstate == IDLE)begin
+            x          <= 'b0;
+            y          <= 'b0;
+            top_left_y <= 8'd127;
+            top_left_u <= 8'd127;
+            top_left_v <= 8'd127;
+            top_y      <= {20{8'd127}};
+            top_u      <= { 8{8'd127}};
+            top_v      <= { 8{8'd127}};
+            left_y     <= {16{8'd129}};
+            left_u     <= { 8{8'd129}};
+            left_v     <= { 8{8'd129}};
+        end
+        else if(D_done)begin
+            x          <= (x >= w1) ? 'b0 : (x + 1'b1);
+            y          <= (x >= w1) ? (y + 1'b1) : y;
+            top_left_y <= top_left_y_w;
+            top_left_u <= top_left_u_w;
+            top_left_v <= top_left_v_w;
+            top_y      <= top_y_w;
+            top_u      <= top_u_w;
+            top_v      <= top_v_w;
+            left_y     <= left_y_w;
+            left_u     <= left_u_w;
+            left_v     <= left_v_w;
+        end
     end
 end
 
