@@ -56,9 +56,7 @@ wire[127:0] top_uv_w;
 reg         top_uv_ren;
 reg [  9:0] top_uv_raddr;
 wire[127:0] top_uv_r;
-reg [127:0] top_y_tmp0;
-reg [127:0] top_y_tmp1;
-reg [127:0] top_uv_tmp;
+reg [127:0] top_y_tmp;
 
 top_ram U_TOP_Y_RAM (
     .clka                           ( clk                           ),
@@ -132,9 +130,7 @@ always @ (posedge clk or negedge rst_n)begin
         top_y_raddr  <= 'b0;
         top_uv_ren   <= 'b0;
         top_uv_raddr <= 'b0;
-        top_y_tmp0   <= 'b0;
-        top_y_tmp1   <= 'b0;
-        top_uv_tmp   <= 'b0;
+        top_y_tmp    <= 'b0;
     end
     else begin
         case(cstate)
@@ -149,9 +145,7 @@ always @ (posedge clk or negedge rst_n)begin
                 top_uv_ren   <= 1'b0;
             end
             STORE:begin
-                top_y_tmp0   <= top_y_r;
-                top_y_tmp1   <= top_y_tmp0;
-                top_uv_tmp   <= top_uv_r;
+                top_y_tmp    <= top_y_r;
             end
             DONE:begin
                 ;
@@ -191,14 +185,14 @@ always @ * begin
         top_v = { 8{8'd127}};
     end
     else begin
-        top_y[127:0] = top_y_tmp1;
-        top_u = top_uv_tmp[ 63: 0];
-        top_v = top_uv_tmp[127:64];
+        top_y[127:0] = top_y_r;
+        top_u = top_uv_r[ 63: 0];
+        top_v = top_uv_r[127:64];
         if(x == w2)begin
             top_y[159:128] = {4{top_y_i[127:120]}};
         end
         else begin
-            top_y[159:128] = top_y_tmp0[31:0];
+            top_y[159:128] = top_y_tmp[31:0];
         end
     end
 end
