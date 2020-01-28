@@ -91,13 +91,12 @@ assign top_uv_wea   = load;
 assign top_uv_waddr = x;
 assign top_uv_w     = UVin[1023:896];
 
-reg [3:0] cstate;
-reg [3:0] nstate;
+reg [2:0] cstate;
+reg [2:0] nstate;
 
 parameter READ       = 'h1;
 parameter WAIT       = 'h2; 
 parameter STORE      = 'h4;
-parameter DONE       = 'h8;
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
@@ -111,14 +110,12 @@ always @ * begin
         READ:
             nstate = WAIT;
         WAIT:
-            nstate = STORE;
-        STORE:
-            nstate = DONE;
-        DONE:
             if(load)
-                nstate = READ;
+                nstate = STORE;
             else
-                nstate = DONE;
+                nstate = WAIT;
+        STORE:
+            nstate = READ;
         default:
             nstate = READ;
     endcase
@@ -146,9 +143,6 @@ always @ (posedge clk or negedge rst_n)begin
             end
             STORE:begin
                 top_y_tmp    <= top_y_r;
-            end
-            DONE:begin
-                ;
             end
         endcase
     end
@@ -185,14 +179,14 @@ always @ * begin
         top_v = { 8{8'd127}};
     end
     else begin
-        top_y[127:0] = top_y_r;
+        top_y[127:0] = top_y_tmp;
         top_u = top_uv_r[ 63: 0];
         top_v = top_uv_r[127:64];
         if(x == w2)begin
             top_y[159:128] = {4{top_y_i[127:120]}};
         end
         else begin
-            top_y[159:128] = top_y_tmp[31:0];
+            top_y[159:128] = top_y_r[31:0];
         end
     end
 end
