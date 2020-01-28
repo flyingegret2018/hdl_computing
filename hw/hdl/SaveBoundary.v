@@ -28,6 +28,9 @@ module SaveBoundary#(
 ,input             [10                   - 1 : 0] h1
 ,input             [ 8 * 16 * BLOCK_SIZE - 1 : 0] Yin
 ,input             [ 8 *  8 * BLOCK_SIZE - 1 : 0] UVin
+,input             [ 8 * 20              - 1 : 0] top_y_i
+,input             [ 8 *  8              - 1 : 0] top_u_i
+,input             [ 8 *  8              - 1 : 0] top_v_i
 ,output reg        [ 8                   - 1 : 0] top_left_y
 ,output reg        [ 8                   - 1 : 0] top_left_u
 ,output reg        [ 8                   - 1 : 0] top_left_v
@@ -146,7 +149,7 @@ always @ * begin
         top_u = top_uv_r[ 63: 0];
         top_v = top_uv_r[127:64];
         if(x == w2)begin
-            top_y[159:128] = {4{top_y[127:120]}};
+            top_y[159:128] = {4{top_y_tmp[127:120]}};
         end
         else begin
             top_y[159:128] = top_y_r[31:0];
