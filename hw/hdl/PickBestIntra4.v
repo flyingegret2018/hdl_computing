@@ -422,8 +422,8 @@ always @ (posedge clk or negedge rst_n)begin
                 i4           <= 'b0;
                 left_i       <= left;
                 top_left_i   <= top_left;
-                top_i        <= top[31:0];
-                top_right_i  <= top[63:0];
+                top_i        <= top[31: 0];
+                top_right_i  <= top[63:32];
                 src          <= Ysrc_i[0];
                 Score        <= 'd211 * lambda_mode;
                 done         <= 1'b0;
