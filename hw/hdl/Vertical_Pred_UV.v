@@ -34,7 +34,7 @@ for(j = 0; j < BLOCK_SIZE; j = j + 1)begin
         assign dst[(j * UV_SIZE + i) * BIT_WIDTH + 7 : (j * UV_SIZE + i) * BIT_WIDTH] = 
             top_u[i * BIT_WIDTH + 7 : i * BIT_WIDTH];
         assign dst[(j * UV_SIZE + i + 8) * BIT_WIDTH + 7 : (j * UV_SIZE + i + 8) * BIT_WIDTH] = 
-            top_u[i * BIT_WIDTH + 7 : i * BIT_WIDTH];
+            top_v[i * BIT_WIDTH + 7 : i * BIT_WIDTH];
     end
 end
 
