@@ -95,6 +95,23 @@ wire[   9:0]top_derr_waddr;
 wire        top_derr_wen;
 wire        top_derr_wea;
 wire[  47:0]derr;
+reg [   1:0]count;
+reg [   2:0]uv;
+reg [1023:0]UVout_tmp;
+reg [2047:0]levels_tmp;
+reg [  63:0]Score;
+reg [  63:0]score_tmp;
+reg [   1:0]mode;
+reg [   1:0]mode_tmp;
+reg [  31:0]nz_tmp;
+reg [  47:0]derr_tmp;
+
+assign out = UVout_tmp;
+assign levels = levels_tmp;
+assign mode_uv = {30'b0,mode};
+assign nz = nz_tmp;
+
+
 ReconstructUV U_RECONSTRUCTUV(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
@@ -173,22 +190,6 @@ assign FixedCost[0] = 'd302;
 assign FixedCost[1] = 'd984;
 assign FixedCost[2] = 'd439;
 assign FixedCost[3] = 'd642;
-
-reg [   1:0]count;
-reg [   2:0]uv;
-reg [1023:0]UVout_tmp;
-reg [2047:0]levels_tmp;
-reg [  63:0]Score;
-reg [  63:0]score_tmp;
-reg [   1:0]mode;
-reg [   1:0]mode_tmp;
-reg [  31:0]nz_tmp;
-reg [  47:0]derr_tmp;
-
-assign out = UVout_tmp;
-assign levels = levels_tmp;
-assign mode_uv = {30'b0,mode};
-assign nz = nz_tmp;
 
 reg [6:0] cstate;
 reg [6:0] nstate;

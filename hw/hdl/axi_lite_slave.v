@@ -240,6 +240,7 @@ module axi_lite_slave #(
          w1 <= regw_mb_width_height[15: 0] - 1'd1;
          w2 <= regw_mb_width_height[15: 0] - 2'd2;
          h1 <= regw_mb_width_height[31:16] - 1'd1;
+       end
        default :;
      endcase
 
