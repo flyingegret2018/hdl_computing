@@ -118,7 +118,6 @@ input      [31:0]                               i_action_version
 wire              start_pulse        ;
 wire  [  63:0]    source_address     ;
 wire  [  63:0]    target_address     ;
-wire  [  63:0]    dqm_address        ;
 wire              done_pulse         ;
 wire              rd_error           ;
 wire              wr_error           ;

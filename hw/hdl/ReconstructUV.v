@@ -74,18 +74,18 @@ assign {UVout[ 511:480],UVout[383:352],UVout[255:224],UVout[127: 96]} = UVout_i[
 assign {UVout[ 991:960],UVout[863:832],UVout[735:704],UVout[607:576]} = UVout_i[6];
 assign {UVout[1023:992],UVout[895:864],UVout[767:736],UVout[639:608]} = UVout_i[7];
 
+assign UVlevels[ 255:   0] = UVlevels_i[0];
+assign UVlevels[ 511: 256] = UVlevels_i[1];
+assign UVlevels[ 767: 512] = UVlevels_i[2];
+assign UVlevels[1023: 768] = UVlevels_i[3];
+assign UVlevels[1279:1024] = UVlevels_i[4];
+assign UVlevels[1535:1280] = UVlevels_i[5];
+assign UVlevels[1791:1536] = UVlevels_i[6];
+assign UVlevels[2047:1792] = UVlevels_i[7];
+
 genvar i;
 
 generate
-
-assign UVlevels[ 255:   0] = UVlevels_i[0];
-assign UVlevels[ 511: 256] = UVlevels_i[1];
-assign UVlevels[ 767: 512] = UVlevels_i[4];
-assign UVlevels[1023: 768] = UVlevels_i[5];
-assign UVlevels[1279:1024] = UVlevels_i[2];
-assign UVlevels[1535:1280] = UVlevels_i[3];
-assign UVlevels[1791:1536] = UVlevels_i[6];
-assign UVlevels[2047:1792] = UVlevels_i[7];
 
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin:FDCT
     wire FDCT_done;
