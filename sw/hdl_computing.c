@@ -15444,8 +15444,7 @@ static void *FPGAEncode(void *tid) {
 	action_write(card, REG_TARGET_ADDRESS_L, (uint32_t) (((uint64_t) mem_out) & 0xffffffff));
 	action_write(card, REG_TARGET_ADDRESS_H, (uint32_t) ((((uint64_t) mem_out) >> 32) & 0xffffffff));
 	  
-	action_write(card, REG_MB_W, mb_w_);
-	action_write(card, REG_MB_H, mb_h_);
+	action_write(card, REG_MB_WIDTH_HEIGHT, (mb_w_ | (mb_h_ << 16)));
 
 	action_write(card, REG_USER_CONTROL, 0x00000001);
 	  

@@ -78,8 +78,7 @@ module axi_lite_slave #(
  wire[31:0] regw_control;
  wire[63:0] regw_source_address;
  wire[63:0] regw_target_address;
- wire[31:0] regw_mb_w;
- wire[31:0] regw_mb_h;
+ wire[31:0] regw_mb_width_height;
  wire[31:0] regw_soft_reset;
 
  reg [31:0] write_address;
@@ -100,8 +99,7 @@ module axi_lite_slave #(
  /**/   reg [31:0] REG_user_control          ;  /**/
  /**/   reg [63:0] REG_source_address        ;  /**/
  /**/   reg [63:0] REG_target_address        ;  /**/
- /**/   reg [31:0] REG_mb_w                  ;  /**/
- /**/   reg [31:0] REG_mb_h                  ;  /**/
+ /**/   reg [31:0] REG_mb_width_height       ;  /**/
  /**/   reg [31:0] REG_soft_reset            ;  /**/
  //                                               //
  //-----------------------------------------------//
@@ -123,8 +121,7 @@ module axi_lite_slave #(
            ADDR_SOURCE_ADDRESS_H    = 32'h3C,
            ADDR_TARGET_ADDRESS_L    = 32'h40,
            ADDR_TARGET_ADDRESS_H    = 32'h44,
-           ADDR_MB_W                = 32'h48,
-           ADDR_MB_H                = 32'h4C,
+           ADDR_MB_WIDTH_HEIGHT     = 32'h48,
            ADDR_SOFT_RESET          = 32'h50;
 
  
@@ -132,8 +129,8 @@ module axi_lite_slave #(
 //---- local controlling signals assignments ----
  assign source_address = REG_source_address;
  assign target_address = REG_target_address;
- assign mb_w           = REG_mb_w;
- assign mb_h           = REG_mb_h;
+ assign mb_w           = {16'b0,REG_mb_width_height[15: 0]};
+ assign mb_h           = {16'b0,REG_mb_width_height[31:16]};
  assign o_snap_context = REG_snap_context;
  assign soft_reset     = REG_soft_reset[0];
 
@@ -175,8 +172,7 @@ module axi_lite_slave #(
  assign regw_control         = {(s_axi_wdata&wr_mask)|(~wr_mask&REG_user_control)};
  assign regw_source_address  = {(s_axi_wdata&wr_mask)|(~wr_mask&REG_source_address)};
  assign regw_target_address  = {(s_axi_wdata&wr_mask)|(~wr_mask&REG_target_address)};
- assign regw_mb_w            = {(s_axi_wdata&wr_mask)|(~wr_mask&REG_mb_w)};
- assign regw_mb_h            = {(s_axi_wdata&wr_mask)|(~wr_mask&REG_mb_h)};
+ assign regw_mb_width_height = {(s_axi_wdata&wr_mask)|(~wr_mask&REG_mb_width_height)};
  assign regw_soft_reset      = {(s_axi_wdata&wr_mask)|(~wr_mask&REG_soft_reset)};
 
 //---- write registers ----
@@ -189,8 +185,7 @@ module axi_lite_slave #(
        REG_user_control    <= 32'd0;
        REG_source_address  <= 64'd0;
        REG_target_address  <= 64'd0;
-       REG_mb_w            <= 32'd0;
-       REG_mb_h            <= 32'd0;
+       REG_mb_width_height <= 32'd0;
        REG_soft_reset      <= 32'd0;
      end
     else if(soft_reset)
@@ -201,8 +196,7 @@ module axi_lite_slave #(
        REG_user_control    <= 32'd0;
        REG_source_address  <= 64'd0;
        REG_target_address  <= 64'd0;
-       REG_mb_w            <= 32'd0;
-       REG_mb_h            <= 32'd0;
+       REG_mb_width_height <= 32'd0;
        REG_soft_reset      <= 32'd0;
     end
    else if(s_axi_wvalid & s_axi_wready)
@@ -217,8 +211,7 @@ module axi_lite_slave #(
        ADDR_SOURCE_ADDRESS_L : REG_source_address  <= {REG_source_address[63:32],regw_source_address};
        ADDR_TARGET_ADDRESS_H : REG_target_address  <= {regw_target_address,REG_target_address[31:00]};
        ADDR_TARGET_ADDRESS_L : REG_target_address  <= {REG_target_address[63:32],regw_target_address};
-       ADDR_MB_W             : REG_mb_w            <= regw_mb_w;
-       ADDR_MB_H             : REG_mb_h            <= regw_mb_h;
+       ADDR_MB_WIDTH_HEIGHT  : REG_mb_width_height <= regw_mb_width_height;
 
        ADDR_SOFT_RESET       : REG_soft_reset      <= regw_soft_reset;
        default :;
@@ -243,12 +236,10 @@ module axi_lite_slave #(
     end
    else if(s_axi_wvalid & s_axi_wready)
      case(write_address)
-       ADDR_MB_W:begin
-         w1 <= regw_mb_w - 1'd1;
-         w2 <= regw_mb_w - 2'd2;
-       end
-       ADDR_MB_H:
-         h1 <= regw_mb_h - 1'd1;
+       ADDR_MB_WIDTH_HEIGHT:begin
+         w1 <= regw_mb_width_height[15: 0] - 1'd1;
+         w2 <= regw_mb_width_height[15: 0] - 2'd2;
+         h1 <= regw_mb_width_height[31:16] - 1'd1;
        default :;
      endcase
 
@@ -379,8 +370,7 @@ assign REG_snap_control_rd = {REG_snap_control[31:4], 1'b1, snap_idle_q, 1'b0, s
        ADDR_SOURCE_ADDRESS_H    : s_axi_rdata <= REG_source_address[63  : 32];
        ADDR_TARGET_ADDRESS_L    : s_axi_rdata <= REG_target_address[31  :  0];
        ADDR_TARGET_ADDRESS_H    : s_axi_rdata <= REG_target_address[63  : 32];
-       ADDR_MB_W                : s_axi_rdata <= REG_mb_w;
-       ADDR_MB_H                : s_axi_rdata <= REG_mb_h;
+       ADDR_MB_WIDTH_HEIGHT     : s_axi_rdata <= REG_mb_width_height;
        ADDR_SOFT_RESET          : s_axi_rdata <= REG_soft_reset;
        default                  : s_axi_rdata <= 32'h5a5aa5a5;
      endcase

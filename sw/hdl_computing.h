@@ -35,8 +35,7 @@
 #define REG_SOURCE_ADDRESS_H    0x3C
 #define REG_TARGET_ADDRESS_L    0x40
 #define REG_TARGET_ADDRESS_H    0x44
-#define REG_MB_W                0x48
-#define REG_MB_H                0x4C
+#define REG_MB_WIDTH_HEIGHT     0x48
 #define REG_SOFT_RESET          0x50
 
 
