@@ -15436,7 +15436,7 @@ static void *FPGAEncode(void *tid) {
 	int mb_w_ = enc[buffer_cnt]->mb_w_;
 	int mb_h_ = enc[buffer_cnt]->mb_h_; 
 
-	snap_action_start ((void*)card);
+	//snap_action_start ((void*)card);
 
 	action_write(card, REG_SOURCE_ADDRESS_L, (uint32_t) (((uint64_t) mem_in) & 0xffffffff));
 	action_write(card, REG_SOURCE_ADDRESS_H, (uint32_t) ((((uint64_t) mem_in) >> 32) & 0xffffffff));
