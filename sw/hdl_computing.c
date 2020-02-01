@@ -15451,9 +15451,9 @@ static void *FPGAEncode(void *tid) {
 	int rc = -1;
 	uint32_t cnt = 0;
     uint32_t reg_data;
-	struct timespec ts;
-	ts.tv_sec = 0;
-	ts.tv_nsec = 1000;
+	//struct timespec ts;
+	//ts.tv_sec = 0;
+	//ts.tv_nsec = 1000;
 	
 	do { 
 		reg_data = action_read(card, REG_USER_STATUS);
@@ -15463,7 +15463,7 @@ static void *FPGAEncode(void *tid) {
 			break;
 		}
 		cnt ++;
-		nanosleep(&ts, &ts);
+		//nanosleep(&ts, &ts);
 	} while (cnt < timeout * 1000);
 
 	action_write(card, REG_SOFT_RESET, 0x00000001);
