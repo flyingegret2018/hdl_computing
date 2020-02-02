@@ -32,7 +32,7 @@ module axi_master_wr #(
                                                             
                        //---- AXI bus ----                   
                          // AXI write address channel           
-                       output reg  [ID_WIDTH - 1:0]       m_axi_awid        ,  
+                       output wire [ID_WIDTH - 1:0]       m_axi_awid        ,  
                        output wire [ADDR_WIDTH - 1:0]     m_axi_awaddr      ,  
                        output wire [0007:0]               m_axi_awlen       ,  
                        output wire [0002:0]               m_axi_awsize      ,  
@@ -80,6 +80,7 @@ module axi_master_wr #(
  wire      resp_get;
 
 //---- signals for AXI advanced features ----
+ assign m_axi_awid     = 5'b0;
  assign m_axi_awsize   = 3'b111; // (2^7) * 8=1024
  assign m_axi_awburst  = 2'd1; // INCR mode for memory access
  assign m_axi_awcache  = 4'd3; // Normal Non-cacheable Bufferable
@@ -121,14 +122,6 @@ wdata_channel U_WDATA_CHANNEL(
     .fifo_dout                      ( fifo_dout                     ),
     .fifo_rd                        ( fifo_rd                       )
 );
-
- always@(posedge clk or negedge rst_n)
- begin
-     if(~rst_n)
-         m_axi_awid <= 0;
-     else if(burst_sent)
-         m_axi_awid <= m_axi_awid + 1;
- end
 
 always@(posedge clk or negedge rst_n)
 begin

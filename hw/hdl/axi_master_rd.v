@@ -32,7 +32,7 @@ module axi_master_rd #(
                                                         
                        //---- AXI bus ----               
                          // AXI read address channel       
-                       output reg [ID_WIDTH - 1:0]     m_axi_arid        ,  
+                       output wire[ID_WIDTH - 1:0]     m_axi_arid        ,  
                        output wire[ADDR_WIDTH - 1:0]   m_axi_araddr      ,  
                        output wire[0007:0]             m_axi_arlen       ,  
                        output wire[0002:0]             m_axi_arsize      ,  
@@ -77,6 +77,7 @@ module axi_master_rd #(
  wire      burst_sent;
 
 //---- signals for AXI advanced features ----
+ assign m_axi_arid     = 5'b0;
  assign m_axi_arsize   = 3'b111; // (2^7) * 8=1024
  assign m_axi_arburst  = 2'd1; // INCR mode for memory access
  assign m_axi_arcache  = 4'd3; // Normal Non-cacheable Bufferable
@@ -123,15 +124,5 @@ U_RDATA_CHANNEL(
     .Y1_fifo_wr                     ( Y1_fifo_wr                    ),
     .UV_fifo_wr                     ( UV_fifo_wr                    )
 );
-
-always@(posedge clk or negedge rst_n)
-begin
-    if(~rst_n)
-        m_axi_arid <= 0;
-    else if(start_pulse)
-        m_axi_arid <= 0;
-    else if(burst_sent)
-        m_axi_arid <= m_axi_arid + 1;
-end
 
 endmodule
