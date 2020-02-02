@@ -72,9 +72,9 @@ module rdata_channel #(
  reg [   3:0]count;
  reg [1023:0]tmp;
 
- assign m_axi_rready   = ~Y0_fifo_full | count != 'd0;
+ assign m_axi_rready   = ~Y0_fifo_full | count != 'd1;
  assign data_receive   = m_axi_rvalid && m_axi_rready;
- assign fifo_wr        = m_axi_rvalid && m_axi_rready && m_axi_rlast;
+ assign fifo_wr        = m_axi_rvalid && m_axi_rready && m_axi_rlast && count != 'd0;
  assign Y0_fifo_wr     = fifo_wr;
  assign Y1_fifo_wr     = fifo_wr;
  assign UV_fifo_wr     = fifo_wr;
@@ -141,7 +141,7 @@ assign y1_bias     = {{15{tmp[ 127:  96]}},tmp[  95:  64]};
 assign y1_zthresh  = {{15{tmp[ 191: 160]}},tmp[ 159: 128]};
 assign y1_sharpen  = tmp[ 447: 192];
 assign y2_q        = {{15{tmp[ 479: 464]}},tmp[ 463: 448]};
-assign y2_iq       = {{15{tmp[ 511: 496]}},tmp[ 495: 479]};
+assign y2_iq       = {{15{tmp[ 511: 496]}},tmp[ 495: 480]};
 assign y2_bias     = {{15{tmp[ 575: 544]}},tmp[ 543: 512]};
 assign y2_zthresh  = {{15{tmp[ 639: 608]}},tmp[ 607: 576]};
 assign y2_sharpen  = 256'b0;
