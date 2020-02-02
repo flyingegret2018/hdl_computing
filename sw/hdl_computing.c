@@ -15597,6 +15597,25 @@ static void *WebPEncode(void *tid) {
   return tid;
 }
 
+typedef struct {
+  uint16_t y1_q_[2];        // quantizer steps
+  uint16_t y1_iq_[2];       // reciprocals, fixed point.
+  uint32_t y1_bias_[2];     // rounding bias
+  uint32_t y1_zthresh_[2];  // value below which a coefficient is zeroed
+  uint16_t y1_sharpen_[16];  // frequency boosters for slight sharpening
+  uint16_t y2_q_[2];        // quantizer steps
+  uint16_t y2_iq_[2];       // reciprocals, fixed point.
+  uint32_t y2_bias_[2];     // rounding bias
+  uint32_t y2_zthresh_[2];  // value below which a coefficient is zeroed
+  uint16_t uv_q_[2];        // quantizer steps
+  uint16_t uv_iq_[2];       // reciprocals, fixed point.
+  uint32_t uv_bias_[2];     // rounding bias
+  uint32_t uv_zthresh_[2];  // value below which a coefficient is zeroed
+  int min_disto_;  // minimum distortion required to trigger filtering record
+  int lambda_i16_, lambda_i4_, lambda_uv_;
+  int lambda_mode_, tlambda_;
+} FPGA_ENV;
+
 int main(int argc, const char *argv[]) {
   int return_value = -1;
   const char *in_dir = NULL;
