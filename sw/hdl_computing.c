@@ -15436,8 +15436,6 @@ static void *FPGAEncode(void *tid) {
 	int mb_w_ = enc[buffer_cnt]->mb_w_;
 	int mb_h_ = enc[buffer_cnt]->mb_h_; 
 
-	snap_action_start ((void*)card);
-
 	action_write(card, REG_SOURCE_ADDRESS_L, (uint32_t) (((uint64_t) mem_in) & 0xffffffff));
 	action_write(card, REG_SOURCE_ADDRESS_H, (uint32_t) ((((uint64_t) mem_in) >> 32) & 0xffffffff));
 	  
@@ -15451,9 +15449,9 @@ static void *FPGAEncode(void *tid) {
 	int rc = -1;
 	uint32_t cnt = 0;
     uint32_t reg_data;
-	//struct timespec ts;
-	//ts.tv_sec = 0;
-	//ts.tv_nsec = 1000;
+	struct timespec ts;
+	ts.tv_sec = 0;
+	ts.tv_nsec = 1000;
 	
 	do { 
 		reg_data = action_read(card, REG_USER_STATUS);
@@ -15463,7 +15461,7 @@ static void *FPGAEncode(void *tid) {
 			break;
 		}
 		cnt ++;
-		//nanosleep(&ts, &ts);
+		nanosleep(&ts, &ts);
 	} while (cnt < timeout * 1000);
 
 	action_write(card, REG_SOFT_RESET, 0x00000001);
