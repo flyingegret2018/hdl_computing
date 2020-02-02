@@ -35,6 +35,12 @@ module rdata_channel #(
                        input                           start_pulse       ,
                        output reg                      rd_error          ,
 
+                       output     [32      - 1 : 0]    lambda_i16        ,
+                       output     [32      - 1 : 0]    lambda_i4         ,
+                       output     [32      - 1 : 0]    lambda_uv         ,
+                       output     [32      - 1 : 0]    tlambda           ,
+                       output     [32      - 1 : 0]    lambda_mode       ,
+                       output     [32      - 1 : 0]    min_disto         ,
                        output     [16 * 16 - 1 : 0]    y1_q              ,
                        output     [16 * 16 - 1 : 0]    y1_iq             ,
                        output     [32 * 16 - 1 : 0]    y1_bias           ,

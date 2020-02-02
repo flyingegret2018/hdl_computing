@@ -24,12 +24,12 @@ module WebPEncode#(
 ,input             [10                   - 1 : 0] w1
 ,input             [10                   - 1 : 0] w2
 ,input             [10                   - 1 : 0] h1
-,input      signed [32                   - 1 : 0] lambda_i16
-,input      signed [32                   - 1 : 0] lambda_i4
-,input      signed [32                   - 1 : 0] lambda_uv
-,input      signed [32                   - 1 : 0] tlambda
-,input      signed [32                   - 1 : 0] lambda_mode
-,input      signed [32                   - 1 : 0] min_disto
+,input             [32                   - 1 : 0] lambda_i16
+,input             [32                   - 1 : 0] lambda_i4
+,input             [32                   - 1 : 0] lambda_uv
+,input             [32                   - 1 : 0] tlambda
+,input             [32                   - 1 : 0] lambda_mode
+,input             [32                   - 1 : 0] min_disto
 ,input             [16 * 16              - 1 : 0] y1_q
 ,input             [16 * 16              - 1 : 0] y1_iq
 ,input             [32 * 16              - 1 : 0] y1_bias
