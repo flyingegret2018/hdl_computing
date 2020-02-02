@@ -67,9 +67,10 @@ module rdata_channel #(
                        output                          UV_fifo_wr        
                        );
 
- wire      data_receive;
- wire      fifo_wr;
- reg [ 3:0]count;
+ wire        data_receive;
+ wire        fifo_wr;
+ reg [   3:0]count;
+ reg [1023:0]tmp;
 
  assign m_axi_rready   = ~Y0_fifo_full | count != 'd0;
  assign data_receive   = m_axi_rvalid && m_axi_rready;
@@ -87,8 +88,8 @@ always @ (posedge clk or negedge rst_n)begin
         if(start_pulse)
             count <= 'b0;
         else if(data_receive)
-            if(count >= 'd2)
-                count <= 'b0;
+            if(count >= 'd3)
+                count <= 'b1;
             else
                 count <= count + 1'b1;
     end
@@ -96,19 +97,23 @@ end
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)begin
-        Y0_fifo_din   <= 'b0;
-        Y1_fifo_din   <= 'b0;
+        tmp         <= 'b0;
+        Y0_fifo_din <= 'b0;
+        Y1_fifo_din <= 'b0;
     end
     else begin
         if(data_receive)begin
             case(count)
                 'd0:begin
-                    Y0_fifo_din         <= m_axi_rdata;
+                    tmp         <= m_axi_rdata;
                 end
                 'd1:begin
-                    Y1_fifo_din         <= m_axi_rdata;
+                    Y0_fifo_din <= m_axi_rdata;
                 end
                 'd2:begin
+                    Y1_fifo_din <= m_axi_rdata;
+                end
+                'd3:begin
                     ;
                 end
                 default:;
@@ -130,26 +135,26 @@ always @ (posedge clk or negedge rst_n)begin
     end
 end
 
-assign lambda_i16  = 32'h18CC;
-assign lambda_i4   = 32'h15;
-assign lambda_uv   = 32'h1F;
-assign tlambda     = 32'h2E;
-assign lambda_mode = 32'h7;
-assign min_disto   = 32'h1E0;
-assign y1_q        = {{15{16'h001E}},16'h0018};
-assign y1_iq       = {{15{16'h1111}},16'h1555};
-assign y1_bias     = {{15{32'hDC00}},32'hC000};
-assign y1_zthresh  = {{15{32'h0011}},32'h000F};
-assign y1_sharpen  = {{7{16'h1}},16'h0,16'h1,16'h1,16'h0,16'h0,16'h1,{3{16'h0}}};
-assign y2_q        = {{15{16'h002E}},16'h0030};
-assign y2_iq       = {{15{16'h0B21}},16'h0AAA};
-assign y2_bias     = {{15{32'hD800}},32'hC000};
-assign y2_zthresh  = {{15{32'h001A}},32'h001E};
+assign y1_q        = {{15{tmp[  31:  16]}},tmp[  15:   0]};
+assign y1_iq       = {{15{tmp[  63:  48]}},tmp[  47:  32]};
+assign y1_bias     = {{15{tmp[ 127:  96]}},tmp[  95:  64]};
+assign y1_zthresh  = {{15{tmp[ 191: 160]}},tmp[ 159: 128]};
+assign y1_sharpen  = tmp[ 447: 192];
+assign y2_q        = {{15{tmp[ 479: 464]}},tmp[ 463: 448]};
+assign y2_iq       = {{15{tmp[ 511: 496]}},tmp[ 495: 479]};
+assign y2_bias     = {{15{tmp[ 575: 544]}},tmp[ 543: 512]};
+assign y2_zthresh  = {{15{tmp[ 639: 608]}},tmp[ 607: 576]};
 assign y2_sharpen  = 256'b0;
-assign uv_q        = {{15{16'h001A}},16'h0017};
-assign uv_iq       = {{15{16'h13B1}},16'h1642};
-assign uv_bias     = {{15{32'hE600}},32'hDC00};
-assign uv_zthresh  = {{15{32'h000E}},32'h000D};
-assign uv_sharpen  = 256'b0;
+assign uv_q        = {{15{tmp[ 671: 656]}},tmp[ 655: 640]};
+assign uv_iq       = {{15{tmp[ 703: 688]}},tmp[ 687: 672]};
+assign uv_bias     = {{15{tmp[ 767: 736]}},tmp[ 735: 704]};
+assign uv_zthresh  = {{15{tmp[ 831: 800]}},tmp[ 799: 768]};
+assign uv_sharpen  = 256'b0; 
+assign min_disto   = tmp[ 863: 832];
+assign lambda_i16  = tmp[ 895: 864];
+assign lambda_i4   = tmp[ 927: 896];
+assign lambda_uv   = tmp[ 959: 928];
+assign tlambda     = tmp[ 991: 960];
+assign lambda_mode = tmp[1023: 992];
 
 endmodule

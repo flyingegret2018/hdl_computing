@@ -15383,11 +15383,12 @@ static int DeleteVP8Encoder(VP8Encoder* enc) {
 }
 
 #define BUFFER_LEN 256
-VP8Encoder* enc[BUFFER_LEN];
-VP8EncIterator* it[BUFFER_LEN];
-uint8_t* mem_output[BUFFER_LEN];
-uint8_t* mem_input[BUFFER_LEN];
-WebPPicture* picture[BUFFER_LEN];
+VP8Encoder* enc_g[BUFFER_LEN];
+VP8EncIterator* it_g[BUFFER_LEN];
+WebPPicture* picture_g[BUFFER_LEN];
+uint8_t* mem_out_g[BUFFER_LEN];
+uint8_t* mem_in_g[BUFFER_LEN];
+
 int card_no = 0;
 uint32_t timeout = 60;
 snap_action_flag_t attach_flags = 0;
@@ -15430,11 +15431,14 @@ static void *FPGAEncode(void *tid) {
   while(1){
 	sem_wait(&FPGASem);
 
-	uint8_t* mem_in = mem_input[buffer_cnt];
-	uint8_t* mem_out = mem_output[buffer_cnt];
-	FILE *out = enc[buffer_cnt]->pic_->custom_ptr;
-	int mb_w_ = enc[buffer_cnt]->mb_w_;
-	int mb_h_ = enc[buffer_cnt]->mb_h_; 
+	VP8Encoder* enc = enc_g[buffer_cnt];
+	VP8EncIterator* it = it_g[buffer_cnt];
+	WebPPicture* picture = picture_g[buffer_cnt];
+	uint8_t* mem_in = mem_in_g[buffer_cnt];
+	uint8_t* mem_out = mem_out_g[buffer_cnt];
+	FILE *out = enc->pic_->custom_ptr;
+	int mb_w_ = enc->mb_w_;
+	int mb_h_ = enc->mb_h_; 
 
 	action_write(card, REG_SOURCE_ADDRESS_L, (uint32_t) (((uint64_t) mem_in) & 0xffffffff));
 	action_write(card, REG_SOURCE_ADDRESS_H, (uint32_t) ((((uint64_t) mem_in) >> 32) & 0xffffffff));
@@ -15468,10 +15472,10 @@ static void *FPGAEncode(void *tid) {
 	
 	if (rc != 0) {
   		fprintf(stderr, "time out %d: %s!\n", rc, strerror(errno));
-		WebPPictureFree(picture[buffer_cnt]);
-		WebPSafeFree(picture[buffer_cnt]);
-		DeleteVP8Encoder(enc[buffer_cnt]);
-		WebPSafeFree(it[buffer_cnt]);
+		WebPPictureFree(picture);
+		WebPSafeFree(picture);
+		DeleteVP8Encoder(enc);
+		WebPSafeFree(it);
 		__free(mem_out); 
         __free(mem_in);
 		fclose(out);
@@ -15496,27 +15500,30 @@ static void *WebPEncode(void *tid) {
   
   while(1){
   	sem_wait(&binSem);
-	
-	int mb_w_ = enc[buffer_cnt]->mb_w_;
-	int mb_h_ = enc[buffer_cnt]->mb_h_; 
-	int preds_w_ = enc[buffer_cnt]->preds_w_;
-	uint8_t* mem_out = mem_output[buffer_cnt];
-	VP8TBuffer* tokens_ = &enc[buffer_cnt]->tokens_;
-	uint8_t* preds_ = enc[buffer_cnt]->preds_;
-	VP8MBInfo* mb_info_ = enc[buffer_cnt]->mb_info_;
-	uint32_t* nz_ = enc[buffer_cnt]->nz_;
-	FILE *out = enc[buffer_cnt]->pic_->custom_ptr;
-	VP8EncProba* proba_ = &enc[buffer_cnt]->proba_;
-	VP8BitWriter* parts_ = enc[buffer_cnt]->parts_;
+
+	VP8Encoder* enc = enc_g[buffer_cnt];
+	VP8EncIterator* it = it_g[buffer_cnt];
+	WebPPicture* picture = picture_g[buffer_cnt];
+	uint8_t* mem_out = mem_out_g[buffer_cnt];
+	int mb_w_ = enc->mb_w_;
+	int mb_h_ = enc->mb_h_; 
+	int preds_w_ = enc->preds_w_;
+	VP8TBuffer* tokens_ = &enc->tokens_;
+	uint8_t* preds_ = enc->preds_;
+	VP8MBInfo* mb_info_ = enc->mb_info_;
+	uint32_t* nz_ = enc->nz_;
+	FILE *out = enc->pic_->custom_ptr;
+	VP8EncProba* proba_ = &enc->proba_;
+	VP8BitWriter* parts_ = enc->parts_;
 	int x, y, i, j;
 
 	for(y = 0; y < mb_h_; y++){
 		for(x = 0; x < mb_w_; x++){
 
-		  uint8_t* preds = it[buffer_cnt]->preds_;
+		  uint8_t* preds = it->preds_;
 
 		  if(((DATA_O*)mem_out)[y * mb_w_ + x].mbtype == 1){
-			it[buffer_cnt]->mb_->type_ = 1;
+			it->mb_->type_ = 1;
 			for(j = 0; j < 4; ++j){
 			  for(i = 0; i < 4; ++i){
 				preds[i] = ((DATA_O*)mem_out)[y * mb_w_ + x].info.mode_i16;
@@ -15525,7 +15532,7 @@ static void *WebPEncode(void *tid) {
 			}
 		  }
 		  else{
-			it[buffer_cnt]->mb_->type_ = 0;
+			it->mb_->type_ = 0;
 			for(j = 0; j < 4; ++j){
 			  for(i = 0; i < 4; ++i){
 				preds[i] = ((DATA_O*)mem_out)[y * mb_w_ + x].info.modes_i4[j*4+i];
@@ -15534,29 +15541,29 @@ static void *WebPEncode(void *tid) {
 			}
 		  }
 		  
-		  it[buffer_cnt]->mb_->uv_mode_ = ((DATA_O*)mem_out)[y * mb_w_ + x].info.mode_uv;
-		  it[buffer_cnt]->mb_->skip_ = ((DATA_O*)mem_out)[y * mb_w_ + x].is_skipped;
+		  it->mb_->uv_mode_ = ((DATA_O*)mem_out)[y * mb_w_ + x].info.mode_uv;
+		  it->mb_->skip_ = ((DATA_O*)mem_out)[y * mb_w_ + x].is_skipped;
 		  
-	      ok = RecordTokens(it[buffer_cnt], &((DATA_O*)mem_out)[y * mb_w_ + x].info, tokens_);
+	      ok = RecordTokens(it, &((DATA_O*)mem_out)[y * mb_w_ + x].info, tokens_);
 	      if (!ok) {
 	        fprintf(stderr, "VP8_ENC_ERROR_OUT_OF_MEMORY\n");
 	      }
 		
 		  if((x + 1) == mb_w_){
-			it[buffer_cnt]->preds_ = preds_ + (y + 1) * 4 * preds_w_;
-			it[buffer_cnt]->nz_ = nz_;
-			it[buffer_cnt]->mb_ = mb_info_ + (y + 1) * mb_w_;
-			it[buffer_cnt]->left_nz_[8] = 0;
+			it->preds_ = preds_ + (y + 1) * 4 * preds_w_;
+			it->nz_ = nz_;
+			it->mb_ = mb_info_ + (y + 1) * mb_w_;
+			it->left_nz_[8] = 0;
 		  }
 		  else{
-			it[buffer_cnt]->nz_ = it[buffer_cnt]->nz_ + 1;
-			it[buffer_cnt]->mb_ += 1;
-			it[buffer_cnt]->preds_ += 4;
+			it->nz_ = it->nz_ + 1;
+			it->mb_ += 1;
+			it[->preds_ += 4;
 		  }    
 		}
     }
 
-	enc[buffer_cnt]->dqm_[0].max_edge_ = ((DATA_O*)mem_out)[mb_w_ * mb_h_ - 1].max_edge_;
+	enc->dqm_[0].max_edge_ = ((DATA_O*)mem_out)[mb_w_ * mb_h_ - 1].max_edge_;
 	
 	if (ok) {
 	  FinalizeTokenProbas(proba_);
@@ -15564,27 +15571,27 @@ static void *WebPEncode(void *tid) {
 						 (const uint8_t*)proba_->coeffs_, 1);
 	}
 	
-	ok = ok && PostLoopFinalize(it[buffer_cnt], ok);
+	ok = ok && PostLoopFinalize(it, ok);
 
-    ok = ok && VP8EncFinishAlpha(enc[buffer_cnt]);
+    ok = ok && VP8EncFinishAlpha(enc);
 
-    ok = ok && VP8EncWrite(enc[buffer_cnt]);
+    ok = ok && VP8EncWrite(enc);
 	
-    StoreStats(enc[buffer_cnt]);
+    StoreStats(enc);
 	
     if (!ok) {
 	  fprintf(stderr, "Encode error!\n");
-      VP8EncFreeBitWriters(enc[buffer_cnt]);
+      VP8EncFreeBitWriters(enc);
     }
 	
-    ok &= DeleteVP8Encoder(enc[buffer_cnt]);  // must always be called, even if !ok
+    ok &= DeleteVP8Encoder(enc);  // must always be called, even if !ok
     if (!ok) {
 	  fprintf(stderr, "DeleteVP8Encoder error!\n");
     }
 
-	WebPPictureFree(picture[buffer_cnt]);
-	WebPSafeFree(picture[buffer_cnt]);
-	WebPSafeFree(it[buffer_cnt]);
+	WebPPictureFree(picture);
+	WebPSafeFree(picture);
+	WebPSafeFree(it);
 	__free(mem_out);
 	fclose(out);
 
@@ -15596,25 +15603,6 @@ static void *WebPEncode(void *tid) {
   }
   return tid;
 }
-
-typedef struct {
-  uint16_t y1_q_[2];        // quantizer steps
-  uint16_t y1_iq_[2];       // reciprocals, fixed point.
-  uint32_t y1_bias_[2];     // rounding bias
-  uint32_t y1_zthresh_[2];  // value below which a coefficient is zeroed
-  uint16_t y1_sharpen_[16];  // frequency boosters for slight sharpening
-  uint16_t y2_q_[2];        // quantizer steps
-  uint16_t y2_iq_[2];       // reciprocals, fixed point.
-  uint32_t y2_bias_[2];     // rounding bias
-  uint32_t y2_zthresh_[2];  // value below which a coefficient is zeroed
-  uint16_t uv_q_[2];        // quantizer steps
-  uint16_t uv_iq_[2];       // reciprocals, fixed point.
-  uint32_t uv_bias_[2];     // rounding bias
-  uint32_t uv_zthresh_[2];  // value below which a coefficient is zeroed
-  int min_disto_;  // minimum distortion required to trigger filtering record
-  int lambda_i16_, lambda_i4_, lambda_uv_;
-  int lambda_mode_, tlambda_;
-} FPGA_ENV;
 
 int main(int argc, const char *argv[]) {
   int return_value = -1;
@@ -15757,126 +15745,148 @@ int main(int argc, const char *argv[]) {
 	  memcpy(out_dir_file + dir_len, entry->d_name, strlen(entry->d_name)-strlen(dot));
 	  strcat(out_dir_file, ".webp");
 
-	  picture[buffer_cnt] = (WebPPicture*)WebPSafeMalloc(1, sizeof(WebPPicture));
-	  if (picture[buffer_cnt] == NULL) {
+	  WebPPicture* picture = NULL;
+	  picture = picture_g[buffer_cnt] = (WebPPicture*)WebPSafeMalloc(1, sizeof(WebPPicture));
+	  if (picture == NULL) {
 	  	fprintf(stderr, "picture malloc failed!\n");
 	  	return -1;
 	  }
   
-	  if (!WebPPictureInit(picture[buffer_cnt])) {
+	  if (!WebPPictureInit(picture)) {
 		fprintf(stderr, "Error! Version mismatch!\n");
 		return -1;
 	  }
 
       // Read the input.
-      if (!ReadPicture(in_dir_file, picture[buffer_cnt], keep_alpha, NULL)) {
+      if (!ReadPicture(in_dir_file, picture, keep_alpha, NULL)) {
         fprintf(stderr, "Error! Cannot read input picture file '%s'\n", in_dir_file);
-		WebPPictureFree(picture[buffer_cnt]);
-		WebPSafeFree(picture[buffer_cnt]);
+		WebPPictureFree(picture);
+		WebPSafeFree(picture);
 		return -1;
       }
-      picture[buffer_cnt]->progress_hook = NULL;
+      picture->progress_hook = NULL;
 
       // Open the output
       out = fopen(out_dir_file, "wb");
       if (out == NULL) {
         fprintf(stderr, "Error! Cannot open output file '%s'\n", out_dir_file);		
-		WebPPictureFree(picture[buffer_cnt]);
-		WebPSafeFree(picture[buffer_cnt]);
+		WebPPictureFree(picture);
+		WebPSafeFree(picture);
 		return -1;
       } else {
         fprintf(stderr, "Saving file '%s'\n", out_dir_file);
       }
-      picture[buffer_cnt]->writer = MyWriter;
-      picture[buffer_cnt]->custom_ptr = (void*)out;
-      picture[buffer_cnt]->stats = &stats;
-      picture[buffer_cnt]->user_data = (void*)in_dir_file;
+      picture->writer = MyWriter;
+      picture->custom_ptr = (void*)out;
+      picture->stats = &stats;
+      picture->user_data = (void*)in_dir_file;
     
       // Compress.
 	  int ok = 0;
 
-      WebPEncodingSetError(picture[buffer_cnt], VP8_ENC_OK);  // all ok so far
+      WebPEncodingSetError(picture, VP8_ENC_OK);  // all ok so far
 	  if (!WebPValidateConfig(&config)) {
-	    WebPEncodingSetError(picture[buffer_cnt], VP8_ENC_ERROR_INVALID_CONFIGURATION);
+	    WebPEncodingSetError(picture, VP8_ENC_ERROR_INVALID_CONFIGURATION);
 	  }
-	  if (picture[buffer_cnt]->width <= 0 || picture[buffer_cnt]->height <= 0) {
-	    WebPEncodingSetError(picture[buffer_cnt], VP8_ENC_ERROR_BAD_DIMENSION);
+	  if (picture->width <= 0 || picture->height <= 0) {
+	    WebPEncodingSetError(picture, VP8_ENC_ERROR_BAD_DIMENSION);
 	  }
-	  if (picture[buffer_cnt]->width > WEBP_MAX_DIMENSION || picture[buffer_cnt]->height > WEBP_MAX_DIMENSION) {
-	    WebPEncodingSetError(picture[buffer_cnt], VP8_ENC_ERROR_BAD_DIMENSION);
+	  if (picture->width > WEBP_MAX_DIMENSION || picture->height > WEBP_MAX_DIMENSION) {
+	    WebPEncodingSetError(picture, VP8_ENC_ERROR_BAD_DIMENSION);
 	  }
  
-	  if (picture[buffer_cnt]->stats != NULL) memset(picture[buffer_cnt]->stats, 0, sizeof(WebPAuxStats));
+	  if (picture->stats != NULL) memset(picture->stats, 0, sizeof(WebPAuxStats));
 	  
 	  if (!config.exact) {
-		WebPCleanupTransparentArea(picture[buffer_cnt]);
+		WebPCleanupTransparentArea(picture);
 	  }
 
-	  enc[buffer_cnt] = InitVP8Encoder(&config, picture[buffer_cnt]);
-	  if (enc[buffer_cnt] == NULL) {
+	  VP8Encoder* enc = NULL;
+	  enc = enc_g[buffer_cnt] = InitVP8Encoder(&config, picture);
+	  if (enc == NULL) {
 	  	fprintf(stderr, "enc malloc failed!\n");
 	  	fclose(out);	
-		WebPPictureFree(picture[buffer_cnt]);
-		WebPSafeFree(picture[buffer_cnt]);
+		WebPPictureFree(picture);
+		WebPSafeFree(picture);
 	  	return -1;
 	  }
 	  
       // Note: each of the tasks below account for 20% in the progress report.
-      ok = VP8EncAnalyze(enc[buffer_cnt]);
+      ok = VP8EncAnalyze(enc);
 	  
 	  // Analysis is done, proceed to actual coding.
-	  ok = ok && VP8EncStartAlpha(enc[buffer_cnt]);   // possibly done in parallel
+	  ok = ok && VP8EncStartAlpha(enc);   // possibly done in parallel
 
-	  it[buffer_cnt] = (VP8EncIterator*)WebPSafeMalloc(1, sizeof(VP8EncIterator));
-	  if (it[buffer_cnt] == NULL) {
+	  VP8EncIterator* it = NULL;
+	  it = it_g[buffer_cnt]; = (VP8EncIterator*)WebPSafeMalloc(1, sizeof(VP8EncIterator));
+	  if (it == NULL) {
 	  	fprintf(stderr, "it malloc failed!\n");
 	  	fclose(out);
-		WebPPictureFree(picture[buffer_cnt]);
-		WebPSafeFree(picture[buffer_cnt]);
-		DeleteVP8Encoder(enc[buffer_cnt]);
+		WebPPictureFree(picture);
+		WebPSafeFree(picture);
+		DeleteVP8Encoder(enc);
 		return -1;
 	  }
 	  
 	  PassStats stats;
 	  
-	  InitPassStats(enc[buffer_cnt], &stats);
-	  ok = ok && PreLoopInitialize(enc[buffer_cnt]);
+	  InitPassStats(enc, &stats);
+	  ok = ok && PreLoopInitialize(enc);
       if (!ok) {
 	  	fprintf(stderr, "PreLoopInitialize failed!\n");
-        fprintf(stderr, "Error code: %d (%s)\n",
-                picture[buffer_cnt]->error_code, kErrorMessages[picture[buffer_cnt]->error_code]);
+        fprintf(stderr, "Error code: %d (%s)\n", picture->error_code, kErrorMessages[picture->error_code]);
 	  	fclose(out);
-		WebPPictureFree(picture[buffer_cnt]);
-		WebPSafeFree(picture[buffer_cnt]);
-		DeleteVP8Encoder(enc[buffer_cnt]);
-	  	WebPSafeFree(it[buffer_cnt]);
+		WebPPictureFree(picture);
+		WebPSafeFree(picture);
+		DeleteVP8Encoder(enc);
+	  	WebPSafeFree(it);
 		return -1;
       }
 	  
-	  VP8IteratorInit(enc[buffer_cnt], it[buffer_cnt]);
-	  SetLoopParams(enc[buffer_cnt], stats.q);
-	  ResetTokenStats(enc[buffer_cnt]);
-	  VP8InitFilter(it[buffer_cnt]);
-	  VP8TBufferClear(&enc[buffer_cnt]->tokens_);
+	  VP8IteratorInit(enc, it);
+	  SetLoopParams(enc, stats.q);
+	  ResetTokenStats(enc);
+	  VP8InitFilter(it);
+	  VP8TBufferClear(&enc->tokens_);
 
 	  int x, y, i;
-	  const WebPPicture* const pic = enc[buffer_cnt]->pic_;
-	  int mb_w_ = enc[buffer_cnt]->mb_w_;
-	  int mb_h_ = enc[buffer_cnt]->mb_h_; 
-	  uint8_t * mem_in = NULL;
+	  const WebPPicture* const pic = enc->pic_;
+	  int mb_w_ = enc->mb_w_;
+	  int mb_h_ = enc->mb_h_;
 	  
-	  mem_input[buffer_cnt] = (uint8_t*)alloc_mem(4096, 384 * mb_w_ * mb_h_);
-	  mem_in = mem_input[buffer_cnt];
+	  uint8_t * mem_in = NULL;
+	  mem_in = mem_in_g[buffer_cnt] = (uint8_t*)alloc_mem(4096, 384 * mb_w_ * mb_h_ + 128);
 	  if (mem_in == NULL){
 	  	fprintf(stderr, "mem_in malloc failed!\n");
-		WebPPictureFree(picture[buffer_cnt]);
-		WebPSafeFree(picture[buffer_cnt]);
-		DeleteVP8Encoder(enc[buffer_cnt]);
-	  	WebPSafeFree(it[buffer_cnt]);
+		WebPPictureFree(picture);
+		WebPSafeFree(picture);
+		DeleteVP8Encoder(enc);
+	  	WebPSafeFree(it);
 		__free(mem_in);
 	  	fclose(out);
 		return -1;
 	  }
+
+	  VP8SegmentInfo * dqm = enc->dqm_[0];
+	  memcpy(mem_in, dqm->y1_->q_, 4);
+	  memcpy(mem_in + 4, dqm->y1_->iq_, 4);
+	  memcpy(mem_in + 8, dqm->y1_->bias_, 8);
+	  memcpy(mem_in + 16, dqm->y1_->zthresh_, 8);
+	  memcpy(mem_in + 24, dqm->y1_->sharpen_, 32);
+	  memcpy(mem_in + 56, dqm->y2_->q_, 4);
+	  memcpy(mem_in + 60, dqm->y2_->iq_, 4);
+	  memcpy(mem_in + 64, dqm->y2_->bias_, 8);
+	  memcpy(mem_in + 72, dqm->y2_->zthresh_, 8);
+	  memcpy(mem_in + 80, dqm->uv_->q_, 4);
+	  memcpy(mem_in + 84, dqm->uv_->iq_, 4);
+	  memcpy(mem_in + 88, dqm->uv_->bias_, 8);
+	  memcpy(mem_in + 96, dqm->uv_->zthresh_, 8);
+	  memcpy(mem_in + 104, &dqm->min_disto_, 4);
+	  memcpy(mem_in + 108, &dqm->lambda_i16_, 4);
+	  memcpy(mem_in + 112, &dqm->lambda_i4_, 4);
+	  memcpy(mem_in + 116, &dqm->lambda_uv_, 4);
+	  memcpy(mem_in + 120, &dqm->lambda_mode_, 4); 
+	  memcpy(mem_in + 124, &dqm->tlambda_, 4);
 	  
 	  for(y = 0; y < mb_h_; y++){
 		  for(x = 0; x < mb_w_; x++){
@@ -15885,37 +15895,36 @@ int main(int argc, const char *argv[]) {
 			  const int uv_w = (w + 1) >> 1;
 			  const int uv_h = (h + 1) >> 1;
 			  for(i = 0; i < h; i++){
-				  memcpy(mem_in + (y * mb_w_ + x) * 384 + i * 16, pic->y + (y * pic->y_stride	+ x) * 16 + i * pic->y_stride, w);
+				  memcpy(mem_in + 128 + (y * mb_w_ + x) * 384 + i * 16, pic->y + (y * pic->y_stride	+ x) * 16 + i * pic->y_stride, w);
 				  if(w < 16){
-					  memset(mem_in + (y * mb_w_ + x) * 384 + i * 16 + w, (mem_in + (y * mb_w_ + x) * 384 + i * 16)[w - 1], 16 - w);
+					  memset(mem_in + 128 + (y * mb_w_ + x) * 384 + i * 16 + w, (mem_in + (y * mb_w_ + x) * 384 + i * 16)[w - 1], 16 - w);
 				  }
 			  }
 			  for (i = h; i < 16; ++i) {
-				  memcpy(mem_in + (y * mb_w_ + x) * 384 + i * 16, mem_in + (y * mb_w_ + x) * 384 + i * 16 - 16, 16);
+				  memcpy(mem_in + 128 + (y * mb_w_ + x) * 384 + i * 16, mem_in + (y * mb_w_ + x) * 384 + i * 16 - 16, 16);
 			  }
 			  for(i = 0; i < uv_h; i++){
-				  memcpy(mem_in + 256 + (y * mb_w_ + x) * 384 + i * 16, pic->u + (y * pic->uv_stride + x) * 8 + i * pic->uv_stride, uv_w);
-				  memcpy(mem_in + 264 + (y * mb_w_ + x) * 384 + i * 16, pic->v + (y * pic->uv_stride + x) * 8 + i * pic->uv_stride, uv_w);
+				  memcpy(mem_in + 128 + 256 + (y * mb_w_ + x) * 384 + i * 16, pic->u + (y * pic->uv_stride + x) * 8 + i * pic->uv_stride, uv_w);
+				  memcpy(mem_in + 128 + 264 + (y * mb_w_ + x) * 384 + i * 16, pic->v + (y * pic->uv_stride + x) * 8 + i * pic->uv_stride, uv_w);
 				  if(uv_w < 8){
-					  memset(mem_in + 256 + (y * mb_w_ + x) * 384 + i * 16 + uv_w, (mem_in + 256 + (y * mb_w_ + x) * 384 + i * 16)[uv_w - 1], 8 - uv_w);
-					  memset(mem_in + 264 + (y * mb_w_ + x) * 384 + i * 16 + uv_w, (mem_in + 264 + (y * mb_w_ + x) * 384 + i * 16)[uv_w - 1], 8 - uv_w);
+					  memset(mem_in + 128 + 256 + (y * mb_w_ + x) * 384 + i * 16 + uv_w, (mem_in + 256 + (y * mb_w_ + x) * 384 + i * 16)[uv_w - 1], 8 - uv_w);
+					  memset(mem_in + 128 + 264 + (y * mb_w_ + x) * 384 + i * 16 + uv_w, (mem_in + 264 + (y * mb_w_ + x) * 384 + i * 16)[uv_w - 1], 8 - uv_w);
 				  }
 			  }
 			  for (i = uv_h; i < 8; ++i) {
-				  memcpy(mem_in + 256 + (y * mb_w_ + x) * 384 + i * 16, mem_in + 256 + (y * mb_w_ + x) * 384 + i * 16 - 16, 16);
+				  memcpy(mem_in + 128 + 256 + (y * mb_w_ + x) * 384 + i * 16, mem_in + 256 + (y * mb_w_ + x) * 384 + i * 16 - 16, 16);
 			  }
 		  }
 	  }
 	  
 	  uint8_t * mem_out = NULL;
-	  mem_output[buffer_cnt] = (uint8_t*)alloc_mem(4096,sizeof(DATA_O) * mb_w_ * mb_h_);
-	  mem_out = mem_output[buffer_cnt];
+	  mem_out = mem_output[buffer_cnt] = (uint8_t*)alloc_mem(4096,sizeof(DATA_O) * mb_w_ * mb_h_);
 	  if (mem_out == NULL){
 	  	fprintf(stderr, "mem_out malloc failed!\n");
-		WebPPictureFree(picture[buffer_cnt]);
-		WebPSafeFree(picture[buffer_cnt]);
-		DeleteVP8Encoder(enc[buffer_cnt]);
-	  	WebPSafeFree(it[buffer_cnt]);
+		WebPPictureFree(picture);
+		WebPSafeFree(picture);
+		DeleteVP8Encoder(enc);
+	  	WebPSafeFree(it);
 		__free(mem_in);
 		__free(mem_out);
 		fclose(out);
