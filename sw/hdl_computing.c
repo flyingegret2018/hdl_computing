@@ -15558,7 +15558,7 @@ static void *WebPEncode(void *tid) {
 		  else{
 			it->nz_ = it->nz_ + 1;
 			it->mb_ += 1;
-			it[->preds_ += 4;
+			it->preds_ += 4;
 		  }    
 		}
     }
@@ -15818,7 +15818,7 @@ int main(int argc, const char *argv[]) {
 	  ok = ok && VP8EncStartAlpha(enc);   // possibly done in parallel
 
 	  VP8EncIterator* it = NULL;
-	  it = it_g[buffer_cnt]; = (VP8EncIterator*)WebPSafeMalloc(1, sizeof(VP8EncIterator));
+	  it = it_g[buffer_cnt] = (VP8EncIterator*)WebPSafeMalloc(1, sizeof(VP8EncIterator));
 	  if (it == NULL) {
 	  	fprintf(stderr, "it malloc failed!\n");
 	  	fclose(out);
@@ -15867,20 +15867,20 @@ int main(int argc, const char *argv[]) {
 		return -1;
 	  }
 
-	  VP8SegmentInfo * dqm = enc->dqm_[0];
-	  memcpy(mem_in, dqm->y1_->q_, 4);
-	  memcpy(mem_in + 4, dqm->y1_->iq_, 4);
-	  memcpy(mem_in + 8, dqm->y1_->bias_, 8);
-	  memcpy(mem_in + 16, dqm->y1_->zthresh_, 8);
-	  memcpy(mem_in + 24, dqm->y1_->sharpen_, 32);
-	  memcpy(mem_in + 56, dqm->y2_->q_, 4);
-	  memcpy(mem_in + 60, dqm->y2_->iq_, 4);
-	  memcpy(mem_in + 64, dqm->y2_->bias_, 8);
-	  memcpy(mem_in + 72, dqm->y2_->zthresh_, 8);
-	  memcpy(mem_in + 80, dqm->uv_->q_, 4);
-	  memcpy(mem_in + 84, dqm->uv_->iq_, 4);
-	  memcpy(mem_in + 88, dqm->uv_->bias_, 8);
-	  memcpy(mem_in + 96, dqm->uv_->zthresh_, 8);
+	  VP8SegmentInfo * dqm = &enc->dqm_[0];
+	  memcpy(mem_in, dqm->y1_.q_, 4);
+	  memcpy(mem_in + 4, dqm->y1_.iq_, 4);
+	  memcpy(mem_in + 8, dqm->y1_.bias_, 8);
+	  memcpy(mem_in + 16, dqm->y1_.zthresh_, 8);
+	  memcpy(mem_in + 24, dqm->y1_.sharpen_, 32);
+	  memcpy(mem_in + 56, dqm->y2_.q_, 4);
+	  memcpy(mem_in + 60, dqm->y2_.iq_, 4);
+	  memcpy(mem_in + 64, dqm->y2_.bias_, 8);
+	  memcpy(mem_in + 72, dqm->y2_.zthresh_, 8);
+	  memcpy(mem_in + 80, dqm->uv_.q_, 4);
+	  memcpy(mem_in + 84, dqm->uv_.iq_, 4);
+	  memcpy(mem_in + 88, dqm->uv_.bias_, 8);
+	  memcpy(mem_in + 96, dqm->uv_.zthresh_, 8);
 	  memcpy(mem_in + 104, &dqm->min_disto_, 4);
 	  memcpy(mem_in + 108, &dqm->lambda_i16_, 4);
 	  memcpy(mem_in + 112, &dqm->lambda_i4_, 4);
@@ -15918,7 +15918,7 @@ int main(int argc, const char *argv[]) {
 	  }
 	  
 	  uint8_t * mem_out = NULL;
-	  mem_out = mem_output[buffer_cnt] = (uint8_t*)alloc_mem(4096,sizeof(DATA_O) * mb_w_ * mb_h_);
+	  mem_out = mem_out_g[buffer_cnt] = (uint8_t*)alloc_mem(4096,sizeof(DATA_O) * mb_w_ * mb_h_);
 	  if (mem_out == NULL){
 	  	fprintf(stderr, "mem_out malloc failed!\n");
 		WebPPictureFree(picture);
