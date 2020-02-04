@@ -135,26 +135,26 @@ always @ (posedge clk or negedge rst_n)begin
     end
 end
 
-assign y1_q        = {{15{tmp[  31:  16]}},tmp[  15:   0]};
-assign y1_iq       = {{15{tmp[  63:  48]}},tmp[  47:  32]};
-assign y1_bias     = {{15{tmp[ 127:  96]}},tmp[  95:  64]};
-assign y1_zthresh  = {{15{tmp[ 191: 160]}},tmp[ 159: 128]};
+assign y1_q        = {{15{ 8'b0,tmp[  23:  16]}}, 8'b0,tmp[   7:   0]};
+assign y1_iq       = {{15{      tmp[  63:  48]}},      tmp[  47:  32]};
+assign y1_bias     = {{15{            32'hDC00}},            32'hC000};
+assign y1_zthresh  = {{15{24'b0,tmp[ 167: 160]}},24'b0,tmp[ 135: 128]};
 assign y1_sharpen  = tmp[ 447: 192];
-assign y2_q        = {{15{tmp[ 479: 464]}},tmp[ 463: 448]};
-assign y2_iq       = {{15{tmp[ 511: 496]}},tmp[ 495: 480]};
-assign y2_bias     = {{15{tmp[ 575: 544]}},tmp[ 543: 512]};
-assign y2_zthresh  = {{15{tmp[ 639: 608]}},tmp[ 607: 576]};
+assign y2_q        = {{15{ 8'b0,tmp[ 471: 464]}}, 8'b0,tmp[ 455: 448]};
+assign y2_iq       = {{15{      tmp[ 511: 496]}},      tmp[ 495: 480]};
+assign y2_bias     = {{15{            32'hD800}},            32'hC000};
+assign y2_zthresh  = {{15{24'b0,tmp[ 615: 608]}},24'b0,tmp[ 583: 576]};
 assign y2_sharpen  = 256'b0;
-assign uv_q        = {{15{tmp[ 671: 656]}},tmp[ 655: 640]};
-assign uv_iq       = {{15{tmp[ 703: 688]}},tmp[ 687: 672]};
-assign uv_bias     = {{15{tmp[ 767: 736]}},tmp[ 735: 704]};
-assign uv_zthresh  = {{15{tmp[ 831: 800]}},tmp[ 799: 768]};
+assign uv_q        = {{15{ 8'b0,tmp[ 663: 656]}}, 8'b0,tmp[ 647: 640]};
+assign uv_iq       = {{15{      tmp[ 703: 688]}},      tmp[ 687: 672]};
+assign uv_bias     = {{15{            32'hE600}},            32'hDC00};
+assign uv_zthresh  = {{15{24'b0,tmp[ 807: 800]}},24'b0,tmp[ 775: 768]};
 assign uv_sharpen  = 256'b0; 
-assign min_disto   = tmp[ 863: 832];
-assign lambda_i16  = tmp[ 895: 864];
-assign lambda_i4   = tmp[ 927: 896];
-assign lambda_uv   = tmp[ 959: 928];
-assign tlambda     = tmp[ 991: 960];
-assign lambda_mode = tmp[1023: 992];
+assign min_disto   = {tmp[ 843: 832]};
+assign lambda_i16  = {tmp[ 879: 864]};
+assign lambda_i4   = {tmp[ 903: 896]};
+assign lambda_uv   = {tmp[ 935: 928]};
+assign lambda_mode = {tmp[ 963: 960]};
+assign tlambda     = {tmp[ 999: 992]};
 
 endmodule
