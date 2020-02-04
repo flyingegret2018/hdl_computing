@@ -150,11 +150,11 @@ assign uv_iq       = {{15{      tmp[ 703: 688]}},      tmp[ 687: 672]};
 assign uv_bias     = {{15{            32'hE600}},            32'hDC00};
 assign uv_zthresh  = {{15{24'b0,tmp[ 807: 800]}},24'b0,tmp[ 775: 768]};
 assign uv_sharpen  = 256'b0; 
-assign min_disto   = {tmp[ 843: 832]};
-assign lambda_i16  = {tmp[ 879: 864]};
-assign lambda_i4   = {tmp[ 903: 896]};
-assign lambda_uv   = {tmp[ 935: 928]};
-assign lambda_mode = {tmp[ 963: 960]};
-assign tlambda     = {tmp[ 999: 992]};
+assign min_disto   = {20'b0,tmp[ 843: 832]};
+assign lambda_i16  = {16'b0,tmp[ 879: 864]};
+assign lambda_i4   = {24'b0,tmp[ 903: 896]};
+assign lambda_uv   = {24'b0,tmp[ 935: 928]};
+assign lambda_mode = {28'b0,tmp[ 963: 960]};
+assign tlambda     = {24'b0,tmp[ 999: 992]};
 
 endmodule
