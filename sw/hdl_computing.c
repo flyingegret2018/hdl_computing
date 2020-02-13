@@ -15897,22 +15897,22 @@ int main(int argc, const char *argv[]) {
 			  for(i = 0; i < h; i++){
 				  memcpy(mem_in + 128 + (y * mb_w_ + x) * 384 + i * 16, pic->y + (y * pic->y_stride	+ x) * 16 + i * pic->y_stride, w);
 				  if(w < 16){
-					  memset(mem_in + 128 + (y * mb_w_ + x) * 384 + i * 16 + w, (mem_in + (y * mb_w_ + x) * 384 + i * 16)[w - 1], 16 - w);
+					  memset(mem_in + 128 + (y * mb_w_ + x) * 384 + i * 16 + w, (mem_in + 128 + (y * mb_w_ + x) * 384 + i * 16)[w - 1], 16 - w);
 				  }
 			  }
 			  for (i = h; i < 16; ++i) {
-				  memcpy(mem_in + 128 + (y * mb_w_ + x) * 384 + i * 16, mem_in + (y * mb_w_ + x) * 384 + i * 16 - 16, 16);
+				  memcpy(mem_in + 128 + (y * mb_w_ + x) * 384 + i * 16, mem_in + 128 + (y * mb_w_ + x) * 384 + i * 16 - 16, 16);
 			  }
 			  for(i = 0; i < uv_h; i++){
 				  memcpy(mem_in + 128 + 256 + (y * mb_w_ + x) * 384 + i * 16, pic->u + (y * pic->uv_stride + x) * 8 + i * pic->uv_stride, uv_w);
 				  memcpy(mem_in + 128 + 264 + (y * mb_w_ + x) * 384 + i * 16, pic->v + (y * pic->uv_stride + x) * 8 + i * pic->uv_stride, uv_w);
 				  if(uv_w < 8){
-					  memset(mem_in + 128 + 256 + (y * mb_w_ + x) * 384 + i * 16 + uv_w, (mem_in + 256 + (y * mb_w_ + x) * 384 + i * 16)[uv_w - 1], 8 - uv_w);
-					  memset(mem_in + 128 + 264 + (y * mb_w_ + x) * 384 + i * 16 + uv_w, (mem_in + 264 + (y * mb_w_ + x) * 384 + i * 16)[uv_w - 1], 8 - uv_w);
+					  memset(mem_in + 128 + 256 + (y * mb_w_ + x) * 384 + i * 16 + uv_w, (mem_in + 128 + 256 + (y * mb_w_ + x) * 384 + i * 16)[uv_w - 1], 8 - uv_w);
+					  memset(mem_in + 128 + 264 + (y * mb_w_ + x) * 384 + i * 16 + uv_w, (mem_in + 128 + 264 + (y * mb_w_ + x) * 384 + i * 16)[uv_w - 1], 8 - uv_w);
 				  }
 			  }
 			  for (i = uv_h; i < 8; ++i) {
-				  memcpy(mem_in + 128 + 256 + (y * mb_w_ + x) * 384 + i * 16, mem_in + 256 + (y * mb_w_ + x) * 384 + i * 16 - 16, 16);
+				  memcpy(mem_in + 128 + 256 + (y * mb_w_ + x) * 384 + i * 16, mem_in + 128 + 256 + (y * mb_w_ + x) * 384 + i * 16 - 16, 16);
 			  }
 		  }
 	  }
