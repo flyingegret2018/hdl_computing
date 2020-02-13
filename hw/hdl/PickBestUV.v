@@ -278,7 +278,7 @@ always @ (posedge clk or negedge rst_n)begin
                 rec_start  <= 1'b0;
             end
             SCORE:begin
-                score_tmp  <= ((sum << 10) + FixedCost[mode_tmp]) * lambda_uv + 'd256 * sse;
+                score_tmp  <= ((sum << 10) + FixedCost[mode_tmp]) * lambda_uv + (sse << 8);
             end
             COMP:begin
                 ;

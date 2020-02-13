@@ -25,6 +25,6 @@ module RDScore(
 ,output        [63:0] score
 );
 
-assign score = ((R << 10) + H) * lambda + 'd256 * (D + ((SD * tlambda + 'd128) >> 8));
+assign score = ((R << 10) + H) * lambda + (D << 8) + SD * tlambda;
 
 endmodule

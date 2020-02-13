@@ -457,7 +457,7 @@ always @ (posedge clk or negedge rst_n)begin
                 levels_i[i4] <= YLevels[mode];
                 nz[i4]       <= nz_i[mode];
                 score_tmp    <= ((sum[mode] << 10) + FixedCost[mode]) * lambda_mode +
-                             'd256 * (sse[mode] + ((disto[mode] * tlambda + 'd128) >> 8));
+                                (sse[mode] << 8) + disto[mode] * tlambda;
                 load         <= 1'b1;
             end
             ROTATE:begin

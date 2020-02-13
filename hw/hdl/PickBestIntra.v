@@ -283,8 +283,8 @@ always @ (posedge clk or negedge rst_n)begin
                 rec_start <= 1'b0;
             end
             SCORE:begin
-                score_tmp <= ((sum << 10) + FixedCost[mode_tmp]) * lambda_i16 +
-                             'd256 * (sse + ((disto * tlambda + 'd128) >> 8));
+                score_tmp <= ((sum << 10) + FixedCost[mode_tmp]) * lambda_i16 + 
+                             (sse << 8) + disto * tlambda;
             end
             COMP:begin
                 ;
@@ -303,7 +303,7 @@ always @ (posedge clk or negedge rst_n)begin
             end
             DONE:begin
                 Score     <= ((R_tmp << 10) + H_tmp) * lambda_mode +
-                             'd256 * (D_tmp + ((SD_tmp * tlambda + 'd128) >> 8));
+                             (D_tmp << 8) + SD_tmp * tlambda;
                 done      <= 1'b1;
             end
         endcase
