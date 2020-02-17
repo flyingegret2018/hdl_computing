@@ -22,14 +22,14 @@ module FTransformWHT#(
  input                                             clk
 ,input                                             rst_n
 ,input                                             start
-,input      [12 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] in
-,output     [15 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] out
+,input      [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] in
+,output     [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] out
 ,output reg                                        done
 );
 
-wire signed [11 : 0]in_i [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//12b
-wire signed [13 : 0]tmp  [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//14b
-reg  signed [14 : 0]out_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//15b
+wire signed [15 : 0]in_i [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//12b
+wire signed [15 : 0]tmp  [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//14b
+reg  signed [15 : 0]out_i[BLOCK_SIZE * BLOCK_SIZE - 1 : 0];//15b
 
 always @ (posedge clk or negedge rst_n)begin
     if(!rst_n)begin
@@ -45,12 +45,12 @@ genvar i;
 generate
 
 for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
-    assign in_i[i] = in   [12 * (i + 1) - 1 : 12 * i];
-    assign out[15 * (i + 1) - 1 : 15 * i] = out_i[i];
+    assign in_i[i] = in   [16 * (i + 1) - 1 : 16 * i];
+    assign out[16 * (i + 1) - 1 : 16 * i] = out_i[i];
 end
 
 for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
-    wire signed [12 : 0] a0,a1,a2,a3;//13b
+    wire signed [15 : 0] a0,a1,a2,a3;//13b
     assign a0 = in_i[BLOCK_SIZE * i + 0] + in_i[BLOCK_SIZE * i + 2];
     assign a1 = in_i[BLOCK_SIZE * i + 1] + in_i[BLOCK_SIZE * i + 3];
     assign a2 = in_i[BLOCK_SIZE * i + 1] - in_i[BLOCK_SIZE * i + 3];
@@ -61,7 +61,7 @@ for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
     assign tmp[BLOCK_SIZE * i + 2] = a3 - a2;
     assign tmp[BLOCK_SIZE * i + 3] = a0 - a1;
     
-    wire signed [14 : 0] b0,b1,b2,b3;//15b
+    wire signed [15 : 0] b0,b1,b2,b3;//15b
     assign b0 = tmp[0 + i] + tmp[ 8 + i];
     assign b1 = tmp[4 + i] + tmp[12 + i];
     assign b2 = tmp[4 + i] - tmp[12 + i];

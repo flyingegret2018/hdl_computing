@@ -290,17 +290,18 @@ RotateI4 U_ROTATEI4(
     .top_right_i                    ( top_right_w                   )
 );
 
-reg [7:0] cstate;
-reg [7:0] nstate;
+reg [8:0] cstate;
+reg [8:0] nstate;
 
 parameter IDLE        = 'h1;
-parameter PRED        = 'h2;
-parameter WAIT        = 'h4;
-parameter SCORE       = 'h8;
-parameter BEST        = 'h10;
-parameter STORE       = 'h20;
-parameter ROTATE      = 'h40;
-parameter DONE        = 'h80;
+parameter INIT        = 'h2;
+parameter PRED        = 'h4;
+parameter WAIT        = 'h8;
+parameter SCORE       = 'h10;
+parameter BEST        = 'h20;
+parameter STORE       = 'h40;
+parameter ROTATE      = 'h80;
+parameter DONE        = 'h100; 
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
@@ -313,9 +314,11 @@ always @ * begin
     case(cstate)
         IDLE:
             if(start)
-                nstate = PRED;
+                nstate = INIT;
             else
                 nstate = IDLE;
+        INIT:
+            nstate = PRED;
         PRED:
             nstate = WAIT;
         WAIT:
@@ -419,6 +422,9 @@ always @ (posedge clk or negedge rst_n)begin
     else begin
         case(cstate)
             IDLE:begin
+                done         <= 1'b0;
+            end
+            INIT:begin
                 i4           <= 'b0;
                 left_i       <= left;
                 top_left_i   <= top_left;
@@ -426,7 +432,6 @@ always @ (posedge clk or negedge rst_n)begin
                 top_right_i  <= top[63:32];
                 src          <= Ysrc_i[0];
                 Score        <= 'd211 * lambda_mode;
-                done         <= 1'b0;
             end
             PRED:begin
                 pred_r[0]    <= pred[0];
