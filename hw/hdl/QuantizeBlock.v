@@ -83,12 +83,18 @@ for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
     wire[31:0]mul_tmp;
     assign mul_tmp = coeff * iq_i[i];
 
+    wire sign_tmp;
+    wire[31:0]coeff_tmp;
     always @ (posedge clk or negedge rst_n)begin
         if(!rst_n)begin
-            level[i] <= 'b0;
+            sign_tmp  <= 'b0;
+            coeff_tmp <= 'b0;
+            level[i]  <= 'b0;
         end
         else begin
-            level[i] <= (mul_tmp + bias_i[i]) >>> 17;
+            sign_tmp  <= sign;
+            coeff_tmp <= coeff;
+            level[i]  <= (mul_tmp + bias_i[i]) >>> 17;
         end
     end
     
@@ -96,7 +102,7 @@ for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
     assign level1 = (level[i] > 'd2047) ? 'd2047 : level[i];
     
     wire signed [31:0]level2;
-    assign level2 = sign ? (~level1 + 1'b1) : level1;
+    assign level2 = sign_tmp ? (~level1 + 1'b1) : level1;
     
     always @ (posedge clk or negedge rst_n)begin
         if(!rst_n)begin
@@ -104,7 +110,7 @@ for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
             out_i [i] <= 'b0;
         end
         else begin
-            if(coeff > zthresh_i[i])begin
+            if(coeff_tmp > zthresh_i[i])begin
                 Rout_i[i] <= level2 * q_i[i];
                 out_i [i] <= level2;
             end

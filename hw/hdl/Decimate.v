@@ -76,6 +76,7 @@ wire[  31:0]Ynz;
 wire[4095:0]ac_levels0;
 wire[2047:0]Yout16;
 reg         mbtype_i;
+wire        PB_done;
 assign mbtype = {7'b0,mbtype_i};
 
 PickBestIntra U_PICKBESTINTRA(
@@ -110,14 +111,13 @@ PickBestIntra U_PICKBESTINTRA(
     .dc_levels                      ( dc_levels                     ),
     .ac_levels                      ( ac_levels0                    ),
     .nz                             ( Ynz                           ),
-    .done                           (                               )
+    .done                           ( PB_done                      )
 );
 
 wire[  63:0]Yscore4;
 wire[  31:0]Ynz4;
 wire[4095:0]ac_levels1;
 wire[2047:0]Yout4;
-wire        PB4_done;
 PickBestIntra4 U_PICKBESTINTRA4(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
@@ -139,7 +139,7 @@ PickBestIntra4 U_PICKBESTINTRA4(
     .mode_i4                        ( mode_i4                       ),
     .levels                         ( ac_levels1                    ),
     .nz                             ( Ynz4                          ),
-    .done                           ( PB4_done                      )
+    .done                           (                               )
 );
 
 wire[  31:0]UVnz;
