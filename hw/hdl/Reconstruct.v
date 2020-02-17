@@ -173,7 +173,7 @@ always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
         count <= 'b0;
     else
-        if(count >= 'd38)
+        if(count >= 'd44)
             count <= 'b0;
         else if(start | count != 'b0)
             count <= count + 1'b1;
