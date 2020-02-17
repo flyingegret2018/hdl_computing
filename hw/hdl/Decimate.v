@@ -179,7 +179,7 @@ always @ (posedge clk or negedge rst_n)begin
         skipped   <= 'b0;
     end
     else begin
-        if(PB4_done)begin
+        if(PB_done)begin
             done      <= 1'b1;
             if(Yscore4 >= Yscore)begin
                 ac_levels <= ac_levels0;
