@@ -173,7 +173,7 @@ always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
         count <= 'b0;
     else
-        if(count >= 'd44)
+        if(count >= 'd41)
             count <= 'b0;
         else if(start | count != 'b0)
             count <= count + 1'b1;
@@ -254,210 +254,203 @@ always @ (posedge clk or negedge rst_n)begin
             'd3:begin
                 Ysrc_r          <= Ysrc_w [ 3];
                 YPred_r         <= YPred_w[ 3];
+                FWHT_r[ 15:  0] <= FDCT_w[15:0];
             end
             'd4:begin
                 Ysrc_r          <= Ysrc_w [ 4];
                 YPred_r         <= YPred_w[ 4];
-                FWHT_r[ 15:  0] <= FDCT_w[15:0];
+                FWHT_r[ 31: 16] <= FDCT_w[15:0];
             end
             'd5:begin
                 Ysrc_r          <= Ysrc_w [ 5];
                 YPred_r         <= YPred_w[ 5];
-                FWHT_r[ 31: 16] <= FDCT_w[15:0];
-            end
-            'd6:begin
-                Ysrc_r          <= Ysrc_w [ 6];
-                YPred_r         <= YPred_w[ 6];
                 FWHT_r[ 47: 32] <= FDCT_w[15:0];
                 Yac_r[0]        <= Yac_w;
                 AC_Rout_r[0]    <= AC_Rout_w;
                 AC_nz_r[0]      <= AC_nz_w;
             end
-            'd7:begin
-                Ysrc_r          <= Ysrc_w [ 7];
-                YPred_r         <= YPred_w[ 7];
+            'd6:begin
+                Ysrc_r          <= Ysrc_w [ 6];
+                YPred_r         <= YPred_w[ 6];
                 FWHT_r[ 63: 48] <= FDCT_w[15:0];
                 Yac_r[1]        <= Yac_w;
                 AC_Rout_r[1]    <= AC_Rout_w;
                 AC_nz_r[1]      <= AC_nz_w;
             end
-            'd8:begin
-                Ysrc_r          <= Ysrc_w [ 8];
-                YPred_r         <= YPred_w[ 8];
+            'd7:begin
+                Ysrc_r          <= Ysrc_w [ 7];
+                YPred_r         <= YPred_w[ 7];
                 FWHT_r[ 79: 64] <= FDCT_w[15:0];
                 Yac_r[2]        <= Yac_w;
                 AC_Rout_r[2]    <= AC_Rout_w;
                 AC_nz_r[2]      <= AC_nz_w;
             end
-            'd9:begin
-                Ysrc_r          <= Ysrc_w [ 9];
-                YPred_r         <= YPred_w[ 9];
+            'd8:begin
+                Ysrc_r          <= Ysrc_w [ 8];
+                YPred_r         <= YPred_w[ 8];
                 FWHT_r[ 95: 80] <= FDCT_w[15:0];
                 Yac_r[3]        <= Yac_w;
                 AC_Rout_r[3]    <= AC_Rout_w;
                 AC_nz_r[3]      <= AC_nz_w;
             end
-            'd10:begin
-                Ysrc_r          <= Ysrc_w [10];
-                YPred_r         <= YPred_w[10];
+            'd9:begin
+                Ysrc_r          <= Ysrc_w [ 9];
+                YPred_r         <= YPred_w[ 9];
                 FWHT_r[111: 96] <= FDCT_w[15:0];
                 Yac_r[4]        <= Yac_w;
                 AC_Rout_r[4]    <= AC_Rout_w;
                 AC_nz_r[4]      <= AC_nz_w;
             end
-            'd11:begin
-                Ysrc_r          <= Ysrc_w [11];
-                YPred_r         <= YPred_w[11];
+            'd10:begin
+                Ysrc_r          <= Ysrc_w [10];
+                YPred_r         <= YPred_w[10];
                 FWHT_r[127:112] <= FDCT_w[15:0];
                 Yac_r[5]        <= Yac_w;
                 AC_Rout_r[5]    <= AC_Rout_w;
                 AC_nz_r[5]      <= AC_nz_w;
             end
-            'd12:begin
-                Ysrc_r          <= Ysrc_w [12];
-                YPred_r         <= YPred_w[12];
+            'd11:begin
+                Ysrc_r          <= Ysrc_w [11];
+                YPred_r         <= YPred_w[11];
                 FWHT_r[143:128] <= FDCT_w[15:0];
                 Yac_r[6]        <= Yac_w;
                 AC_Rout_r[6]    <= AC_Rout_w;
                 AC_nz_r[6]      <= AC_nz_w;
             end
-            'd13:begin
-                Ysrc_r          <= Ysrc_w [13];
-                YPred_r         <= YPred_w[13];
+            'd12:begin
+                Ysrc_r          <= Ysrc_w [12];
+                YPred_r         <= YPred_w[12];
                 FWHT_r[159:144] <= FDCT_w[15:0];
                 Yac_r[7]        <= Yac_w;
                 AC_Rout_r[7]    <= AC_Rout_w;
                 AC_nz_r[7]      <= AC_nz_w;
             end
-            'd14:begin
-                Ysrc_r          <= Ysrc_w [14];
-                YPred_r         <= YPred_w[14];
+            'd13:begin
+                Ysrc_r          <= Ysrc_w [13];
+                YPred_r         <= YPred_w[13];
                 FWHT_r[175:160] <= FDCT_w[15:0];
                 Yac_r[8]        <= Yac_w;
                 AC_Rout_r[8]    <= AC_Rout_w;
                 AC_nz_r[8]      <= AC_nz_w;
             end
-            'd15:begin
-                Ysrc_r          <= Ysrc_w [15];
-                YPred_r         <= YPred_w[15];
+            'd14:begin
+                Ysrc_r          <= Ysrc_w [14];
+                YPred_r         <= YPred_w[14];
                 FWHT_r[191:176] <= FDCT_w[15:0];
                 Yac_r[9]        <= Yac_w;
                 AC_Rout_r[9]    <= AC_Rout_w;
                 AC_nz_r[9]      <= AC_nz_w;
             end
-            'd16:begin
+            'd15:begin
+                Ysrc_r          <= Ysrc_w [15];
+                YPred_r         <= YPred_w[15];
                 FWHT_r[207:192] <= FDCT_w[15:0];
                 Yac_r[10]       <= Yac_w;
                 AC_Rout_r[10]   <= AC_Rout_w;
                 AC_nz_r[10]     <= AC_nz_w;
             end
-            'd17:begin
+            'd16:begin
                 FWHT_r[223:208] <= FDCT_w[15:0];
                 Yac_r[11]       <= Yac_w;
                 AC_Rout_r[11]   <= AC_Rout_w;
                 AC_nz_r[11]     <= AC_nz_w;
             end
-            'd18:begin
+            'd17:begin
                 FWHT_r[239:224] <= FDCT_w[15:0];
                 Yac_r[12]       <= Yac_w;
                 AC_Rout_r[12]   <= AC_Rout_w;
                 AC_nz_r[12]     <= AC_nz_w;
             end
-            'd19:begin
+            'd18:begin
                 FWHT_r[255:240] <= FDCT_w[15:0];
                 Yac_r[13]       <= Yac_w;
                 AC_Rout_r[13]   <= AC_Rout_w;
                 AC_nz_r[13]     <= AC_nz_w;
             end
-            'd20:begin
+            'd19:begin
                 Yac_r[14]       <= Yac_w;
                 AC_Rout_r[14]   <= AC_Rout_w;
                 AC_nz_r[14]     <= AC_nz_w;
             end
-            'd21:begin
+            'd20:begin
                 Yac_r[15]       <= Yac_w;
                 AC_Rout_r[15]   <= AC_Rout_w;
                 AC_nz_r[15]     <= AC_nz_w;
+            end
+            'd21:begin
+                ;
             end
             'd22:begin
                 ;
             end
             'd23:begin
-                ;
-            end
-            'd24:begin
-                ;
-            end
-            'd25:begin
                 IDCT_r          <= {AC_Rout_r[ 0][255:16],IWHT_w[ 15:  0]};
             end
-            'd26:begin
+            'd24:begin
                 IDCT_r          <= {AC_Rout_r[ 1][255:16],IWHT_w[ 31: 16]};
             end
-            'd27:begin
+            'd25:begin
                 IDCT_r          <= {AC_Rout_r[ 2][255:16],IWHT_w[ 47: 32]};
             end
-            'd28:begin
+            'd26:begin
                 IDCT_r          <= {AC_Rout_r[ 3][255:16],IWHT_w[ 63: 48]};
-            end
-            'd29:begin
-                IDCT_r          <= {AC_Rout_r[ 4][255:16],IWHT_w[ 79: 64]};
                 Yout_r[ 0]      <= Yout_w;
             end
-            'd30:begin
-                IDCT_r          <= {AC_Rout_r[ 5][255:16],IWHT_w[ 95: 80]};
+            'd27:begin
+                IDCT_r          <= {AC_Rout_r[ 4][255:16],IWHT_w[ 79: 64]};
                 Yout_r[ 1]      <= Yout_w;
             end
-            'd31:begin
-                IDCT_r          <= {AC_Rout_r[ 6][255:16],IWHT_w[111: 96]};
+            'd28:begin
+                IDCT_r          <= {AC_Rout_r[ 5][255:16],IWHT_w[ 95: 80]};
                 Yout_r[ 2]      <= Yout_w;
             end
-            'd32:begin
-                IDCT_r          <= {AC_Rout_r[ 7][255:16],IWHT_w[127:112]};
+            'd29:begin
+                IDCT_r          <= {AC_Rout_r[ 6][255:16],IWHT_w[111: 96]};
                 Yout_r[ 3]      <= Yout_w;
             end
-            'd33:begin
-                IDCT_r          <= {AC_Rout_r[ 8][255:16],IWHT_w[143:128]};
+            'd30:begin
+                IDCT_r          <= {AC_Rout_r[ 7][255:16],IWHT_w[127:112]};
                 Yout_r[ 4]      <= Yout_w;
             end
-            'd34:begin
-                IDCT_r          <= {AC_Rout_r[ 9][255:16],IWHT_w[159:144]};
+            'd31:begin
+                IDCT_r          <= {AC_Rout_r[ 8][255:16],IWHT_w[143:128]};
                 Yout_r[ 5]      <= Yout_w;
             end
-            'd35:begin
-                IDCT_r          <= {AC_Rout_r[10][255:16],IWHT_w[175:160]};
+            'd32:begin
+                IDCT_r          <= {AC_Rout_r[ 9][255:16],IWHT_w[159:144]};
                 Yout_r[ 6]      <= Yout_w;
             end
-            'd36:begin
-                IDCT_r          <= {AC_Rout_r[11][255:16],IWHT_w[191:176]};
+            'd33:begin
+                IDCT_r          <= {AC_Rout_r[10][255:16],IWHT_w[175:160]};
                 Yout_r[ 7]      <= Yout_w;
             end
-            'd37:begin
-                IDCT_r          <= {AC_Rout_r[12][255:16],IWHT_w[207:192]};
+            'd34:begin
+                IDCT_r          <= {AC_Rout_r[11][255:16],IWHT_w[191:176]};
                 Yout_r[ 8]      <= Yout_w;
             end
-            'd38:begin
-                IDCT_r          <= {AC_Rout_r[13][255:16],IWHT_w[223:208]};
+            'd35:begin
+                IDCT_r          <= {AC_Rout_r[12][255:16],IWHT_w[207:192]};
                 Yout_r[ 9]      <= Yout_w;
             end
-            'd39:begin
-                IDCT_r          <= {AC_Rout_r[14][255:16],IWHT_w[239:224]};
+            'd36:begin
+                IDCT_r          <= {AC_Rout_r[13][255:16],IWHT_w[223:208]};
                 Yout_r[10]      <= Yout_w;
             end
-            'd40:begin
-                IDCT_r          <= {AC_Rout_r[15][255:16],IWHT_w[255:240]};
+            'd37:begin
+                IDCT_r          <= {AC_Rout_r[14][255:16],IWHT_w[239:224]};
                 Yout_r[11]      <= Yout_w;
             end
-            'd41:begin
+            'd38:begin
+                IDCT_r          <= {AC_Rout_r[15][255:16],IWHT_w[255:240]};
                 Yout_r[12]      <= Yout_w;
             end
-            'd42:begin
+            'd39:begin
                 Yout_r[13]      <= Yout_w;
             end
-            'd43:begin
+            'd40:begin
                 Yout_r[14]      <= Yout_w;
             end
-            'd44:begin
+            'd41:begin
                 Yout_r[15]      <= Yout_w;
                 done            <= 'b1;
             end
