@@ -83,8 +83,8 @@ for(i = 0; i < BLOCK_SIZE * BLOCK_SIZE; i = i + 1)begin
     wire[31:0]mul_tmp;
     assign mul_tmp = coeff * iq_i[i];
 
-    wire sign_tmp;
-    wire[31:0]coeff_tmp;
+    reg sign_tmp;
+    reg[31:0]coeff_tmp;
     always @ (posedge clk or negedge rst_n)begin
         if(!rst_n)begin
             sign_tmp  <= 'b0;
