@@ -466,6 +466,6 @@ always @ (posedge clk or negedge rst_n)begin
     end
 end
 
-assign nz = {7'b0,DC_nz,8'b0,AC_nz};
+assign nz = {7'b0,DC_nz_w,8'b0,AC_nz_r};
 
 endmodule
