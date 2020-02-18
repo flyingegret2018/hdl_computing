@@ -40,6 +40,7 @@ module Reconstruct#(
 ,output reg                                        done
 );
 
+reg  [ 8              - 1 : 0]count;
 wire [ 8 * BLOCK_SIZE - 1 : 0]Ysrc_w[BLOCK_SIZE - 1 : 0];
 wire [ 8 * BLOCK_SIZE - 1 : 0]YPred_w[BLOCK_SIZE - 1 : 0];
 reg  [ 8 * BLOCK_SIZE - 1 : 0]Yout_r[BLOCK_SIZE - 1 : 0];
@@ -59,7 +60,8 @@ wire [16 * BLOCK_SIZE - 1 : 0]DC_Rout_w;
 wire                          DC_nz_w;
 wire [16 * BLOCK_SIZE - 1 : 0]IWHT_w;
 reg  [16 * BLOCK_SIZE - 1 : 0]IDCT_r;
-reg  [ 8              - 1 : 0]count;
+
+assign nz = {7'b0,DC_nz_w,8'b0,AC_nz_r};
 
 genvar i;
 
@@ -377,12 +379,6 @@ always @ (posedge clk or negedge rst_n)begin
                 AC_Rout_r[15]   <= AC_Rout_w;
                 AC_nz_r[15]     <= AC_nz_w;
             end
-            'd21:begin
-                ;
-            end
-            'd22:begin
-                ;
-            end
             'd23:begin
                 IDCT_r          <= {AC_Rout_r[ 0][255:16],IWHT_w[ 15:  0]};
             end
@@ -474,7 +470,5 @@ always @ (posedge clk or negedge rst_n)begin
         endcase 
     end
 end
-
-assign nz = {7'b0,DC_nz_w,8'b0,AC_nz_r};
 
 endmodule

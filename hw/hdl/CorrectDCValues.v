@@ -16,8 +16,8 @@
 `timescale 1ns/100ps
 
 module CorrectDCValues#(
- parameter I_WIDTH = 12,
- parameter O_WIDTH = 12
+ parameter I_WIDTH = 16,
+ parameter O_WIDTH = 16
 )(
  input                                     clk
 ,input                                     rst_n
