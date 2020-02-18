@@ -60,21 +60,6 @@ reg  [ 8      - 1 : 0]QB_nz;
 wire [ 1      - 1 : 0]QB_nz_w;
 
 assign nz = {8'b0,QB_nz,16'b0};
-assign done = IDCT_done[0];
-assign CDCV_i = {FDCT_o[7][11:0],FDCT_o[6][11:0],
-                 FDCT_o[5][11:0],FDCT_o[4][11:0],
-                 FDCT_o[3][11:0],FDCT_o[2][11:0],
-                 FDCT_o[1][11:0],FDCT_o[0][11:0]};
-
-genvar i;
-
-generate
-
-for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
-    assign QB_i[i] = {FDCT_o[i][191: 12],CDCV_o[12 * (i + 1) - 1: 12 * i]};
-end
-
-endgenerate
 
 assign UVsrc_w[0] = {UVsrc[ 415:384],UVsrc[287:256],UVsrc[159:128],UVsrc[ 31:  0]};
 assign UVsrc_w[1] = {UVsrc[ 447:416],UVsrc[319:288],UVsrc[191:160],UVsrc[ 63: 32]};
