@@ -44,7 +44,7 @@ module ReconstructUV#(
 reg  [ 8      - 1 : 0]count;
 wire [ 8 * 16 - 1 : 0]UVsrc_w     [BLOCK_SIZE - 1 : 0];
 wire [ 8 * 16 - 1 : 0]UVPred_w    [BLOCK_SIZE - 1 : 0];
-reg  [ 8 * 16 - 1 : 0]UVout_i     [BLOCK_SIZE - 1 : 0];
+reg  [ 8 * 16 - 1 : 0]UVout_r     [BLOCK_SIZE - 1 : 0];
 reg  [ 8 * 16 - 1 : 0]UVsrc_r;
 reg  [ 8 * 16 - 1 : 0]UVPred_r;
 wire [ 8 * 16 - 1 : 0]UVout_w;
@@ -79,14 +79,14 @@ assign UVPred_w[5] = {UVPred[ 511:480],UVPred[383:352],UVPred[255:224],UVPred[12
 assign UVPred_w[6] = {UVPred[ 991:960],UVPred[863:832],UVPred[735:704],UVPred[607:576]};
 assign UVPred_w[7] = {UVPred[1023:992],UVPred[895:864],UVPred[767:736],UVPred[639:608]};
 
-assign {UVout[ 415:384],UVout[287:256],UVout[159:128],UVout[ 31:  0]} = UVout_i[0];
-assign {UVout[ 447:416],UVout[319:288],UVout[191:160],UVout[ 63: 32]} = UVout_i[1];
-assign {UVout[ 927:896],UVout[799:768],UVout[671:640],UVout[543:512]} = UVout_i[2];
-assign {UVout[ 959:928],UVout[831:800],UVout[703:672],UVout[575:544]} = UVout_i[3];
-assign {UVout[ 479:448],UVout[351:320],UVout[223:192],UVout[ 95: 64]} = UVout_i[4];
-assign {UVout[ 511:480],UVout[383:352],UVout[255:224],UVout[127: 96]} = UVout_i[5];
-assign {UVout[ 991:960],UVout[863:832],UVout[735:704],UVout[607:576]} = UVout_i[6];
-assign {UVout[1023:992],UVout[895:864],UVout[767:736],UVout[639:608]} = UVout_i[7];
+assign {UVout[ 415:384],UVout[287:256],UVout[159:128],UVout[ 31:  0]} = UVout_r[0];
+assign {UVout[ 447:416],UVout[319:288],UVout[191:160],UVout[ 63: 32]} = UVout_r[1];
+assign {UVout[ 927:896],UVout[799:768],UVout[671:640],UVout[543:512]} = UVout_r[2];
+assign {UVout[ 959:928],UVout[831:800],UVout[703:672],UVout[575:544]} = UVout_r[3];
+assign {UVout[ 479:448],UVout[351:320],UVout[223:192],UVout[ 95: 64]} = UVout_r[4];
+assign {UVout[ 511:480],UVout[383:352],UVout[255:224],UVout[127: 96]} = UVout_r[5];
+assign {UVout[ 991:960],UVout[863:832],UVout[735:704],UVout[607:576]} = UVout_r[6];
+assign {UVout[1023:992],UVout[895:864],UVout[767:736],UVout[639:608]} = UVout_r[7];
 
 assign UVlevels[ 255:   0] = UVlevels_i[0];
 assign UVlevels[ 511: 256] = UVlevels_i[1];
@@ -192,14 +192,14 @@ always @ (posedge clk or negedge rst_n)begin
         UVlevels_i[6]   <= 'b0;
         UVlevels_i[7]   <= 'b0;
         QB_nz           <= 'b0;
-        UVout_i[0]      <= 'b0;
-        UVout_i[1]      <= 'b0;
-        UVout_i[2]      <= 'b0;
-        UVout_i[3]      <= 'b0;
-        UVout_i[4]      <= 'b0;
-        UVout_i[5]      <= 'b0;
-        UVout_i[6]      <= 'b0;
-        UVout_i[7]      <= 'b0;
+        UVout_r[0]      <= 'b0;
+        UVout_r[1]      <= 'b0;
+        UVout_r[2]      <= 'b0;
+        UVout_r[3]      <= 'b0;
+        UVout_r[4]      <= 'b0;
+        UVout_r[5]      <= 'b0;
+        UVout_r[6]      <= 'b0;
+        UVout_r[7]      <= 'b0;
         done            <= 'b0;
     end
     else begin
