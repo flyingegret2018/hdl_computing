@@ -332,9 +332,9 @@ always @ (posedge clk or negedge rst_n)begin
 end
 
 wire[31:0]v0,v1,v2;
-assign v0 = dc_tmp[31] ? (~dc_tmp[31:16] + 1'b1) : dc_tmp[31:16];
-assign v1 = dc_tmp[47] ? (~dc_tmp[47:32] + 1'b1) : dc_tmp[47:32];
-assign v2 = dc_tmp[79] ? (~dc_tmp[79:64] + 1'b1) : dc_tmp[79:64];
+assign v0 = {16'b0,(dc_tmp[31] ? (~dc_tmp[31:16] + 1'b1) : dc_tmp[31:16])};
+assign v1 = {16'b0,(dc_tmp[47] ? (~dc_tmp[47:32] + 1'b1) : dc_tmp[47:32])};
+assign v2 = {16'b0,(dc_tmp[79] ? (~dc_tmp[79:64] + 1'b1) : dc_tmp[79:64])};
 wire[31:0]max0,max1;
 assign max0 = (v1 > v0) ? v1 : v0;
 assign max1 = (v2 > max_edge) ? v2 : max_edge;
