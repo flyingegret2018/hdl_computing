@@ -15402,7 +15402,7 @@ struct snap_action *action = NULL;
 uint32_t total_pic = 0;
 uint32_t fpga_pic = 0;
 uint32_t WebP_pic = 0;
-pthread_mutex_t mut;
+//pthread_mutex_t mut;
 
 
 struct timeval endtime, starttime;
@@ -15487,9 +15487,9 @@ static void *FPGAEncode(void *tid) {
 	sem_post(&binSem);
 	__free(mem_in);
 
-	pthread_mutex_lock(&mut);
+	//pthread_mutex_lock(&mut);
 	fpga_pic++;
-	pthread_mutex_unlock(&mut);
+	//pthread_mutex_unlock(&mut);
 	
 	if(buffer_cnt >= BUFFER_LEN - 1) buffer_cnt = 0;
 	else buffer_cnt++;
@@ -15600,11 +15600,11 @@ static void *WebPEncode(void *tid) {
 	__free(mem_out);
 	fclose(out);
 
-	pthread_mutex_lock(&mut);
+	//pthread_mutex_lock(&mut);
 	WebP_pic++;
 	if(WebP_pic >= total_pic)
 		gettimeofday(&endtime, NULL);
-	pthread_mutex_unlock(&mut);
+	//pthread_mutex_unlock(&mut);
 	
     if(buffer_cnt >= BUFFER_LEN - 1) buffer_cnt = 0;
 	else buffer_cnt++;
@@ -15947,9 +15947,9 @@ int main(int argc, const char *argv[]) {
 		fprintf(stderr, "FPGA prepare took: %.3fs\n", encode_time);
 	  }
 	  
-	  pthread_mutex_lock(&mut);
+	  //pthread_mutex_lock(&mut);
 	  total_pic ++;
-	  pthread_mutex_unlock(&mut);
+	  //pthread_mutex_unlock(&mut);
 
       return_value = 0;
 	  if(buffer_cnt >= BUFFER_LEN - 1) buffer_cnt = 0;
@@ -15961,10 +15961,10 @@ int main(int argc, const char *argv[]) {
   closedir(dir); 
 
   while(1){
-  	pthread_mutex_lock(&mut);
+  	//pthread_mutex_lock(&mut);
 	if(fpga_pic >= total_pic && WebP_pic >= total_pic)
 		break;
-	pthread_mutex_unlock(&mut);
+	//pthread_mutex_unlock(&mut);
 	sleep(1);
   }
     
