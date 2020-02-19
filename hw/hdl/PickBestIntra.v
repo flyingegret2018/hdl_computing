@@ -177,7 +177,6 @@ GetCostLuma U_GETCOSTLUMA(
 reg [6:0] cstate;
 reg [6:0] nstate;
 
-reg [   1:0]count;
 reg [ 255:0]dc_tmp;
 reg [4095:0]ac_tmp;
 reg [  31:0]nz_tmp;
@@ -222,7 +221,7 @@ always @ * begin
         PRED:
             nstate = WAIT;
         WAIT:
-            if(count == 2'b11)
+            if(disto_done)
                 nstate = SCORE;
             else
                 nstate = WAIT;
@@ -307,27 +306,6 @@ always @ (posedge clk or negedge rst_n)begin
                 done      <= 1'b1;
             end
         endcase
-    end
-end
-
-always @ (posedge clk or negedge rst_n)begin
-    if(~rst_n)begin
-        count <= 'b0;
-    end
-    else begin
-        if(cstate == SCORE)
-            count <= 'b0;
-        else
-            case({sse_done,disto_done,cost_done})
-                3'b111:count <= count + 2'b11;
-                3'b110:count <= count + 2'b10;
-                3'b101:count <= count + 2'b10;
-                3'b011:count <= count + 2'b10;
-                3'b001:count <= count + 2'b01;
-                3'b010:count <= count + 2'b01;
-                3'b100:count <= count + 2'b01;
-                3'b000:count <= count + 2'b00;
-            endcase
     end
 end
 

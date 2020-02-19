@@ -158,7 +158,6 @@ wire[   9:0]cost_done;
 wire[  15:0]FixedCost[9:0];
 wire[  63:0]score[9:0];
 reg [  63:0]score_tmp;
-reg [   1:0]count;
 reg [   3:0]mode;
 reg [ 127:0]o_tmp;
 reg [ 127:0]pred_r[9:0];
@@ -322,7 +321,7 @@ always @ * begin
         PRED:
             nstate = WAIT;
         WAIT:
-            if(count == 2'b11)
+            if(sse_done[0])
                 nstate = SCORE;
             else
                 nstate = WAIT;
@@ -479,27 +478,6 @@ always @ (posedge clk or negedge rst_n)begin
                 done         <= 1'b1;
             end
         endcase
-    end
-end
-
-always @ (posedge clk or negedge rst_n)begin
-    if(~rst_n)begin
-        count <= 'b0;
-    end
-    else begin
-        if(cstate == SCORE)
-            count <= 'b0;
-        else
-            case({sse_done[0],disto_done[0],cost_done[0]})
-                3'b111:count <= count + 2'b11;
-                3'b110:count <= count + 2'b10;
-                3'b101:count <= count + 2'b10;
-                3'b011:count <= count + 2'b10;
-                3'b001:count <= count + 2'b01;
-                3'b010:count <= count + 2'b01;
-                3'b100:count <= count + 2'b01;
-                3'b000:count <= count + 2'b00;
-            endcase
     end
 end
 

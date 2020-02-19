@@ -95,7 +95,6 @@ wire[   9:0]top_derr_waddr;
 wire        top_derr_wen;
 wire        top_derr_wea;
 wire[  47:0]derr;
-reg [   1:0]count;
 reg [   2:0]uv;
 reg [1023:0]UVout_tmp;
 reg [2047:0]levels_tmp;
@@ -219,7 +218,7 @@ always @ * begin
         PRED:
             nstate = WAIT;
         WAIT:
-            if(count == 2'b10)
+            if(sse_done)
                 nstate = SCORE;
             else
                 nstate = WAIT;
@@ -296,23 +295,6 @@ always @ (posedge clk or negedge rst_n)begin
                 done       <= 1'b1;
             end
         endcase
-    end
-end
-
-always @ (posedge clk or negedge rst_n)begin
-    if(~rst_n)begin
-        count <= 'b0;
-    end
-    else begin
-        if(cstate == SCORE)
-            count <= 'b0;
-        else
-            case({sse_done,cost_done})
-                2'b11:count <= count + 2'b10;
-                2'b10:count <= count + 2'b01;
-                2'b01:count <= count + 2'b01;
-                2'b00:count <= count + 2'b00;
-            endcase
     end
 end
 
