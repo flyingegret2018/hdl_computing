@@ -28,9 +28,11 @@ module GetCostLuma#(
 ,output reg                                               done
 );
 
-reg [ 3:0]count;
-reg [ 0:0]shift;
-reg [31:0]tmp[8:0];
+reg  [ 3         :0]count;
+reg  [ 0         :0]shift;
+reg  [31         :0]tmp[8:0];
+wire [16 * 16 - 1:0]tmp_ac[15:0];
+wire [16      - 1:0]tmp_dc[15:0];
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
@@ -39,9 +41,6 @@ always @ (posedge clk or negedge rst_n)begin
         if(start | count != 'b0)
             count <= count + 1'b1;
 end
-
-wire [16 * 16 - 1:0]tmp_ac[15:0];
-wire [16      - 1:0]tmp_dc[15:0];
 
 genvar i;
 
