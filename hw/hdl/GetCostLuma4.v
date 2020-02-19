@@ -27,13 +27,64 @@ module GetCostLuma4#(
 ,output reg                                               done
 );
 
+reg [ 0:0]shift;
+reg [31:0]tmp[7:0];
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)begin
-        done  <= 'b0;
+        tmp[0] <= 'b0;
+        tmp[1] <= 'b0;
+        tmp[2] <= 'b0;
+        tmp[3] <= 'b0;
+        tmp[4] <= 'b0;
+        tmp[5] <= 'b0;
+        tmp[6] <= 'b0;
+        tmp[7] <= 'b0;
     end
     else begin
-        done  <= start;
+        if(start)begin
+            tmp[0] <= $signed(levels[ 15:  0]) * $signed(levels[ 15:  0]) +
+                      $signed(levels[ 31: 16]) * $signed(levels[ 31: 16]) +
+                      $signed(tmp[0]);
+
+            tmp[1] <= $signed(levels[ 47: 32]) * $signed(levels[ 47: 32]) +
+                      $signed(levels[ 63: 48]) * $signed(levels[ 63: 48]) +
+                      $signed(tmp[1]);
+
+            tmp[2] <= $signed(levels[ 79: 64]) * $signed(levels[ 79: 64]) +
+                      $signed(levels[ 95: 80]) * $signed(levels[ 95: 80]) +
+                      $signed(tmp[2]);
+
+            tmp[3] <= $signed(levels[111: 96]) * $signed(levels[111: 96]) +
+                      $signed(levels[127:112]) * $signed(levels[127:112]) +
+                      $signed(tmp[3]);
+
+            tmp[4] <= $signed(levels[143:128]) * $signed(levels[143:128]) +
+                      $signed(levels[159:144]) * $signed(levels[159:144]) +
+                      $signed(tmp[4]);
+
+            tmp[5] <= $signed(levels[175:160]) * $signed(levels[175:160]) +
+                      $signed(levels[191:176]) * $signed(levels[191:176]) +
+                      $signed(tmp[5]);
+
+            tmp[6] <= $signed(levels[207:192]) * $signed(levels[207:192]) +
+                      $signed(levels[223:208]) * $signed(levels[223:208]) +
+                      $signed(tmp[6]);
+
+            tmp[7] <= $signed(levels[239:224]) * $signed(levels[239:224]) +
+                      $signed(levels[255:240]) * $signed(levels[255:240]) +
+                      $signed(tmp[7]);
+        end
+        else begin
+            tmp[0] <= 'b0;
+            tmp[1] <= 'b0;
+            tmp[2] <= 'b0;
+            tmp[3] <= 'b0;
+            tmp[4] <= 'b0;
+            tmp[5] <= 'b0;
+            tmp[6] <= 'b0;
+            tmp[7] <= 'b0;
+        end
     end
 end
 
@@ -41,23 +92,20 @@ always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
         sum <= 'b0;
     else
-        if(start)
-            sum <= $signed(levels[ 15:  0]) * $signed(levels[ 15:  0]) +
-                   $signed(levels[ 31: 16]) * $signed(levels[ 31: 16]) +
-                   $signed(levels[ 47: 32]) * $signed(levels[ 47: 32]) +
-                   $signed(levels[ 63: 48]) * $signed(levels[ 63: 48]) +
-                   $signed(levels[ 79: 64]) * $signed(levels[ 79: 64]) +
-                   $signed(levels[ 95: 80]) * $signed(levels[ 95: 80]) +
-                   $signed(levels[111: 96]) * $signed(levels[111: 96]) +
-                   $signed(levels[127:112]) * $signed(levels[127:112]) +
-                   $signed(levels[143:128]) * $signed(levels[143:128]) +
-                   $signed(levels[159:144]) * $signed(levels[159:144]) +
-                   $signed(levels[175:160]) * $signed(levels[175:160]) +
-                   $signed(levels[191:176]) * $signed(levels[191:176]) +
-                   $signed(levels[207:192]) * $signed(levels[207:192]) +
-                   $signed(levels[223:208]) * $signed(levels[223:208]) +
-                   $signed(levels[239:224]) * $signed(levels[239:224]) +
-                   $signed(levels[255:240]) * $signed(levels[255:240]);
+        if(shift)
+            sum <= tmp[0] + tmp[1] + tmp[2] + tmp[3] + 
+                   tmp[4] + tmp[5] + tmp[6] + tmp[7];
+end
+
+always @ (posedge clk or negedge rst_n)begin
+    if(~rst_n)begin
+        done  <= 'b0;
+        shift <= 'b0;
+    end
+    else begin
+        shift <= start;
+        done  <= shift;
+    end
 end
 
 endmodule

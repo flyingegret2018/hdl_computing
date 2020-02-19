@@ -122,8 +122,9 @@ always @ (posedge clk or negedge rst_n)begin
         sum <= 'b0;
     else
         if(shift)
-            sum <= tmp[0] + tmp[1] + tmp[2] + tmp[3] + tmp[4] + 
-                   tmp[5] + tmp[6] + tmp[7] + tmp[8];
+            sum <= tmp[0] + tmp[1] + tmp[2] + tmp[3] + 
+                   tmp[4] + tmp[5] + tmp[6] + tmp[7] + 
+                   tmp[8];
 end
 
 always @ (posedge clk or negedge rst_n)begin
