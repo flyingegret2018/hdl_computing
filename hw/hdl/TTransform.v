@@ -90,26 +90,14 @@ always @ (posedge clk or negedge rst_n)begin
         tmp3[7] <= 'b0;
     end
     else begin
-        if(shift[0])begin
-            tmp3[0] <= tmp2[ 0] * w_i[ 0] + tmp2[ 1] * w_i[ 1] + tmp3[0];
-            tmp3[1] <= tmp2[ 2] * w_i[ 2] + tmp2[ 3] * w_i[ 3] + tmp3[1];
-            tmp3[2] <= tmp2[ 4] * w_i[ 4] + tmp2[ 5] * w_i[ 5] + tmp3[2];
-            tmp3[3] <= tmp2[ 6] * w_i[ 6] + tmp2[ 7] * w_i[ 7] + tmp3[3];
-            tmp3[4] <= tmp2[ 8] * w_i[ 8] + tmp2[ 9] * w_i[ 9] + tmp3[4];
-            tmp3[5] <= tmp2[10] * w_i[10] + tmp2[11] * w_i[11] + tmp3[5];
-            tmp3[6] <= tmp2[12] * w_i[12] + tmp2[13] * w_i[13] + tmp3[6];
-            tmp3[7] <= tmp2[14] * w_i[14] + tmp2[15] * w_i[15] + tmp3[7];
-        end
-        else begin
-            tmp3[0] <= 'b0;
-            tmp3[1] <= 'b0;
-            tmp3[2] <= 'b0;
-            tmp3[3] <= 'b0;
-            tmp3[4] <= 'b0;
-            tmp3[5] <= 'b0;
-            tmp3[6] <= 'b0;
-            tmp3[7] <= 'b0;
-        end
+        tmp3[0] <= tmp2[ 0] * w_i[ 0] + tmp2[ 1] * w_i[ 1];
+        tmp3[1] <= tmp2[ 2] * w_i[ 2] + tmp2[ 3] * w_i[ 3];
+        tmp3[2] <= tmp2[ 4] * w_i[ 4] + tmp2[ 5] * w_i[ 5];
+        tmp3[3] <= tmp2[ 6] * w_i[ 6] + tmp2[ 7] * w_i[ 7];
+        tmp3[4] <= tmp2[ 8] * w_i[ 8] + tmp2[ 9] * w_i[ 9];
+        tmp3[5] <= tmp2[10] * w_i[10] + tmp2[11] * w_i[11];
+        tmp3[6] <= tmp2[12] * w_i[12] + tmp2[13] * w_i[13];
+        tmp3[7] <= tmp2[14] * w_i[14] + tmp2[15] * w_i[15];
     end
 end
 
