@@ -321,7 +321,7 @@ always @ * begin
         PRED:
             nstate = WAIT;
         WAIT:
-            if(sse_done[0])
+            if(disto_done[0])
                 nstate = SCORE;
             else
                 nstate = WAIT;
