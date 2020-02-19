@@ -50,6 +50,7 @@ reg  [ 8 * 16 - 1 : 0]UVPred_r;
 wire [ 8 * 16 - 1 : 0]UVout_w;
 reg  [16 * 16 - 1 : 0]FDCT_o      [BLOCK_SIZE - 1 : 0];
 wire [16 * 16 - 1 : 0]FDCT_w;
+reg  [ 1      - 1 : 0]CDCV_start;
 reg  [16 *  8 - 1 : 0]CDCV_i;
 wire [16 *  8 - 1 : 0]CDCV_o;
 reg  [16 * 16 - 1 : 0]QB_i;
@@ -113,7 +114,7 @@ U_FDCT(
 CorrectDCValues U_CDCV(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
-    .start                          (                               ),
+    .start                          ( CDCV_start                    ),
     .x                              ( x                             ),
     .y                              ( y                             ),
     .in                             ( CDCV_i                        ),
@@ -182,6 +183,7 @@ always @ (posedge clk or negedge rst_n)begin
         FDCT_o[6]       <= 'b0;
         FDCT_o[7]       <= 'b0;
         CDCV_i          <= 'b0;
+        CDCV_start      <= 'b0;
         QB_i            <= 'b0;
         UVlevels_i[0]   <= 'b0;
         UVlevels_i[1]   <= 'b0;
@@ -258,6 +260,10 @@ always @ (posedge clk or negedge rst_n)begin
             'd10:begin
                 CDCV_i[127:112] <= FDCT_w[15:0];
                 FDCT_o[7]       <= FDCT_w;
+                CDCV_start      <= 1'b1;
+            end
+            'd11:begin
+                CDCV_start      <= 1'b0;
             end
             'd19:begin
                 QB_i            <= {FDCT_o[0][255:16],CDCV_o[ 15:  0]};
