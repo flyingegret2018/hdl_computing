@@ -142,7 +142,7 @@ HU4 U_HU4(
 );
 
 reg [   3:0]i4;
-reg [ 127:0]src;
+reg [ 127:0]src[9:0];
 wire[ 127:0]dst[9:0];
 wire[ 255:0]YLevels[9:0];
 wire[   9:0]nz_i;
@@ -199,7 +199,7 @@ Reconstruct4 U_RECONSTRUCT4(
     .rst_n                          ( rst_n                         ),
     .start                          ( rec_start                     ),
     .YPred                          ( pred_r[i]                     ),
-    .Ysrc                           ( src                           ),
+    .Ysrc                           ( src[i]                        ),
     .q                              ( q                             ),
     .iq                             ( iq                            ),
     .bias                           ( bias                          ),
@@ -215,7 +215,7 @@ GetSSE4 U_GETSSE4(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
     .start                          ( rec_done[i]                   ),
-    .a                              ( src                           ),
+    .a                              ( src[i]                        ),
     .b                              ( dst[i]                        ),
     .sse                            ( sse[i]                        ),
     .done                           ( sse_done[i]                   )
@@ -225,7 +225,7 @@ Disto4x4 U_DISTO4X4(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
     .start                          ( rec_done[i]                   ),
-    .ina                            ( src                           ),
+    .ina                            ( src[i]                        ),
     .inb                            ( dst[i]                        ),
     .w                              ( kWeightY                      ),
     .sum                            ( disto[i]                      ),
@@ -360,7 +360,16 @@ always @ (posedge clk or negedge rst_n)begin
         top_left_i   <= 'b0;
         top_i        <= 'b0;
         top_right_i  <= 'b0;
-        src          <= 'b0;
+        src[0]       <= 'b0;
+        src[1]       <= 'b0;
+        src[2]       <= 'b0;
+        src[3]       <= 'b0;
+        src[4]       <= 'b0;
+        src[5]       <= 'b0;
+        src[6]       <= 'b0;
+        src[7]       <= 'b0;
+        src[8]       <= 'b0;
+        src[9]       <= 'b0;
         Score        <= 'b0;
         score_tmp    <= 'b0;
         mode         <= 'b0;
@@ -437,13 +446,22 @@ always @ (posedge clk or negedge rst_n)begin
                 done         <= 1'b0;
             end
             INIT:begin
+                Score        <= 'd211 * lambda_mode;
                 i4           <= 'b0;
                 left_i       <= left;
                 top_left_i   <= top_left;
                 top_i        <= top[31: 0];
                 top_right_i  <= top[63:32];
-                src          <= Ysrc_i[0];
-                Score        <= 'd211 * lambda_mode;
+                src[0]       <= Ysrc_i[0];
+                src[1]       <= Ysrc_i[0];
+                src[2]       <= Ysrc_i[0];
+                src[3]       <= Ysrc_i[0];
+                src[4]       <= Ysrc_i[0];
+                src[5]       <= Ysrc_i[0];
+                src[6]       <= Ysrc_i[0];
+                src[7]       <= Ysrc_i[0];
+                src[8]       <= Ysrc_i[0];
+                src[9]       <= Ysrc_i[0];
             end
             PRED:begin
                 pred_r[0]    <= pred[0];
@@ -486,7 +504,16 @@ always @ (posedge clk or negedge rst_n)begin
             ROTATE:begin
                 Score        <= Score + score_tmp;
                 i4           <= i4 + 1'b1;
-                src          <= Ysrc_i[i4 + 1'b1];
+                src[0]       <= Ysrc_i[i4 + 1'b1];
+                src[1]       <= Ysrc_i[i4 + 1'b1];
+                src[2]       <= Ysrc_i[i4 + 1'b1];
+                src[3]       <= Ysrc_i[i4 + 1'b1];
+                src[4]       <= Ysrc_i[i4 + 1'b1];
+                src[5]       <= Ysrc_i[i4 + 1'b1];
+                src[6]       <= Ysrc_i[i4 + 1'b1];
+                src[7]       <= Ysrc_i[i4 + 1'b1];
+                src[8]       <= Ysrc_i[i4 + 1'b1];
+                src[9]       <= Ysrc_i[i4 + 1'b1];
                 left_i       <= left_w;
                 top_left_i   <= top_left_w;
                 top_i        <= top_w;

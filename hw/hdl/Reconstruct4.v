@@ -34,6 +34,29 @@ module Reconstruct4#(
 ,output                                            done
 );
 
+reg [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] q1;
+reg [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] iq1;
+reg [32 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] bias1;
+reg [32 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] zthresh1;
+reg [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] sharpen1;
+
+always @ (posedge clk or negedge rst_n)begin
+    if(~rst_n)begin
+        q1       <= 'b0;
+        iq1      <= 'b0;
+        bias1    <= 'b0;
+        zthresh1 <= 'b0;
+        sharpen1 <= 'b0;
+    end
+    else begin
+        q1       <= q;
+        iq1      <= iq;
+        bias1    <= bias;
+        zthresh1 <= zthresh;
+        sharpen1 <= sharpen;
+    end
+end
+
 wire [12 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0]FDCT_out;
 wire FDCT_done;
 FTransform U_FDCT(
@@ -56,11 +79,11 @@ U_QB(
     .rst_n                          ( rst_n                         ),
     .start                          ( FDCT_done                     ),
     .in                             ( FDCT_out                      ),
-    .q                              ( q                             ),
-    .iq                             ( iq                            ),
-    .bias                           ( bias                          ),
-    .zthresh                        ( zthresh                       ),
-    .sharpen                        ( sharpen                       ),
+    .q                              ( q1                            ),
+    .iq                             ( iq1                           ),
+    .bias                           ( bias1                         ),
+    .zthresh                        ( zthresh1                      ),
+    .sharpen                        ( sharpen1                      ),
     .Rout                           ( QB_Rout                       ),
     .out                            ( YLevels                       ),
     .nz                             ( nz                            ),
