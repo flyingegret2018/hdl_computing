@@ -477,21 +477,21 @@ always @ (posedge clk or negedge rst_n)begin
                 SD_tmp       <= disto[mode];
                 H_tmp        <= FixedCost[mode];
                 R_tmp        <= sum[mode];
-                load         <= 1'b1;
             end
             TOTAL:begin
                 score_tmp    <= ((R_tmp << 10) + H_tmp) * lambda_mode +
                                 (D_tmp << 8) + SD_tmp * tlambda;
-                load         <= 1'b0;
-                left_i       <= left_w;
-                top_left_i   <= top_left_w;
-                top_i        <= top_w;
-                top_right_i  <= top_right_w;
+                load         <= 1'b1;
             end
             ROTATE:begin
                 Score        <= Score + score_tmp;
                 i4           <= i4 + 1'b1;
-                src          <= Ysrc_i[i4];
+                src          <= Ysrc_i[i4 + 1'b1];
+                left_i       <= left_w;
+                top_left_i   <= top_left_w;
+                top_i        <= top_w;
+                top_right_i  <= top_right_w;
+                load         <= 1'b0;
             end
             DONE:begin
                 done         <= 1'b1;
