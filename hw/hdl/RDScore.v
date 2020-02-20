@@ -16,15 +16,22 @@
 `timescale 1ns/100ps
 
 module RDScore(
- input  signed [31:0] lambda
-,input  signed [31:0] tlambda
-,input  signed [31:0] D
-,input  signed [31:0] SD
-,input  signed [31:0] H
-,input  signed [31:0] R
-,output        [63:0] score
+ input                    clk
+,input                    rst_n
+,input      signed [31:0] lambda
+,input      signed [31:0] tlambda
+,input      signed [31:0] D
+,input      signed [31:0] SD
+,input      signed [31:0] H
+,input      signed [31:0] R
+,output reg        [63:0] score
 );
 
-assign score = ((R << 10) + H) * lambda + (D << 8) + SD * tlambda;
+always @ (posedge clk or negedge rst_n)begin
+    if(~rst_n)
+        score <= 'b0;
+    else
+        score <= ((R << 10) + H) * lambda + (D << 8) + SD * tlambda;
+end
 
 endmodule

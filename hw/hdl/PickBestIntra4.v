@@ -242,6 +242,8 @@ GetCostLuma4 U_GETCOSTLUMA4(
 );
 
 RDScore U_RDSCORE(
+    .clk                            ( clk                           ),
+    .rst_n                          ( rst_n                         ),
     .lambda                         ( lambda_i4                     ),
     .tlambda                        ( tlambda                       ),
     .D                              ( sse[i]                        ),
@@ -289,8 +291,12 @@ RotateI4 U_ROTATEI4(
     .top_right_i                    ( top_right_w                   )
 );
 
-reg [8:0] cstate;
-reg [8:0] nstate;
+reg [ 9:0]cstate;
+reg [ 9:0]nstate;
+reg [31:0]D_tmp;
+reg [31:0]SD_tmp;
+reg [31:0]H_tmp;
+reg [31:0]R_tmp;
 
 parameter IDLE        = 'h1;
 parameter INIT        = 'h2;
@@ -299,8 +305,9 @@ parameter WAIT        = 'h8;
 parameter SCORE       = 'h10;
 parameter BEST        = 'h20;
 parameter STORE       = 'h40;
-parameter ROTATE      = 'h80;
-parameter DONE        = 'h100; 
+parameter TOTAL       = 'h80;
+parameter ROTATE      = 'h100;
+parameter DONE        = 'h200; 
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
@@ -330,6 +337,8 @@ always @ * begin
         BEST:
             nstate = STORE;
         STORE:
+            nstate = TOTAL;
+        TOTAL:
             nstate = ROTATE;
         ROTATE:
             if(i4 >= 'd15)
@@ -356,6 +365,10 @@ always @ (posedge clk or negedge rst_n)begin
         score_tmp    <= 'b0;
         mode         <= 'b0;
         o_tmp        <= 'b0;
+        D_tmp        <= 'b0;
+        SD_tmp       <= 'b0;
+        H_tmp        <= 'b0;
+        R_tmp        <= 'b0;
         nz           <= 'b0;
         load         <= 'b0;
         pred_r[0]    <= 'b0;
@@ -460,19 +473,25 @@ always @ (posedge clk or negedge rst_n)begin
                 o_tmp        <= dst[mode];
                 levels_i[i4] <= YLevels[mode];
                 nz[i4]       <= nz_i[mode];
-                score_tmp    <= ((sum[mode] << 10) + FixedCost[mode]) * lambda_mode +
-                                (sse[mode] << 8) + disto[mode] * tlambda;
+                D_tmp        <= sse[mode];
+                SD_tmp       <= disto[mode];
+                H_tmp        <= FixedCost[mode];
+                R_tmp        <= sum[mode];
                 load         <= 1'b1;
             end
-            ROTATE:begin
+            TOTAL:begin
+                score_tmp    <= ((R_tmp << 10) + H_tmp) * lambda_mode +
+                                (D_tmp << 8) + SD_tmp * tlambda;
+                load         <= 1'b0;
                 i4           <= i4 + 1'b1;
                 left_i       <= left_w;
                 top_left_i   <= top_left_w;
                 top_i        <= top_w;
                 top_right_i  <= top_right_w;
-                src          <= Ysrc_i[i4 + 1'b1];
+            end
+            ROTATE:begin
+                src          <= Ysrc_i[i4];
                 Score        <= Score + score_tmp;
-                load         <= 1'b0;
             end
             DONE:begin
                 done         <= 1'b1;
