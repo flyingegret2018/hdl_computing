@@ -25,34 +25,52 @@ module Disto4x4#(
 ,input      [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] ina
 ,input      [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] inb
 ,input      [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] w
-,output     [31                               : 0] sum
-,output                                            done
+,output reg [31                               : 0] sum
+,output reg                                        done
 );
 
 wire [31:0]suma,sumb;
 wire [31:0]tmp;
+reg  [ 1:0]shift;
 
 TTransform U_TT_A(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
-    .start                          ( start                         ),
     .in                             ( ina                           ),
     .w                              ( w                             ),
     .sum                            ( suma                          ),
-    .done                           ( done                          )
 );
 
 TTransform U_TT_B(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
-    .start                          ( start                         ),
     .in                             ( inb                           ),
     .w                              ( w                             ),
     .sum                            ( sumb                          ),
-    .done                           (                               )
 );
 
 assign tmp = (sumb > suma) ? (sumb - suma) : (suma - sumb);
-assign sum = tmp >> 5;
+
+always @ (posedge clk or negedge rst_n)begin
+    if(!rst_n)begin
+        sum <= 'b0;
+    end
+    else begin
+        if(shift[1])
+            sum <= tmp >> 5;
+    end
+end
+
+always @ (posedge clk or negedge rst_n)begin
+    if(!rst_n)begin
+        done  <= 'b0;
+        shift <= 'b0;
+    end
+    else begin
+        shift[0] <= start;
+        shift[1] <= shift[0];
+        done     <= shift[1];
+    end
+end
 
 endmodule

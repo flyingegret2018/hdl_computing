@@ -21,11 +21,9 @@ module TTransform#(
 )(
  input                                             clk
 ,input                                             rst_n
-,input                                             start
 ,input      [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] in
 ,input      [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] w
-,output reg [31                               : 0] sum
-,output reg                                        done
+,output     [31                               : 0] sum
 );
 
 wire        [ 7 : 0]in_i [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
@@ -34,7 +32,6 @@ wire signed [10 : 0]tmp  [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 wire signed [12 : 0]tmp1 [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 reg  signed [12 : 0]tmp2 [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 reg  signed [31 : 0]tmp3 [8                       - 1 : 0];
-reg         [ 1 : 0]shift;
 
 genvar i;
 
@@ -101,25 +98,7 @@ always @ (posedge clk or negedge rst_n)begin
     end
 end
 
-always @ (posedge clk or negedge rst_n)begin
-    if(~rst_n)
-        sum <= 'b0;
-    else
-        if(shift[1])
-            sum <= tmp3[0] + tmp3[1] + tmp3[2] + tmp3[3] + 
-                   tmp3[4] + tmp3[5] + tmp3[6] + tmp3[7];
-end
-
-always @ (posedge clk or negedge rst_n)begin
-    if(!rst_n)begin
-        done  <= 'b0;
-        shift <= 'b0;
-    end
-    else begin
-        shift[0] <= start;
-        shift[1] <= shift[0];
-        done     <= shift[1];
-    end
-end
+assign sum <= tmp3[0] + tmp3[1] + tmp3[2] + tmp3[3] + 
+              tmp3[4] + tmp3[5] + tmp3[6] + tmp3[7];
 
 endmodule
