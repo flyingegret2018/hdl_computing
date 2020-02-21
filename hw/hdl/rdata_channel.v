@@ -50,12 +50,12 @@ module rdata_channel #(
                        output reg [16 * 16 - 1 : 0]    y2_iq             ,
                        output reg [32 * 16 - 1 : 0]    y2_bias           ,
                        output reg [32 * 16 - 1 : 0]    y2_zthresh        ,
-                       output reg [16 * 16 - 1 : 0]    y2_sharpen        ,
+                       output     [16 * 16 - 1 : 0]    y2_sharpen        ,
                        output reg [16 * 16 - 1 : 0]    uv_q              ,
                        output reg [16 * 16 - 1 : 0]    uv_iq             ,
                        output reg [32 * 16 - 1 : 0]    uv_bias           ,
                        output reg [32 * 16 - 1 : 0]    uv_zthresh        ,
-                       output reg [16 * 16 - 1 : 0]    uv_sharpen        ,
+                       output     [16 * 16 - 1 : 0]    uv_sharpen        ,
                        output reg [1023:0]             Y0_fifo_din       ,
                        output reg [1023:0]             Y1_fifo_din       ,
                        output     [1023:0]             UV_fifo_din       ,
@@ -166,6 +166,7 @@ always @ (posedge clk or negedge rst_n)begin
         uv_bias     <= {{15{            32'hE600}},            32'hDC00};
         uv_zthresh  <= {{15{24'b0,tmp[ 807: 800]}},24'b0,tmp[ 775: 768]};
     end
+end
 
 assign y2_sharpen  = 256'b0;
 assign uv_sharpen  = 256'b0; 
