@@ -45,6 +45,69 @@ wire[ 8 * BLOCK_SIZE - 1 : 0]Ysrc_i   [BLOCK_SIZE - 1 : 0];
 reg [ 8 * BLOCK_SIZE - 1 : 0]Yout_i   [BLOCK_SIZE - 1 : 0];
 reg [ 8              - 1 : 0]mode_i   [BLOCK_SIZE - 1 : 0];
 reg [16 * BLOCK_SIZE - 1 : 0]levels_i [BLOCK_SIZE - 1 : 0];
+reg [  31:0]left_i;
+reg [   7:0]top_left_i;
+reg [  31:0]top_i;
+reg [  31:0]top_right_i;
+wire[ 127:0]pred[9:0];
+reg [   3:0]i4;
+reg [ 127:0]src[9:0];
+wire[ 127:0]dst[9:0];
+wire[ 255:0]YLevels[9:0];
+wire[   9:0]nz_i;
+reg         rec_start;
+wire[   9:0]rec_done;
+wire[ 255:0]kWeightY;
+wire[  31:0]sse[9:0];
+wire[   9:0]sse_done;
+wire[  31:0]disto[9:0];
+wire[   9:0]disto_done;
+wire[  31:0]sum[9:0];
+wire[   9:0]cost_done;
+wire[  15:0]FixedCost[9:0];
+reg [  63:0]score[9:0];
+reg [  63:0]score_tmp;
+reg [   3:0]mode;
+reg [ 127:0]o_tmp;
+reg [ 127:0]pred_r[9:0];
+wire[   3:0]bestmode;
+wire[  31:0]left_w;
+wire[   7:0]top_left_w;
+wire[  31:0]top_w;
+wire[  31:0]top_right_w;
+reg         load;
+reg [  31:0]D_tmp;
+reg [  31:0]SD_tmp;
+reg [  31:0]H_tmp;
+reg [  31:0]R_tmp;
+
+assign FixedCost[0] = 'd40;
+assign FixedCost[1] = 'd1151;
+assign FixedCost[2] = 'd1723;
+assign FixedCost[3] = 'd1874;
+assign FixedCost[4] = 'd2103;
+assign FixedCost[5] = 'd2019;
+assign FixedCost[6] = 'd1628;
+assign FixedCost[7] = 'd1777;
+assign FixedCost[8] = 'd2226;
+assign FixedCost[9] = 'd2137;
+
+assign kWeightY[ 15:  0] = 'd38;
+assign kWeightY[ 31: 16] = 'd32;
+assign kWeightY[ 47: 32] = 'd20;
+assign kWeightY[ 63: 48] = 'd9;
+assign kWeightY[ 79: 64] = 'd32;
+assign kWeightY[ 95: 80] = 'd28;
+assign kWeightY[111: 96] = 'd17;
+assign kWeightY[127:112] = 'd7;
+assign kWeightY[143:128] = 'd20;
+assign kWeightY[159:144] = 'd17;
+assign kWeightY[175:160] = 'd10;
+assign kWeightY[191:176] = 'd4;
+assign kWeightY[207:192] = 'd9;
+assign kWeightY[223:208] = 'd7;
+assign kWeightY[239:224] = 'd4;
+assign kWeightY[255:240] = 'd2;
 
 genvar i;
 
@@ -70,12 +133,6 @@ for(i = 0; i < BLOCK_SIZE; i = i + 1)begin
 end
 
 endgenerate
-
-reg [ 31:0]left_i;
-reg [  7:0]top_left_i;
-reg [ 31:0]top_i;
-reg [ 31:0]top_right_i;
-wire[127:0]pred[9:0];
 
 DC4 U_DC4(
     .top                            ( top_i                         ),
@@ -141,56 +198,6 @@ HU4 U_HU4(
     .dst                            ( pred[9]                       )
 );
 
-reg [   3:0]i4;
-reg [ 127:0]src[9:0];
-wire[ 127:0]dst[9:0];
-wire[ 255:0]YLevels[9:0];
-wire[   9:0]nz_i;
-reg         rec_start;
-wire[   9:0]rec_done;
-wire[ 255:0]kWeightY;
-wire[  31:0]sse[9:0];
-wire[   9:0]sse_done;
-wire[  31:0]disto[9:0];
-wire[   9:0]disto_done;
-wire[  31:0]sum[9:0];
-wire[   9:0]cost_done;
-wire[  15:0]FixedCost[9:0];
-wire[  63:0]score[9:0];
-reg [  63:0]score_tmp;
-reg [   3:0]mode;
-reg [ 127:0]o_tmp;
-reg [ 127:0]pred_r[9:0];
-
-
-assign FixedCost[0] = 'd40;
-assign FixedCost[1] = 'd1151;
-assign FixedCost[2] = 'd1723;
-assign FixedCost[3] = 'd1874;
-assign FixedCost[4] = 'd2103;
-assign FixedCost[5] = 'd2019;
-assign FixedCost[6] = 'd1628;
-assign FixedCost[7] = 'd1777;
-assign FixedCost[8] = 'd2226;
-assign FixedCost[9] = 'd2137;
-
-assign kWeightY[ 15:  0] = 'd38;
-assign kWeightY[ 31: 16] = 'd32;
-assign kWeightY[ 47: 32] = 'd20;
-assign kWeightY[ 63: 48] = 'd9;
-assign kWeightY[ 79: 64] = 'd32;
-assign kWeightY[ 95: 80] = 'd28;
-assign kWeightY[111: 96] = 'd17;
-assign kWeightY[127:112] = 'd7;
-assign kWeightY[143:128] = 'd20;
-assign kWeightY[159:144] = 'd17;
-assign kWeightY[175:160] = 'd10;
-assign kWeightY[191:176] = 'd4;
-assign kWeightY[207:192] = 'd9;
-assign kWeightY[223:208] = 'd7;
-assign kWeightY[239:224] = 'd4;
-assign kWeightY[255:240] = 'd2;
-
 generate
 
 for(i = 0; i < 10; i = i + 1)begin
@@ -253,7 +260,6 @@ end
 
 endgenerate
 
-wire[ 3:0]bestmode;
 BestScore U_BESTSCORE(
     .score0                         ( score[0]                      ),
     .score1                         ( score[1]                      ),
@@ -268,11 +274,6 @@ BestScore U_BESTSCORE(
     .mode                           ( bestmode                      )
 );
 
-wire[ 31:0]left_w;
-wire[  7:0]top_left_w;
-wire[ 31:0]top_w;
-wire[ 31:0]top_right_w;
-reg load;
 RotateI4 U_ROTATEI4(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
@@ -290,10 +291,6 @@ RotateI4 U_ROTATEI4(
 
 reg [ 9:0]cstate;
 reg [ 9:0]nstate;
-reg [31:0]D_tmp;
-reg [31:0]SD_tmp;
-reg [31:0]H_tmp;
-reg [31:0]R_tmp;
 
 parameter IDLE        = 'h1;
 parameter INIT        = 'h2;
