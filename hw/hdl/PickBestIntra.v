@@ -53,6 +53,62 @@ module PickBestIntra#(
 );
 
 wire [8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0]pred[3:0];
+reg         rec_start;
+wire        rec_done;
+reg [2047:0]YPred;
+wire[2047:0]Yout;
+wire[ 255:0]Y_dc_levels;
+wire[4095:0]Y_ac_levels;
+wire[  31:0]nz_i;
+wire[31:0]sse;
+wire sse_done;
+wire[31:0]disto;
+wire disto_done;
+wire[255:0]kWeightY;
+wire[15:0]FixedCost[3:0];
+wire[31:0]sum;
+wire cost_done;
+reg [ 255:0]dc_tmp;
+reg [4095:0]ac_tmp;
+reg [  31:0]nz_tmp;
+reg [2047:0]Yout_tmp;
+reg [  63:0]score_tmp;
+reg [  31:0]D_tmp;
+reg [  31:0]SD_tmp;
+reg [  31:0]H_tmp;
+reg [  31:0]R_tmp;
+reg [   2:0]i16;
+reg [   1:0]mode;
+reg [   1:0]mode_tmp;
+
+assign kWeightY[ 15:  0] = 'd38;
+assign kWeightY[ 31: 16] = 'd32;
+assign kWeightY[ 47: 32] = 'd20;
+assign kWeightY[ 63: 48] = 'd9;
+assign kWeightY[ 79: 64] = 'd32;
+assign kWeightY[ 95: 80] = 'd28;
+assign kWeightY[111: 96] = 'd17;
+assign kWeightY[127:112] = 'd7;
+assign kWeightY[143:128] = 'd20;
+assign kWeightY[159:144] = 'd17;
+assign kWeightY[175:160] = 'd10;
+assign kWeightY[191:176] = 'd4;
+assign kWeightY[207:192] = 'd9;
+assign kWeightY[223:208] = 'd7;
+assign kWeightY[239:224] = 'd4;
+assign kWeightY[255:240] = 'd2;
+
+assign FixedCost[0] = 'd663;
+assign FixedCost[1] = 'd919;
+assign FixedCost[2] = 'd872;
+assign FixedCost[3] = 'd919;
+
+assign ac_levels = ac_tmp;
+assign dc_levels = dc_tmp;
+assign nz = nz_tmp;
+assign out = Yout_tmp;
+assign mode_i16 = {30'b0,mode};
+
 DC_Pred U_DC_PRED(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
@@ -82,13 +138,6 @@ Horizontal_Pred U_HORIZONTAL_PRED(
     .dst                            ( pred[3]                       )
 );
 
-reg         rec_start;
-wire        rec_done;
-reg [2047:0]YPred;
-wire[2047:0]Yout;
-wire[ 255:0]Y_dc_levels;
-wire[4095:0]Y_ac_levels;
-wire[  31:0]nz_i;
 Reconstruct U_RECONSTRUCT(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
@@ -112,8 +161,6 @@ Reconstruct U_RECONSTRUCT(
     .done                           ( rec_done                      )
 );
 
-wire[31:0]sse;
-wire sse_done;
 GetSSE U_GETSSE(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
@@ -123,27 +170,6 @@ GetSSE U_GETSSE(
     .sse                            ( sse                           ),
     .done                           ( sse_done                      )
 );
-
-wire[31:0]disto;
-wire disto_done;
-wire[255:0]kWeightY;
-
-assign kWeightY[ 15:  0] = 'd38;
-assign kWeightY[ 31: 16] = 'd32;
-assign kWeightY[ 47: 32] = 'd20;
-assign kWeightY[ 63: 48] = 'd9;
-assign kWeightY[ 79: 64] = 'd32;
-assign kWeightY[ 95: 80] = 'd28;
-assign kWeightY[111: 96] = 'd17;
-assign kWeightY[127:112] = 'd7;
-assign kWeightY[143:128] = 'd20;
-assign kWeightY[159:144] = 'd17;
-assign kWeightY[175:160] = 'd10;
-assign kWeightY[191:176] = 'd4;
-assign kWeightY[207:192] = 'd9;
-assign kWeightY[223:208] = 'd7;
-assign kWeightY[239:224] = 'd4;
-assign kWeightY[255:240] = 'd2;
 
 Disto16x16 U_DISTO16X16(
     .clk                            ( clk                           ),
@@ -156,14 +182,6 @@ Disto16x16 U_DISTO16X16(
     .done                           ( disto_done                    )
 );
 
-wire[15:0]FixedCost[3:0];
-assign FixedCost[0] = 'd663;
-assign FixedCost[1] = 'd919;
-assign FixedCost[2] = 'd872;
-assign FixedCost[3] = 'd919;
-
-wire[31:0]sum;
-wire cost_done;
 GetCostLuma U_GETCOSTLUMA(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
@@ -176,25 +194,6 @@ GetCostLuma U_GETCOSTLUMA(
 
 reg [6:0] cstate;
 reg [6:0] nstate;
-
-reg [ 255:0]dc_tmp;
-reg [4095:0]ac_tmp;
-reg [  31:0]nz_tmp;
-reg [2047:0]Yout_tmp;
-reg [  63:0]score_tmp;
-reg [  31:0]D_tmp;
-reg [  31:0]SD_tmp;
-reg [  31:0]H_tmp;
-reg [  31:0]R_tmp;
-reg [   2:0]i16;
-reg [   1:0]mode;
-reg [   1:0]mode_tmp;
-
-assign ac_levels = ac_tmp;
-assign dc_levels = dc_tmp;
-assign nz = nz_tmp;
-assign out = Yout_tmp;
-assign mode_i16 = {30'b0,mode};
 
 parameter IDLE  = 'h1;
 parameter PRED  = 'h2;
