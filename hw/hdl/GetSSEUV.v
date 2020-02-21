@@ -29,8 +29,10 @@ module GetSSEUV#(
 );
 
 reg [2:0]count;
-reg ena;
-reg valid;
+reg      ena;
+reg      valid;
+wire[8 * 16 - 1:0]tmpa[BLOCK_SIZE - 1:0];
+wire[8 * 16 - 1:0]tmpb[BLOCK_SIZE - 1:0];
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
@@ -59,9 +61,6 @@ always @ (posedge clk or negedge rst_n)begin
         else
             valid <= 1'b0;
 end
-
-wire [8 * 16 - 1:0]tmpa[BLOCK_SIZE - 1:0];
-wire [8 * 16 - 1:0]tmpb[BLOCK_SIZE - 1:0];
 
 genvar i;
 

@@ -19,22 +19,24 @@ module Disto16x16#(
  parameter BIT_WIDTH    = 8
 ,parameter BLOCK_SIZE   = 16
 )(
- input                                                    clk
-,input                                                    rst_n
-,input                                                    start
-,input             [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] ina
-,input             [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] inb
-,input             [16 * BLOCK_SIZE              - 1 : 0] w
-,output reg signed [31                               : 0] sum
-,output reg                                               done
+ input                                             clk
+,input                                             rst_n
+,input                                             start
+,input      [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] ina
+,input      [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] inb
+,input      [16 * BLOCK_SIZE              - 1 : 0] w
+,output reg [31                               : 0] sum
+,output reg                                        done
 );
 
 wire[ 8 * BLOCK_SIZE - 1 : 0]tmpa[BLOCK_SIZE - 1 : 0];
 wire[ 8 * BLOCK_SIZE - 1 : 0]tmpb[BLOCK_SIZE - 1 : 0];
 reg [ 8 * BLOCK_SIZE - 1 : 0]tmpc;
 reg [ 8 * BLOCK_SIZE - 1 : 0]tmpd;
-reg [3:0]count;
-reg valid;
+reg [ 3                  : 0]count;
+reg                          valid;
+wire[31                  : 0]sum4;
+wire                         done4;
 
 genvar i;
 
@@ -56,8 +58,6 @@ end
 
 endgenerate
 
-wire [31:0]sum4;
-wire done4;
 Disto4x4 U_DISTO4X4(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),

@@ -29,10 +29,10 @@ module TTransform#(
 );
 
 wire        [ 7 : 0]in_i [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
+wire signed [15 : 0]w_i  [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 wire signed [10 : 0]tmp  [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 wire signed [12 : 0]tmp1 [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 reg  signed [12 : 0]tmp2 [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
-wire signed [15 : 0]w_i  [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
 reg  signed [31 : 0]tmp3 [8                       - 1 : 0];
 reg         [ 1 : 0]shift;
 

@@ -19,17 +19,18 @@ module Disto4x4#(
  parameter BIT_WIDTH    = 8
 ,parameter BLOCK_SIZE   = 4
 )(
- input                                                    clk
-,input                                                    rst_n
-,input                                                    start
-,input             [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] ina
-,input             [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] inb
-,input             [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] w
-,output     signed [31                               : 0] sum
-,output                                                   done
+ input                                             clk
+,input                                             rst_n
+,input                                             start
+,input      [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] ina
+,input      [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] inb
+,input      [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] w
+,output     [31                               : 0] sum
+,output                                            done
 );
 
-wire signed[31:0]suma,sumb;
+wire [31:0]suma,sumb;
+wire [31:0]tmp;
 
 TTransform U_TT_A(
     .clk                            ( clk                           ),
@@ -50,8 +51,6 @@ TTransform U_TT_B(
     .sum                            ( sumb                          ),
     .done                           (                               )
 );
-
-wire [31:0]tmp;
 
 assign tmp = (sumb > suma) ? (sumb - suma) : (suma - sumb);
 assign sum = tmp >> 5;

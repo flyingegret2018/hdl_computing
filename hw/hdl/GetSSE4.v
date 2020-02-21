@@ -28,8 +28,9 @@ module GetSSE4#(
 ,output reg                                               done
 );
 
-reg ena;
-reg valid;
+reg      ena;
+reg      valid;
+reg [1:0]shift;
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
@@ -88,7 +89,6 @@ always @ (posedge clk or negedge rst_n)begin
                    ROM[12].douta + ROM[13].douta + ROM[14].douta + ROM[15].douta;
 end
 
-reg [1:0]shift;
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)begin
         done  <= 'b0;

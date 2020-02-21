@@ -28,9 +28,11 @@ module GetSSE#(
 ,output reg                                               done
 );
 
-reg [3:0]count;
-reg ena;
-reg valid;
+reg [3         :0]count;
+reg               ena;
+reg               valid;
+wire[8 * 16 - 1:0]tmpa[15:0];
+wire[8 * 16 - 1:0]tmpb[15:0];
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
@@ -59,9 +61,6 @@ always @ (posedge clk or negedge rst_n)begin
         else
             valid <= 1'b0;
 end
-
-wire [8 * 16 - 1:0]tmpa[15:0];
-wire [8 * 16 - 1:0]tmpb[15:0];
 
 genvar i;
 
