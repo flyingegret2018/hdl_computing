@@ -41,21 +41,21 @@ module rdata_channel #(
                        output     [32      - 1 : 0]    tlambda           ,
                        output     [32      - 1 : 0]    lambda_mode       ,
                        output     [32      - 1 : 0]    min_disto         ,
-                       output     [16 * 16 - 1 : 0]    y1_q              ,
-                       output     [16 * 16 - 1 : 0]    y1_iq             ,
-                       output     [32 * 16 - 1 : 0]    y1_bias           ,
-                       output     [32 * 16 - 1 : 0]    y1_zthresh        ,
-                       output     [16 * 16 - 1 : 0]    y1_sharpen        ,
-                       output     [16 * 16 - 1 : 0]    y2_q              ,
-                       output     [16 * 16 - 1 : 0]    y2_iq             ,
-                       output     [32 * 16 - 1 : 0]    y2_bias           ,
-                       output     [32 * 16 - 1 : 0]    y2_zthresh        ,
-                       output     [16 * 16 - 1 : 0]    y2_sharpen        ,
-                       output     [16 * 16 - 1 : 0]    uv_q              ,
-                       output     [16 * 16 - 1 : 0]    uv_iq             ,
-                       output     [32 * 16 - 1 : 0]    uv_bias           ,
-                       output     [32 * 16 - 1 : 0]    uv_zthresh        ,
-                       output     [16 * 16 - 1 : 0]    uv_sharpen        ,
+                       output reg [16 * 16 - 1 : 0]    y1_q              ,
+                       output reg [16 * 16 - 1 : 0]    y1_iq             ,
+                       output reg [32 * 16 - 1 : 0]    y1_bias           ,
+                       output reg [32 * 16 - 1 : 0]    y1_zthresh        ,
+                       output reg [16 * 16 - 1 : 0]    y1_sharpen        ,
+                       output reg [16 * 16 - 1 : 0]    y2_q              ,
+                       output reg [16 * 16 - 1 : 0]    y2_iq             ,
+                       output reg [32 * 16 - 1 : 0]    y2_bias           ,
+                       output reg [32 * 16 - 1 : 0]    y2_zthresh        ,
+                       output reg [16 * 16 - 1 : 0]    y2_sharpen        ,
+                       output reg [16 * 16 - 1 : 0]    uv_q              ,
+                       output reg [16 * 16 - 1 : 0]    uv_iq             ,
+                       output reg [32 * 16 - 1 : 0]    uv_bias           ,
+                       output reg [32 * 16 - 1 : 0]    uv_zthresh        ,
+                       output reg [16 * 16 - 1 : 0]    uv_sharpen        ,
                        output reg [1023:0]             Y0_fifo_din       ,
                        output reg [1023:0]             Y1_fifo_din       ,
                        output     [1023:0]             UV_fifo_din       ,
@@ -135,20 +135,39 @@ always @ (posedge clk or negedge rst_n)begin
     end
 end
 
-assign y1_q        = {{15{ 8'b0,tmp[  23:  16]}}, 8'b0,tmp[   7:   0]};
-assign y1_iq       = {{15{      tmp[  63:  48]}},      tmp[  47:  32]};
-assign y1_bias     = {{15{            32'hDC00}},            32'hC000};
-assign y1_zthresh  = {{15{24'b0,tmp[ 167: 160]}},24'b0,tmp[ 135: 128]};
-assign y1_sharpen  = tmp[ 447: 192];
-assign y2_q        = {{15{ 8'b0,tmp[ 471: 464]}}, 8'b0,tmp[ 455: 448]};
-assign y2_iq       = {{15{      tmp[ 511: 496]}},      tmp[ 495: 480]};
-assign y2_bias     = {{15{            32'hD800}},            32'hC000};
-assign y2_zthresh  = {{15{24'b0,tmp[ 615: 608]}},24'b0,tmp[ 583: 576]};
+always @ (posedge clk or negedge rst_n)begin
+    if(~rst_n)begin
+        y1_q        <= 'b0;
+        y1_iq       <= 'b0;
+        y1_bias     <= 'b0;
+        y1_zthresh  <= 'b0;
+        y1_sharpen  <= 'b0;
+        y2_q        <= 'b0;
+        y2_iq       <= 'b0;
+        y2_bias     <= 'b0;
+        y2_zthresh  <= 'b0;
+        uv_q        <= 'b0;
+        uv_iq       <= 'b0;
+        uv_bias     <= 'b0;
+        uv_zthresh  <= 'b0;
+    end
+    else begin
+        y1_q        <= {{15{ 8'b0,tmp[  23:  16]}}, 8'b0,tmp[   7:   0]};
+        y1_iq       <= {{15{      tmp[  63:  48]}},      tmp[  47:  32]};
+        y1_bias     <= {{15{            32'hDC00}},            32'hC000};
+        y1_zthresh  <= {{15{24'b0,tmp[ 167: 160]}},24'b0,tmp[ 135: 128]};
+        y1_sharpen  <= tmp[ 447: 192];
+        y2_q        <= {{15{ 8'b0,tmp[ 471: 464]}}, 8'b0,tmp[ 455: 448]};
+        y2_iq       <= {{15{      tmp[ 511: 496]}},      tmp[ 495: 480]};
+        y2_bias     <= {{15{            32'hD800}},            32'hC000};
+        y2_zthresh  <= {{15{24'b0,tmp[ 615: 608]}},24'b0,tmp[ 583: 576]};
+        uv_q        <= {{15{ 8'b0,tmp[ 663: 656]}}, 8'b0,tmp[ 647: 640]};
+        uv_iq       <= {{15{      tmp[ 703: 688]}},      tmp[ 687: 672]};
+        uv_bias     <= {{15{            32'hE600}},            32'hDC00};
+        uv_zthresh  <= {{15{24'b0,tmp[ 807: 800]}},24'b0,tmp[ 775: 768]};
+    end
+
 assign y2_sharpen  = 256'b0;
-assign uv_q        = {{15{ 8'b0,tmp[ 663: 656]}}, 8'b0,tmp[ 647: 640]};
-assign uv_iq       = {{15{      tmp[ 703: 688]}},      tmp[ 687: 672]};
-assign uv_bias     = {{15{            32'hE600}},            32'hDC00};
-assign uv_zthresh  = {{15{24'b0,tmp[ 807: 800]}},24'b0,tmp[ 775: 768]};
 assign uv_sharpen  = 256'b0; 
 assign min_disto   = {20'b0,tmp[ 843: 832]};
 assign lambda_i16  = {16'b0,tmp[ 879: 864]};
