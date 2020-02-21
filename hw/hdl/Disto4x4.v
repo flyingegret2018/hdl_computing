@@ -38,7 +38,7 @@ TTransform U_TT_A(
     .rst_n                          ( rst_n                         ),
     .in                             ( ina                           ),
     .w                              ( w                             ),
-    .sum                            ( suma                          ),
+    .sum                            ( suma                          )
 );
 
 TTransform U_TT_B(
@@ -46,7 +46,7 @@ TTransform U_TT_B(
     .rst_n                          ( rst_n                         ),
     .in                             ( inb                           ),
     .w                              ( w                             ),
-    .sum                            ( sumb                          ),
+    .sum                            ( sumb                          )
 );
 
 assign tmp = (sumb > suma) ? (sumb - suma) : (suma - sumb);
