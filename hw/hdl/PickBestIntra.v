@@ -52,7 +52,7 @@ module PickBestIntra#(
 ,output reg                                               done
 );
 
-wire [8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0]pred[3:0];
+wire[2047:0]pred[3:0];
 reg         rec_start;
 wire        rec_done;
 reg [2047:0]YPred;
@@ -60,14 +60,14 @@ wire[2047:0]Yout;
 wire[ 255:0]Y_dc_levels;
 wire[4095:0]Y_ac_levels;
 wire[  31:0]nz_i;
-wire[31:0]sse;
-wire sse_done;
-wire[31:0]disto;
-wire disto_done;
-wire[255:0]kWeightY;
-wire[15:0]FixedCost[3:0];
-wire[31:0]sum;
-wire cost_done;
+wire[  31:0]sse;
+wire        sse_done;
+wire[  31:0]disto;
+wire        disto_done;
+wire[ 255:0]kWeightY;
+wire[  15:0]FixedCost[3:0];
+wire[  31:0]sum;
+wire        cost_done;
 reg [ 255:0]dc_tmp;
 reg [4095:0]ac_tmp;
 reg [  31:0]nz_tmp;
