@@ -241,17 +241,14 @@ GetCostLuma4 U_GETCOSTLUMA4(
     .done                           ( cost_done[i]                  )
 );
 
-RDScore U_RDSCORE(
-    .clk                            ( clk                           ),
-    .rst_n                          ( rst_n                         ),
-    .lambda                         ( lambda_i4                     ),
-    .tlambda                        ( tlambda                       ),
-    .D                              ( sse[i]                        ),
-    .SD                             ( disto[i]                      ),
-    .H                              ( {16'b0,FixedCost[i]}          ),
-    .R                              ( sum[i]                        ),
-    .score                          ( score[i]                      )
-);
+    always @ (posedge clk or negedge rst_n)begin
+        if(~rst_n)
+            score[i] <= 'b0;
+        else
+            score[i] <= ((sum[i] << 10) + FixedCost[i]) * lambda_i4 +
+                        (sse[i] << 8) + disto[i] * tlambda;
+    end
+
 end
 
 endgenerate
