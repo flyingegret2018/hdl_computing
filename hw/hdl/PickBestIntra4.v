@@ -255,7 +255,6 @@ GetCostLuma4 U_GETCOSTLUMA4(
             score[i] <= ((sum[i] << 10) + FixedCost[i]) * lambda_i4 +
                         (sse[i] << 8) + disto[i] * tlambda;
     end
-
 end
 
 endgenerate
