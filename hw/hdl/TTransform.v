@@ -106,5 +106,6 @@ always @ (posedge clk or negedge rst_n)begin
         sum <= tmp3[0] + tmp3[1] + tmp3[2] + tmp3[3] + 
                tmp3[4] + tmp3[5] + tmp3[6] + tmp3[7];
     end
+end
 
 endmodule
