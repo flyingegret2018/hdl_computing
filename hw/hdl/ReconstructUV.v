@@ -41,7 +41,7 @@ module ReconstructUV#(
 ,output reg                        done
 );
 
-(* max_fanout = "64" *)reg  [ 8      - 1 : 0]count;
+(* max_fanout = "32" *)reg  [ 8      - 1 : 0]count;
 wire [ 8 * 16 - 1 : 0]UVsrc_w     [BLOCK_SIZE - 1 : 0];
 wire [ 8 * 16 - 1 : 0]UVPred_w    [BLOCK_SIZE - 1 : 0];
 reg  [ 8 * 16 - 1 : 0]UVout_r     [BLOCK_SIZE - 1 : 0];

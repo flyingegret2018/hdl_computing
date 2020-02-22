@@ -40,7 +40,7 @@ module Reconstruct#(
 ,output reg                                        done
 );
 
-(* max_fanout = "64" *)reg  [ 8              - 1 : 0]count;
+(* max_fanout = "32" *)reg  [ 8              - 1 : 0]count;
 wire [ 8 * BLOCK_SIZE - 1 : 0]Ysrc_w[BLOCK_SIZE - 1 : 0];
 wire [ 8 * BLOCK_SIZE - 1 : 0]YPred_w[BLOCK_SIZE - 1 : 0];
 reg  [ 8 * BLOCK_SIZE - 1 : 0]Yout_r[BLOCK_SIZE - 1 : 0];

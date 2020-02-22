@@ -27,7 +27,7 @@ module GetCostUV#(
 ,output reg                                       done
 );
 
-(* max_fanout = "64" *)reg  [2          :0]count;
+(* max_fanout = "32" *)reg  [2          :0]count;
 reg  [0          :0]shift;
 wire [16 * 16 - 1:0]level[7:0];
 reg  [31         :0]tmp[7:0];
