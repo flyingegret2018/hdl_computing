@@ -238,6 +238,7 @@ always @ (posedge clk or negedge rst_n)begin
                 ;
             end
             STEP2:begin
+                ;
             end
             STEP3:begin
                 tmp[0]      <= uout;
@@ -252,6 +253,7 @@ always @ (posedge clk or negedge rst_n)begin
                 vtmp        <= in_i[6] + (mul_tmp[10] + mul_tmp[11] >>> 3);
             end
             STEP5:begin
+                ;
             end
             STEP6:begin
                 tmp[2]      <= uout;
@@ -268,8 +270,10 @@ always @ (posedge clk or negedge rst_n)begin
                 vtmp        <= in_i[7] + (mul_tmp[13] + mul_tmp[ 7] >>> 3);
             end
             STEP8:begin
+                ;
             end
             STEP9:begin
+                ;
             end
             STEPA:begin
                 done        <= 'b1;

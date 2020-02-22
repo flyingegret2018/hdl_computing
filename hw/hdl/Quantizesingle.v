@@ -46,7 +46,7 @@ always @ (posedge clk or negedge rst_n)begin
         sign_tmp <= 'b0;
     end
     else begin
-        tmp      <= (mul_tmp0 + bias) >>> 17;
+        tmp      <= (mul_tmp + bias) >>> 17;
         V_tmp    <= V;
         sign_tmp <= sign;
     end
