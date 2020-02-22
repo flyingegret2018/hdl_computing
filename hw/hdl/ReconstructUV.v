@@ -164,7 +164,7 @@ always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
         count <= 'b0;
     else
-        if(count >= 'd31)
+        if(count >= 'd36)
             count <= 'b0;
         else if(start | count != 'b0)
             count <= count + 1'b1;
@@ -265,70 +265,70 @@ always @ (posedge clk or negedge rst_n)begin
             'd11:begin
                 CDCV_start      <= 1'b0;
             end
-            'd19:begin
+            'd24:begin
                 QB_i            <= {FDCT_o[0][255:16],CDCV_o[ 15:  0]};
             end
-            'd20:begin
+            'd25:begin
                 QB_i            <= {FDCT_o[1][255:16],CDCV_o[ 31: 16]};
             end
-            'd21:begin
+            'd26:begin
                 QB_i            <= {FDCT_o[2][255:16],CDCV_o[ 47: 32]};
             end
-            'd22:begin
+            'd27:begin
                 QB_i            <= {FDCT_o[3][255:16],CDCV_o[ 63: 48]};
                 UVlevels_i[0]   <= UVlevels_w;
                 QB_nz[0]        <= QB_nz_w;
                 UVPred_r        <= UVPred_w[0];
             end
-            'd23:begin
+            'd28:begin
                 QB_i            <= {FDCT_o[4][255:16],CDCV_o[ 79: 64]};
                 UVlevels_i[1]   <= UVlevels_w;
                 QB_nz[1]        <= QB_nz_w;
                 UVPred_r        <= UVPred_w[1];
             end
-            'd24:begin
+            'd29:begin
                 QB_i            <= {FDCT_o[5][255:16],CDCV_o[ 95: 80]};
                 UVlevels_i[2]   <= UVlevels_w;
                 QB_nz[2]        <= QB_nz_w;
                 UVPred_r        <= UVPred_w[2];
                 UVout_r[ 0]     <= UVout_w;
             end
-            'd25:begin
+            'd30:begin
                 QB_i            <= {FDCT_o[6][255:16],CDCV_o[111: 96]};
                 UVlevels_i[3]   <= UVlevels_w;
                 QB_nz[3]        <= QB_nz_w;
                 UVPred_r        <= UVPred_w[3];
                 UVout_r[ 1]     <= UVout_w;
             end
-            'd26:begin
+            'd31:begin
                 QB_i            <= {FDCT_o[7][255:16],CDCV_o[127:112]};
                 UVlevels_i[4]   <= UVlevels_w;
                 QB_nz[4]        <= QB_nz_w;
                 UVPred_r        <= UVPred_w[4];
                 UVout_r[ 2]     <= UVout_w;
             end
-            'd27:begin
+            'd32:begin
                 UVlevels_i[5]   <= UVlevels_w;
                 QB_nz[5]        <= QB_nz_w;
                 UVPred_r        <= UVPred_w[5];
                 UVout_r[ 3]     <= UVout_w;
             end
-            'd28:begin
+            'd33:begin
                 UVlevels_i[6]   <= UVlevels_w;
                 QB_nz[6]        <= QB_nz_w;
                 UVPred_r        <= UVPred_w[6];
                 UVout_r[ 4]     <= UVout_w;
             end
-            'd29:begin
+            'd34:begin
                 UVlevels_i[7]   <= UVlevels_w;
                 QB_nz[7]        <= QB_nz_w;
                 UVPred_r        <= UVPred_w[7];
                 UVout_r[ 5]     <= UVout_w;
             end
-            'd30:begin
+            'd35:begin
                 UVout_r[ 6]     <= UVout_w;
             end
-            'd31:begin
+            'd36:begin
                 UVout_r[ 7]     <= UVout_w;
                 done            <= 'b1;
             end

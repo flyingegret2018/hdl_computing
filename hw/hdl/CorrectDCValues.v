@@ -86,8 +86,8 @@ end
 
 endgenerate
 
-reg  [16:0] cstate;
-reg  [16:0] nstate;
+reg  [15:0] cstate;
+reg  [15:0] nstate;
 
 parameter IDLE    = 'h01;
 parameter BOTH    = 'h02;
@@ -105,7 +105,6 @@ parameter STEP6   = 'h1000;
 parameter STEP7   = 'h2000;
 parameter STEP8   = 'h4000;
 parameter STEP9   = 'h8000;
-parameter STEPA   = 'h10000;
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
@@ -159,8 +158,6 @@ always @ * begin
         STEP8:
             nstate = STEP9;
         STEP9:
-            nstate = STEPA;
-        STEPA:
             nstate = IDLE;
         default:
             nstate = IDLE;
@@ -273,9 +270,6 @@ always @ (posedge clk or negedge rst_n)begin
                 ;
             end
             STEP9:begin
-                ;
-            end
-            STEPA:begin
                 done        <= 'b1;
             end
         endcase
