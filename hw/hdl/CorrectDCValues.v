@@ -38,9 +38,6 @@ module CorrectDCValues#(
 ,output reg                                done
 );
 
-reg  [12:0] cstate;
-reg  [12:0] nstate;
-
 wire signed[I_WIDTH - 1:0]in_i [7:0];
 wire signed[O_WIDTH - 1:0]out_i[7:0];
 reg  signed[15:0]tmp [5:0];
@@ -89,6 +86,9 @@ end
 
 endgenerate
 
+reg  [16:0] cstate;
+reg  [16:0] nstate;
+
 parameter IDLE    = 'h01;
 parameter BOTH    = 'h02;
 parameter TOP     = 'h04; 
@@ -102,6 +102,10 @@ parameter STEP3   = 'h200;
 parameter STEP4   = 'h400;
 parameter STEP5   = 'h800;
 parameter STEP6   = 'h1000;
+parameter STEP7   = 'h2000;
+parameter STEP8   = 'h4000;
+parameter STEP9   = 'h8000;
+parameter STEPA   = 'h10000;
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
@@ -149,6 +153,14 @@ always @ * begin
         STEP5:
             nstate = STEP6;
         STEP6:
+            nstate = STEP7;
+        STEP7:
+            nstate = STEP8;
+        STEP8:
+            nstate = STEP9;
+        STEP9:
+            nstate = STEPA;
+        STEPA:
             nstate = IDLE;
         default:
             nstate = IDLE;
@@ -226,6 +238,8 @@ always @ (posedge clk or negedge rst_n)begin
                 ;
             end
             STEP2:begin
+            end
+            STEP3:begin
                 tmp[0]      <= uout;
                 tmp[1]      <= vout;
                 err[0]      <= uerr;
@@ -233,17 +247,19 @@ always @ (posedge clk or negedge rst_n)begin
                 utmp        <= in_i[1] + (mul_tmp[ 4] + mul_tmp[ 5] >>> 3);
                 vtmp        <= in_i[5] + (mul_tmp[ 6] + mul_tmp[ 7] >>> 3);
             end
-            STEP3:begin
+            STEP4:begin
                 utmp        <= in_i[2] + (mul_tmp[ 8] + mul_tmp[ 9] >>> 3);
                 vtmp        <= in_i[6] + (mul_tmp[10] + mul_tmp[11] >>> 3);
             end
-            STEP4:begin
+            STEP5:begin
+            end
+            STEP6:begin
                 tmp[2]      <= uout;
                 tmp[3]      <= vout;
                 err[1]      <= uerr;
                 err[4]      <= verr;
             end
-            STEP5:begin
+            STEP7:begin
                 tmp[4]      <= uout;
                 tmp[5]      <= vout;
                 err[2]      <= uerr;
@@ -251,7 +267,11 @@ always @ (posedge clk or negedge rst_n)begin
                 utmp        <= in_i[3] + (mul_tmp[12] + mul_tmp[ 5] >>> 3);
                 vtmp        <= in_i[7] + (mul_tmp[13] + mul_tmp[ 7] >>> 3);
             end
-            STEP6:begin
+            STEP8:begin
+            end
+            STEP9:begin
+            end
+            STEPA:begin
                 done        <= 'b1;
             end
         endcase
@@ -261,29 +281,25 @@ end
 QuantizeSingle U_QSU(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
-    .start                          ( 'b0                           ),
     .in                             ( utmp                          ),
     .q                              ( q                             ),
     .iq                             ( iq                            ),
     .bias                           ( bias                          ),
     .zthresh                        ( zthresh                       ),
     .out                            ( uout                          ),
-    .err                            ( uerr                          ),
-    .done                           (                               )
+    .err                            ( uerr                          )
 );
 
 QuantizeSingle U_QSV(
     .clk                            ( clk                           ),
     .rst_n                          ( rst_n                         ),
-    .start                          ( 'b0                           ),
     .in                             ( vtmp                          ),
     .q                              ( q                             ),
     .iq                             ( iq                            ),
     .bias                           ( bias                          ),
     .zthresh                        ( zthresh                       ),
     .out                            ( vout                          ),
-    .err                            ( verr                          ),
-    .done                           (                               )
+    .err                            ( verr                          )
 );
 
 assign derr[ 7: 0] = err[1];
