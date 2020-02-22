@@ -38,17 +38,20 @@ assign mul_tmp = V * iq;
 
 reg signed [31:0]tmp;
 reg signed [15:0]V_tmp;
+reg signed [15:0]in_tmp;
 reg sign_tmp;
 always @ (posedge clk or negedge rst_n)begin
     if(!rst_n)begin
         tmp      <= 'b0;
         V_tmp    <= 'b0;
         sign_tmp <= 'b0;
+        in_tmp   <= 'b0;
     end
     else begin
         tmp      <= (mul_tmp + bias) >>> 17;
         V_tmp    <= V;
         sign_tmp <= sign;
+        in_tmp   <= in;
     end
 end
 
@@ -70,7 +73,7 @@ always @ (posedge clk or negedge rst_n)begin
         end
         else begin
             out <= 'b0;
-            err <= in >>> 1;
+            err <= in_tmp >>> 1;
         end
     end
 end
