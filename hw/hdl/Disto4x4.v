@@ -31,7 +31,7 @@ module Disto4x4#(
 
 wire [31:0]suma,sumb;
 wire [31:0]tmp;
-reg  [ 1:0]shift;
+reg  [ 2:0]shift;
 
 TTransform U_TT_A(
     .clk                            ( clk                           ),
@@ -56,7 +56,7 @@ always @ (posedge clk or negedge rst_n)begin
         sum <= 'b0;
     end
     else begin
-        if(shift[1])
+        if(shift[2])
             sum <= tmp >> 5;
     end
 end
@@ -69,7 +69,8 @@ always @ (posedge clk or negedge rst_n)begin
     else begin
         shift[0] <= start;
         shift[1] <= shift[0];
-        done     <= shift[1];
+        shift[2] <= shift[1];
+        done     <= shift[2];
     end
 end
 

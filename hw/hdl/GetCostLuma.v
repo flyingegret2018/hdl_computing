@@ -28,7 +28,7 @@ module GetCostLuma#(
 ,output reg                                               done
 );
 
-reg  [ 3         :0]count;
+(* max_fanout = "64" *)reg  [ 3         :0]count;
 reg  [ 0         :0]shift;
 reg  [31         :0]tmp[8:0];
 wire [16 * 16 - 1:0]tmp_ac[15:0];

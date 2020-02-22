@@ -40,10 +40,7 @@ module Reconstruct#(
 ,output reg                                        done
 );
 
-reg  [ 8              - 1 : 0]count0;
-reg  [ 8              - 1 : 0]count1;
-reg  [ 8              - 1 : 0]count2;
-reg  [ 8              - 1 : 0]count3;
+(* max_fanout = "64" *)reg  [ 8              - 1 : 0]count;
 wire [ 8 * BLOCK_SIZE - 1 : 0]Ysrc_w[BLOCK_SIZE - 1 : 0];
 wire [ 8 * BLOCK_SIZE - 1 : 0]YPred_w[BLOCK_SIZE - 1 : 0];
 reg  [ 8 * BLOCK_SIZE - 1 : 0]Yout_r[BLOCK_SIZE - 1 : 0];
@@ -176,55 +173,73 @@ ITransform U_IDCT(
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
-        count0 <= 'b0;
+        count <= 'b0;
     else
-        if(count0 >= 'd41)
-            count0 <= 'b0;
-        else if(start | count0 != 'b0)
-            count0 <= count0 + 1'b1;
-end
-
-always @ (posedge clk or negedge rst_n)begin
-    if(~rst_n)
-        count1 <= 'b0;
-    else
-        if(count1 >= 'd41)
-            count1 <= 'b0;
-        else if(start | count1 != 'b0)
-            count1 <= count1 + 1'b1;
-end
-
-always @ (posedge clk or negedge rst_n)begin
-    if(~rst_n)
-        count2 <= 'b0;
-    else
-        if(count2 >= 'd41)
-            count2 <= 'b0;
-        else if(start | count2 != 'b0)
-            count2 <= count2 + 1'b1;
-end
-
-always @ (posedge clk or negedge rst_n)begin
-    if(~rst_n)
-        count3 <= 'b0;
-    else
-        if(count3 >= 'd41)
-            count3 <= 'b0;
-        else if(start | count3 != 'b0)
-            count3 <= count3 + 1'b1;
+        if(count >= 'd41)
+            count <= 'b0;
+        else if(start | count != 'b0)
+            count <= count + 1'b1;
 end
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)begin
         Ysrc_r          <= 'b0;
         YPred_r         <= 'b0;
+        Yac_r[ 0]       <= 'b0;
+        Yac_r[ 1]       <= 'b0;
+        Yac_r[ 2]       <= 'b0;
+        Yac_r[ 3]       <= 'b0;
+        Yac_r[ 4]       <= 'b0;
+        Yac_r[ 5]       <= 'b0;
+        Yac_r[ 6]       <= 'b0;
+        Yac_r[ 7]       <= 'b0;
+        Yac_r[ 8]       <= 'b0;
+        Yac_r[ 9]       <= 'b0;
+        Yac_r[10]       <= 'b0;
+        Yac_r[11]       <= 'b0;
+        Yac_r[12]       <= 'b0;
+        Yac_r[13]       <= 'b0;
+        Yac_r[14]       <= 'b0;
+        Yac_r[15]       <= 'b0;
+        AC_Rout_r[ 0]   <= 'b0;
+        AC_Rout_r[ 1]   <= 'b0;
+        AC_Rout_r[ 2]   <= 'b0;
+        AC_Rout_r[ 3]   <= 'b0;
+        AC_Rout_r[ 4]   <= 'b0;
+        AC_Rout_r[ 5]   <= 'b0;
+        AC_Rout_r[ 6]   <= 'b0;
+        AC_Rout_r[ 7]   <= 'b0;
+        AC_Rout_r[ 8]   <= 'b0;
+        AC_Rout_r[ 9]   <= 'b0;
+        AC_Rout_r[10]   <= 'b0;
+        AC_Rout_r[11]   <= 'b0;
+        AC_Rout_r[12]   <= 'b0;
+        AC_Rout_r[13]   <= 'b0;
+        AC_Rout_r[14]   <= 'b0;
+        AC_Rout_r[15]   <= 'b0;
         AC_nz_r         <= 'b0;
         FWHT_r          <= 'b0;
         IDCT_r          <= 'b0;
+        Yout_r[ 0]      <= 'b0;
+        Yout_r[ 1]      <= 'b0;
+        Yout_r[ 2]      <= 'b0;
+        Yout_r[ 3]      <= 'b0;
+        Yout_r[ 4]      <= 'b0;
+        Yout_r[ 5]      <= 'b0;
+        Yout_r[ 6]      <= 'b0;
+        Yout_r[ 7]      <= 'b0;
+        Yout_r[ 8]      <= 'b0;
+        Yout_r[ 9]      <= 'b0;
+        Yout_r[10]      <= 'b0;
+        Yout_r[11]      <= 'b0;
+        Yout_r[12]      <= 'b0;
+        Yout_r[13]      <= 'b0;
+        Yout_r[14]      <= 'b0;
+        Yout_r[15]      <= 'b0;
         done            <= 'b0;
     end
     else begin
-        case(count0)
+        case(count)
             'd0:begin
                 Ysrc_r          <= Ysrc_w [ 0];
                 YPred_r         <= YPred_w[ 0];
@@ -252,84 +267,116 @@ always @ (posedge clk or negedge rst_n)begin
                 Ysrc_r          <= Ysrc_w [ 5];
                 YPred_r         <= YPred_w[ 5];
                 FWHT_r[ 47: 32] <= FDCT_w[15:0];
+                Yac_r[0]        <= Yac_w;
+                AC_Rout_r[0]    <= AC_Rout_w;
                 AC_nz_r[0]      <= AC_nz_w;
             end
             'd6:begin
                 Ysrc_r          <= Ysrc_w [ 6];
                 YPred_r         <= YPred_w[ 6];
                 FWHT_r[ 63: 48] <= FDCT_w[15:0];
+                Yac_r[1]        <= Yac_w;
+                AC_Rout_r[1]    <= AC_Rout_w;
                 AC_nz_r[1]      <= AC_nz_w;
             end
             'd7:begin
                 Ysrc_r          <= Ysrc_w [ 7];
                 YPred_r         <= YPred_w[ 7];
                 FWHT_r[ 79: 64] <= FDCT_w[15:0];
+                Yac_r[2]        <= Yac_w;
+                AC_Rout_r[2]    <= AC_Rout_w;
                 AC_nz_r[2]      <= AC_nz_w;
             end
             'd8:begin
                 Ysrc_r          <= Ysrc_w [ 8];
                 YPred_r         <= YPred_w[ 8];
                 FWHT_r[ 95: 80] <= FDCT_w[15:0];
+                Yac_r[3]        <= Yac_w;
+                AC_Rout_r[3]    <= AC_Rout_w;
                 AC_nz_r[3]      <= AC_nz_w;
             end
             'd9:begin
                 Ysrc_r          <= Ysrc_w [ 9];
                 YPred_r         <= YPred_w[ 9];
                 FWHT_r[111: 96] <= FDCT_w[15:0];
+                Yac_r[4]        <= Yac_w;
+                AC_Rout_r[4]    <= AC_Rout_w;
                 AC_nz_r[4]      <= AC_nz_w;
             end
             'd10:begin
                 Ysrc_r          <= Ysrc_w [10];
                 YPred_r         <= YPred_w[10];
                 FWHT_r[127:112] <= FDCT_w[15:0];
+                Yac_r[5]        <= Yac_w;
+                AC_Rout_r[5]    <= AC_Rout_w;
                 AC_nz_r[5]      <= AC_nz_w;
             end
             'd11:begin
                 Ysrc_r          <= Ysrc_w [11];
                 YPred_r         <= YPred_w[11];
                 FWHT_r[143:128] <= FDCT_w[15:0];
+                Yac_r[6]        <= Yac_w;
+                AC_Rout_r[6]    <= AC_Rout_w;
                 AC_nz_r[6]      <= AC_nz_w;
             end
             'd12:begin
                 Ysrc_r          <= Ysrc_w [12];
                 YPred_r         <= YPred_w[12];
                 FWHT_r[159:144] <= FDCT_w[15:0];
+                Yac_r[7]        <= Yac_w;
+                AC_Rout_r[7]    <= AC_Rout_w;
                 AC_nz_r[7]      <= AC_nz_w;
             end
             'd13:begin
                 Ysrc_r          <= Ysrc_w [13];
                 YPred_r         <= YPred_w[13];
                 FWHT_r[175:160] <= FDCT_w[15:0];
+                Yac_r[8]        <= Yac_w;
+                AC_Rout_r[8]    <= AC_Rout_w;
                 AC_nz_r[8]      <= AC_nz_w;
             end
             'd14:begin
                 Ysrc_r          <= Ysrc_w [14];
                 YPred_r         <= YPred_w[14];
                 FWHT_r[191:176] <= FDCT_w[15:0];
+                Yac_r[9]        <= Yac_w;
+                AC_Rout_r[9]    <= AC_Rout_w;
                 AC_nz_r[9]      <= AC_nz_w;
             end
             'd15:begin
                 Ysrc_r          <= Ysrc_w [15];
                 YPred_r         <= YPred_w[15];
                 FWHT_r[207:192] <= FDCT_w[15:0];
+                Yac_r[10]       <= Yac_w;
+                AC_Rout_r[10]   <= AC_Rout_w;
                 AC_nz_r[10]     <= AC_nz_w;
             end
             'd16:begin
                 FWHT_r[223:208] <= FDCT_w[15:0];
+                Yac_r[11]       <= Yac_w;
+                AC_Rout_r[11]   <= AC_Rout_w;
                 AC_nz_r[11]     <= AC_nz_w;
             end
             'd17:begin
                 FWHT_r[239:224] <= FDCT_w[15:0];
+                Yac_r[12]       <= Yac_w;
+                AC_Rout_r[12]   <= AC_Rout_w;
                 AC_nz_r[12]     <= AC_nz_w;
             end
             'd18:begin
                 FWHT_r[255:240] <= FDCT_w[15:0];
+                Yac_r[13]       <= Yac_w;
+                AC_Rout_r[13]   <= AC_Rout_w;
                 AC_nz_r[13]     <= AC_nz_w;
             end
             'd19:begin
+                Yac_r[14]       <= Yac_w;
+                AC_Rout_r[14]   <= AC_Rout_w;
                 AC_nz_r[14]     <= AC_nz_w;
             end
             'd20:begin
+                Yac_r[15]       <= Yac_w;
+                AC_Rout_r[15]   <= AC_Rout_w;
                 AC_nz_r[15]     <= AC_nz_w;
             end
             'd23:begin
@@ -346,274 +393,70 @@ always @ (posedge clk or negedge rst_n)begin
             'd26:begin
                 IDCT_r          <= {AC_Rout_r[ 3][255:16],IWHT_w[ 63: 48]};
                 YPred_r         <= YPred_w[ 2];
+                Yout_r[ 0]      <= Yout_w;
             end
             'd27:begin
                 IDCT_r          <= {AC_Rout_r[ 4][255:16],IWHT_w[ 79: 64]};
                 YPred_r         <= YPred_w[ 3];
+                Yout_r[ 1]      <= Yout_w;
             end
             'd28:begin
                 IDCT_r          <= {AC_Rout_r[ 5][255:16],IWHT_w[ 95: 80]};
                 YPred_r         <= YPred_w[ 4];
+                Yout_r[ 2]      <= Yout_w;
             end
             'd29:begin
                 IDCT_r          <= {AC_Rout_r[ 6][255:16],IWHT_w[111: 96]};
                 YPred_r         <= YPred_w[ 5];
+                Yout_r[ 3]      <= Yout_w;
             end
             'd30:begin
                 IDCT_r          <= {AC_Rout_r[ 7][255:16],IWHT_w[127:112]};
                 YPred_r         <= YPred_w[ 6];
+                Yout_r[ 4]      <= Yout_w;
             end
             'd31:begin
                 IDCT_r          <= {AC_Rout_r[ 8][255:16],IWHT_w[143:128]};
                 YPred_r         <= YPred_w[ 7];
+                Yout_r[ 5]      <= Yout_w;
             end
             'd32:begin
                 IDCT_r          <= {AC_Rout_r[ 9][255:16],IWHT_w[159:144]};
                 YPred_r         <= YPred_w[ 8];
+                Yout_r[ 6]      <= Yout_w;
             end
             'd33:begin
                 IDCT_r          <= {AC_Rout_r[10][255:16],IWHT_w[175:160]};
                 YPred_r         <= YPred_w[ 9];
+                Yout_r[ 7]      <= Yout_w;
             end
             'd34:begin
                 IDCT_r          <= {AC_Rout_r[11][255:16],IWHT_w[191:176]};
                 YPred_r         <= YPred_w[10];
+                Yout_r[ 8]      <= Yout_w;
             end
             'd35:begin
                 IDCT_r          <= {AC_Rout_r[12][255:16],IWHT_w[207:192]};
                 YPred_r         <= YPred_w[11];
+                Yout_r[ 9]      <= Yout_w;
             end
             'd36:begin
                 IDCT_r          <= {AC_Rout_r[13][255:16],IWHT_w[223:208]};
                 YPred_r         <= YPred_w[12];
+                Yout_r[10]      <= Yout_w;
             end
             'd37:begin
                 IDCT_r          <= {AC_Rout_r[14][255:16],IWHT_w[239:224]};
                 YPred_r         <= YPred_w[13];
+                Yout_r[11]      <= Yout_w;
             end
             'd38:begin
                 IDCT_r          <= {AC_Rout_r[15][255:16],IWHT_w[255:240]};
                 YPred_r         <= YPred_w[14];
-            end
-            'd39:begin
-                YPred_r         <= YPred_w[15];
-            end
-            'd41:begin
-                done            <= 'b1;
-            end
-            default:;
-        endcase 
-    end
-end
-
-always @ (posedge clk or negedge rst_n)begin
-    if(~rst_n)begin
-        Yac_r[ 0]       <= 'b0;
-        Yac_r[ 1]       <= 'b0;
-        Yac_r[ 2]       <= 'b0;
-        Yac_r[ 3]       <= 'b0;
-        Yac_r[ 4]       <= 'b0;
-        Yac_r[ 5]       <= 'b0;
-        Yac_r[ 6]       <= 'b0;
-        Yac_r[ 7]       <= 'b0;
-        Yac_r[ 8]       <= 'b0;
-        Yac_r[ 9]       <= 'b0;
-        Yac_r[10]       <= 'b0;
-        Yac_r[11]       <= 'b0;
-        Yac_r[12]       <= 'b0;
-        Yac_r[13]       <= 'b0;
-        Yac_r[14]       <= 'b0;
-        Yac_r[15]       <= 'b0;
-    end
-    else begin
-        case(count1)
-            'd5:begin
-                Yac_r[0]        <= Yac_w;
-            end
-            'd6:begin
-                Yac_r[1]        <= Yac_w;
-            end
-            'd7:begin
-                Yac_r[2]        <= Yac_w;
-            end
-            'd8:begin
-                Yac_r[3]        <= Yac_w;
-            end
-            'd9:begin
-                Yac_r[4]        <= Yac_w;
-            end
-            'd10:begin
-                Yac_r[5]        <= Yac_w;
-            end
-            'd11:begin
-                Yac_r[6]        <= Yac_w;
-            end
-            'd12:begin
-                Yac_r[7]        <= Yac_w;
-            end
-            'd13:begin
-                Yac_r[8]        <= Yac_w;
-            end
-            'd14:begin
-                Yac_r[9]        <= Yac_w;
-            end
-            'd15:begin
-                Yac_r[10]       <= Yac_w;
-            end
-            'd16:begin
-                Yac_r[11]       <= Yac_w;
-            end
-            'd17:begin
-                Yac_r[12]       <= Yac_w;
-            end
-            'd18:begin
-                Yac_r[13]       <= Yac_w;
-            end
-            'd19:begin
-                Yac_r[14]       <= Yac_w;
-            end
-            'd20:begin
-                Yac_r[15]       <= Yac_w;
-            end
-            default:;
-        endcase 
-    end
-end
-
-always @ (posedge clk or negedge rst_n)begin
-    if(~rst_n)begin
-        AC_Rout_r[ 0]   <= 'b0;
-        AC_Rout_r[ 1]   <= 'b0;
-        AC_Rout_r[ 2]   <= 'b0;
-        AC_Rout_r[ 3]   <= 'b0;
-        AC_Rout_r[ 4]   <= 'b0;
-        AC_Rout_r[ 5]   <= 'b0;
-        AC_Rout_r[ 6]   <= 'b0;
-        AC_Rout_r[ 7]   <= 'b0;
-        AC_Rout_r[ 8]   <= 'b0;
-        AC_Rout_r[ 9]   <= 'b0;
-        AC_Rout_r[10]   <= 'b0;
-        AC_Rout_r[11]   <= 'b0;
-        AC_Rout_r[12]   <= 'b0;
-        AC_Rout_r[13]   <= 'b0;
-        AC_Rout_r[14]   <= 'b0;
-        AC_Rout_r[15]   <= 'b0;
-    end
-    else begin
-        case(count1)
-                AC_Rout_r[0]    <= AC_Rout_w;
-            end
-            'd6:begin
-                AC_Rout_r[1]    <= AC_Rout_w;
-            end
-            'd7:begin
-                AC_Rout_r[2]    <= AC_Rout_w;
-            end
-            'd8:begin
-                AC_Rout_r[3]    <= AC_Rout_w;
-            end
-            'd9:begin
-                AC_Rout_r[4]    <= AC_Rout_w;
-            end
-            'd10:begin
-                AC_Rout_r[5]    <= AC_Rout_w;
-            end
-            'd11:begin
-                AC_Rout_r[6]    <= AC_Rout_w;
-            end
-            'd12:begin
-                AC_Rout_r[7]    <= AC_Rout_w;
-            end
-            'd13:begin
-                AC_Rout_r[8]    <= AC_Rout_w;
-            end
-            'd14:begin
-                AC_Rout_r[9]    <= AC_Rout_w;
-            end
-            'd15:begin
-                AC_Rout_r[10]   <= AC_Rout_w;
-            end
-            'd16:begin
-                AC_Rout_r[11]   <= AC_Rout_w;
-            end
-            'd17:begin
-                AC_Rout_r[12]   <= AC_Rout_w;
-            end
-            'd18:begin
-                AC_Rout_r[13]   <= AC_Rout_w;
-            end
-            'd19:begin
-                AC_Rout_r[14]   <= AC_Rout_w;
-            end
-            'd20:begin
-                AC_Rout_r[15]   <= AC_Rout_w;
-            end
-            default:;
-        endcase 
-    end
-end
-
-always @ (posedge clk or negedge rst_n)begin
-    if(~rst_n)begin
-        Yout_r[ 0]      <= 'b0;
-        Yout_r[ 1]      <= 'b0;
-        Yout_r[ 2]      <= 'b0;
-        Yout_r[ 3]      <= 'b0;
-        Yout_r[ 4]      <= 'b0;
-        Yout_r[ 5]      <= 'b0;
-        Yout_r[ 6]      <= 'b0;
-        Yout_r[ 7]      <= 'b0;
-        Yout_r[ 8]      <= 'b0;
-        Yout_r[ 9]      <= 'b0;
-        Yout_r[10]      <= 'b0;
-        Yout_r[11]      <= 'b0;
-        Yout_r[12]      <= 'b0;
-        Yout_r[13]      <= 'b0;
-        Yout_r[14]      <= 'b0;
-        Yout_r[15]      <= 'b0;
-    end
-    else begin
-        case(count3)
-            'd26:begin
-                Yout_r[ 0]      <= Yout_w;
-            end
-            'd27:begin
-                Yout_r[ 1]      <= Yout_w;
-            end
-            'd28:begin
-                Yout_r[ 2]      <= Yout_w;
-            end
-            'd29:begin
-                Yout_r[ 3]      <= Yout_w;
-            end
-            'd30:begin
-                Yout_r[ 4]      <= Yout_w;
-            end
-            'd31:begin
-                Yout_r[ 5]      <= Yout_w;
-            end
-            'd32:begin
-                Yout_r[ 6]      <= Yout_w;
-            end
-            'd33:begin
-                Yout_r[ 7]      <= Yout_w;
-            end
-            'd34:begin
-                Yout_r[ 8]      <= Yout_w;
-            end
-            'd35:begin
-                Yout_r[ 9]      <= Yout_w;
-            end
-            'd36:begin
-                Yout_r[10]      <= Yout_w;
-            end
-            'd37:begin
-                Yout_r[11]      <= Yout_w;
-            end
-            'd38:begin
                 Yout_r[12]      <= Yout_w;
             end
             'd39:begin
+                YPred_r         <= YPred_w[15];
                 Yout_r[13]      <= Yout_w;
             end
             'd40:begin
@@ -621,6 +464,7 @@ always @ (posedge clk or negedge rst_n)begin
             end
             'd41:begin
                 Yout_r[15]      <= Yout_w;
+                done            <= 'b1;
             end
             default:;
         endcase 

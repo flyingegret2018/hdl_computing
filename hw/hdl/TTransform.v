@@ -23,7 +23,7 @@ module TTransform#(
 ,input                                             rst_n
 ,input      [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] in
 ,input      [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] w
-,output     [31                               : 0] sum
+,output reg [31                               : 0] sum
 );
 
 wire        [ 7 : 0]in_i [BLOCK_SIZE * BLOCK_SIZE - 1 : 0];
@@ -98,7 +98,13 @@ always @ (posedge clk or negedge rst_n)begin
     end
 end
 
-assign sum = tmp3[0] + tmp3[1] + tmp3[2] + tmp3[3] + 
-             tmp3[4] + tmp3[5] + tmp3[6] + tmp3[7];
+always @ (posedge clk or negedge rst_n)begin
+    if(!rst_n)begin
+        sum <= 'b0;
+    end
+    else begin
+        sum <= tmp3[0] + tmp3[1] + tmp3[2] + tmp3[3] + 
+               tmp3[4] + tmp3[5] + tmp3[6] + tmp3[7];
+    end
 
 endmodule
