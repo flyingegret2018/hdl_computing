@@ -111,7 +111,7 @@ PickBestIntra U_PICKBESTINTRA(
     .dc_levels                      ( dc_levels                     ),
     .ac_levels                      ( ac_levels0                    ),
     .nz                             ( Ynz                           ),
-    .done                           ( PB_done                      )
+    .done                           (                               )
 );
 
 wire[  63:0]Yscore4;
@@ -139,7 +139,7 @@ PickBestIntra4 U_PICKBESTINTRA4(
     .mode_i4                        ( mode_i4                       ),
     .levels                         ( ac_levels1                    ),
     .nz                             ( Ynz4                          ),
-    .done                           (                               )
+    .done                           ( PB_done                       )
 );
 
 wire[  31:0]UVnz;
