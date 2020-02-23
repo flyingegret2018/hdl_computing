@@ -104,6 +104,8 @@ reg [   1:0]mode;
 reg [   1:0]mode_tmp;
 reg [  31:0]nz_tmp;
 reg [  47:0]derr_tmp;
+reg [  31:0]tmp0;
+reg [  31:0]tmp1;
 
 assign out = UVout_tmp;
 assign levels = levels_tmp;
@@ -190,16 +192,17 @@ assign FixedCost[1] = 'd984;
 assign FixedCost[2] = 'd439;
 assign FixedCost[3] = 'd642;
 
-reg [6:0] cstate;
-reg [6:0] nstate;
+reg [7:0] cstate;
+reg [7:0] nstate;
 
 parameter IDLE       = 'h1;
 parameter PRED       = 'h2;
 parameter WAIT       = 'h4; 
-parameter SCORE      = 'h8;
-parameter COMP       = 'h10;
-parameter STORE      = 'h20;
-parameter DONE       = 'h40;
+parameter SCORE0     = 'h8;
+parameter SCORE1     = 'h10;
+parameter COMP       = 'h20;
+parameter STORE      = 'h40;
+parameter DONE       = 'h80;
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
@@ -219,10 +222,12 @@ always @ * begin
             nstate = WAIT;
         WAIT:
             if(sse_done)
-                nstate = SCORE;
+                nstate = SCORE0;
             else
                 nstate = WAIT;
-        SCORE:
+        SCORE0:
+            nstate = SCORE1;
+        SCORE1:
             nstate = COMP;
         COMP:
             if((Score >= score_tmp) | (mode_tmp == 2'b11))
@@ -257,6 +262,8 @@ always @ (posedge clk or negedge rst_n)begin
         mode       <= 'b0;
         mode_tmp   <= 'b0;
         nz_tmp     <= 'b0;
+        tmp0       <= 'b0;
+        tmp1       <= 'b0;
         derr_tmp   <= 'b0;
         done       <= 'b0;
     end
@@ -276,8 +283,12 @@ always @ (posedge clk or negedge rst_n)begin
             WAIT:begin
                 rec_start  <= 1'b0;
             end
-            SCORE:begin
-                score_tmp  <= ((sum << 10) + FixedCost[mode_tmp]) * lambda_uv + (sse << 8);
+            SCORE0:begin
+                tmp0       <= (sum << 10) + FixedCost[mode_tmp];
+                tmp1       <= (sse <<  8);
+            end
+            SCORE1:begin
+                score_tmp  <= tmp0 * lambda_uv + tmp1;
             end
             COMP:begin
                 ;

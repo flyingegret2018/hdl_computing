@@ -77,6 +77,7 @@ reg [  31:0]tmp0;
 reg [  31:0]tmp1;
 reg [  31:0]tmp2;
 reg [  31:0]tmp3;
+reg [  31:0]D_tmp;
 reg [   2:0]i16;
 reg [   1:0]mode;
 reg [   1:0]mode_tmp;
@@ -266,6 +267,7 @@ always @ (posedge clk or negedge rst_n)begin
         tmp1      <= 'b0;
         tmp2      <= 'b0;
         tmp3      <= 'b0;
+        D_tmp     <= 'b0;
         done      <= 'b0;
     end
     else begin
@@ -300,11 +302,12 @@ always @ (posedge clk or negedge rst_n)begin
                 dc_tmp    <= Y_dc_levels;
                 ac_tmp    <= Y_ac_levels;
                 nz_tmp    <= nz_i;
-                tmp3      <= tmp0;
-                tmp4      <= tmp1;
+                tmp2      <= tmp0;
+                tmp3      <= tmp1;
+                D_tmp     <= sse;
             end
             DONE:begin
-                Score     <= tmp3 * lambda_mode + tmp4;
+                Score     <= tmp2 * lambda_mode + tmp3;
                 done      <= 1'b1;
             end
         endcase
