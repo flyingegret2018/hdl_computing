@@ -73,10 +73,10 @@ reg [4095:0]ac_tmp;
 reg [  31:0]nz_tmp;
 reg [2047:0]Yout_tmp;
 reg [  63:0]score_tmp;
-reg [  31:0]D_tmp;
-reg [  31:0]SD_tmp;
-reg [  31:0]H_tmp;
-reg [  31:0]R_tmp;
+reg [  31:0]tmp0;
+reg [  31:0]tmp1;
+reg [  31:0]tmp2;
+reg [  31:0]tmp3;
 reg [   2:0]i16;
 reg [   1:0]mode;
 reg [   1:0]mode_tmp;
@@ -192,16 +192,17 @@ GetCostLuma U_GETCOSTLUMA(
     .done                           ( cost_done                     )
 );
 
-reg [6:0] cstate;
-reg [6:0] nstate;
+reg [7:0] cstate;
+reg [7:0] nstate;
 
-parameter IDLE  = 'h1;
-parameter PRED  = 'h2;
-parameter WAIT  = 'h4; 
-parameter SCORE = 'h8;
-parameter COMP  = 'h10;
-parameter STORE = 'h20;
-parameter DONE  = 'h40;
+parameter IDLE   = 'h1;
+parameter PRED   = 'h2;
+parameter WAIT   = 'h4; 
+parameter SCORE0 = 'h8;
+parameter SCORE1 = 'h10;
+parameter COMP   = 'h20;
+parameter STORE  = 'h40;
+parameter DONE   = 'h80;
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)
@@ -221,10 +222,12 @@ always @ * begin
             nstate = WAIT;
         WAIT:
             if(disto_done)
-                nstate = SCORE;
+                nstate = SCORE0;
             else
                 nstate = WAIT;
-        SCORE:
+        SCORE0:
+            nstate = SCORE1;
+        SCORE1:
             nstate = COMP;
         COMP:
             if((Score >= score_tmp) | (mode_tmp == 2'b11))
@@ -259,10 +262,10 @@ always @ (posedge clk or negedge rst_n)begin
         dc_tmp    <= 'b0;
         ac_tmp    <= 'b0;
         nz_tmp    <= 'b0;
-        D_tmp     <= 'b0;
-        SD_tmp    <= 'b0;
-        H_tmp     <= 'b0;
-        R_tmp     <= 'b0;
+        tmp0      <= 'b0;
+        tmp1      <= 'b0;
+        tmp2      <= 'b0;
+        tmp3      <= 'b0;
         done      <= 'b0;
     end
     else begin
@@ -280,9 +283,12 @@ always @ (posedge clk or negedge rst_n)begin
             WAIT:begin
                 rec_start <= 1'b0;
             end
-            SCORE:begin
-                score_tmp <= ((sum << 10) + FixedCost[mode_tmp]) * lambda_i16 + 
-                             (sse << 8) + disto * tlambda;
+            SCORE0:begin
+                tmp0      <= (sum << 10) + FixedCost[mode_tmp];
+                tmp1      <= (sse << 8) + disto * tlambda;
+            end
+            SCORE1:begin
+                score_tmp <= tmp0 * lambda_i16 + tmp1;
             end
             COMP:begin
                 ;
@@ -294,14 +300,11 @@ always @ (posedge clk or negedge rst_n)begin
                 dc_tmp    <= Y_dc_levels;
                 ac_tmp    <= Y_ac_levels;
                 nz_tmp    <= nz_i;
-                D_tmp     <= sse;
-                SD_tmp    <= disto;
-                H_tmp     <= FixedCost[mode_tmp];
-                R_tmp     <= sum;
+                tmp3      <= tmp0;
+                tmp4      <= tmp1;
             end
             DONE:begin
-                Score     <= ((R_tmp << 10) + H_tmp) * lambda_mode +
-                             (D_tmp << 8) + SD_tmp * tlambda;
+                Score     <= tmp3 * lambda_mode + tmp4;
                 done      <= 1'b1;
             end
         endcase
