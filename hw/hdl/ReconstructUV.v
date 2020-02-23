@@ -46,7 +46,8 @@ wire [ 8 * 16 - 1 : 0]UVsrc_w     [BLOCK_SIZE - 1 : 0];
 wire [ 8 * 16 - 1 : 0]UVPred_w    [BLOCK_SIZE - 1 : 0];
 reg  [ 8 * 16 - 1 : 0]UVout_r     [BLOCK_SIZE - 1 : 0];
 reg  [ 8 * 16 - 1 : 0]UVsrc_r;
-reg  [ 8 * 16 - 1 : 0]UVPred_r;
+reg  [ 8 * 16 - 1 : 0]UVPred_0;
+reg  [ 8 * 16 - 1 : 0]UVPred_1;
 wire [ 8 * 16 - 1 : 0]UVout_w;
 reg  [16 * 16 - 1 : 0]FDCT_o      [BLOCK_SIZE - 1 : 0];
 wire [16 * 16 - 1 : 0]FDCT_w;
@@ -106,7 +107,7 @@ U_FDCT(
     ,.rst_n                         ( rst_n                         )
     ,.start                         (                               )
     ,.src                           ( UVsrc_r                       )
-    ,.ref                           ( UVPred_r                      )
+    ,.ref                           ( UVPred_0                      )
     ,.out                           ( FDCT_w                        )
     ,.done                          (                               )
 );
@@ -155,7 +156,7 @@ ITransform U_IDCT(
     .rst_n                          ( rst_n                         ),
     .start                          (                               ),
     .src                            ( QB_Rout_w                     ),
-    .ref                            ( UVPred_r                      ),
+    .ref                            ( UVPred_1                      ),
     .out                            ( UVout_w                       ),
     .done                           (                               )
 );
@@ -173,7 +174,8 @@ end
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)begin
         UVsrc_r         <= 'b0;
-        UVPred_r        <= 'b0;
+        UVPred_0        <= 'b0;
+        UVPred_1        <= 'b0;
         FDCT_o[0]       <= 'b0;
         FDCT_o[1]       <= 'b0;
         FDCT_o[2]       <= 'b0;
@@ -208,44 +210,44 @@ always @ (posedge clk or negedge rst_n)begin
         case(count)
             'd0:begin
                 UVsrc_r         <= UVsrc_w [0];
-                UVPred_r        <= UVPred_w[0];
+                UVPred_0        <= UVPred_w[0];
                 done            <= 'b0;
             end
             'd1:begin
                 UVsrc_r         <= UVsrc_w [1];
-                UVPred_r        <= UVPred_w[1];
+                UVPred_0        <= UVPred_w[1];
             end
             'd2:begin
                 UVsrc_r         <= UVsrc_w [2];
-                UVPred_r        <= UVPred_w[2];
+                UVPred_0        <= UVPred_w[2];
             end
             'd3:begin
                 UVsrc_r         <= UVsrc_w [3];
-                UVPred_r        <= UVPred_w[3];
+                UVPred_0        <= UVPred_w[3];
                 CDCV_i[ 15:  0] <= FDCT_w[15:0];
                 FDCT_o[0]       <= FDCT_w;
             end
             'd4:begin
                 UVsrc_r         <= UVsrc_w [4];
-                UVPred_r        <= UVPred_w[4];
+                UVPred_0        <= UVPred_w[4];
                 CDCV_i[ 31: 16] <= FDCT_w[15:0];
                 FDCT_o[1]       <= FDCT_w;
             end
             'd5:begin
                 UVsrc_r         <= UVsrc_w [5];
-                UVPred_r        <= UVPred_w[5];
+                UVPred_0        <= UVPred_w[5];
                 CDCV_i[ 47: 32] <= FDCT_w[15:0];
                 FDCT_o[2]       <= FDCT_w;
             end
             'd6:begin
                 UVsrc_r         <= UVsrc_w [6];
-                UVPred_r        <= UVPred_w[6];
+                UVPred_0        <= UVPred_w[6];
                 CDCV_i[ 63: 48] <= FDCT_w[15:0];
                 FDCT_o[3]       <= FDCT_w;
             end
             'd7:begin
                 UVsrc_r         <= UVsrc_w [7];
-                UVPred_r        <= UVPred_w[7];
+                UVPred_0        <= UVPred_w[7];
                 CDCV_i[ 79: 64] <= FDCT_w[15:0];
                 FDCT_o[4]       <= FDCT_w;
             end
@@ -278,51 +280,51 @@ always @ (posedge clk or negedge rst_n)begin
                 QB_i            <= {FDCT_o[3][255:16],CDCV_o[ 63: 48]};
                 UVlevels_i[0]   <= UVlevels_w;
                 QB_nz[0]        <= QB_nz_w;
-                UVPred_r        <= UVPred_w[0];
+                UVPred_1        <= UVPred_w[0];
             end
             'd28:begin
                 QB_i            <= {FDCT_o[4][255:16],CDCV_o[ 79: 64]};
                 UVlevels_i[1]   <= UVlevels_w;
                 QB_nz[1]        <= QB_nz_w;
-                UVPred_r        <= UVPred_w[1];
+                UVPred_1        <= UVPred_w[1];
             end
             'd29:begin
                 QB_i            <= {FDCT_o[5][255:16],CDCV_o[ 95: 80]};
                 UVlevels_i[2]   <= UVlevels_w;
                 QB_nz[2]        <= QB_nz_w;
-                UVPred_r        <= UVPred_w[2];
+                UVPred_1        <= UVPred_w[2];
                 UVout_r[ 0]     <= UVout_w;
             end
             'd30:begin
                 QB_i            <= {FDCT_o[6][255:16],CDCV_o[111: 96]};
                 UVlevels_i[3]   <= UVlevels_w;
                 QB_nz[3]        <= QB_nz_w;
-                UVPred_r        <= UVPred_w[3];
+                UVPred_1        <= UVPred_w[3];
                 UVout_r[ 1]     <= UVout_w;
             end
             'd31:begin
                 QB_i            <= {FDCT_o[7][255:16],CDCV_o[127:112]};
                 UVlevels_i[4]   <= UVlevels_w;
                 QB_nz[4]        <= QB_nz_w;
-                UVPred_r        <= UVPred_w[4];
+                UVPred_1        <= UVPred_w[4];
                 UVout_r[ 2]     <= UVout_w;
             end
             'd32:begin
                 UVlevels_i[5]   <= UVlevels_w;
                 QB_nz[5]        <= QB_nz_w;
-                UVPred_r        <= UVPred_w[5];
+                UVPred_1        <= UVPred_w[5];
                 UVout_r[ 3]     <= UVout_w;
             end
             'd33:begin
                 UVlevels_i[6]   <= UVlevels_w;
                 QB_nz[6]        <= QB_nz_w;
-                UVPred_r        <= UVPred_w[6];
+                UVPred_1        <= UVPred_w[6];
                 UVout_r[ 4]     <= UVout_w;
             end
             'd34:begin
                 UVlevels_i[7]   <= UVlevels_w;
                 QB_nz[7]        <= QB_nz_w;
-                UVPred_r        <= UVPred_w[7];
+                UVPred_1        <= UVPred_w[7];
                 UVout_r[ 5]     <= UVout_w;
             end
             'd35:begin
