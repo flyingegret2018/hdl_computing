@@ -253,14 +253,16 @@ GetCostLuma4 U_GETCOSTLUMA4(
     reg[31:0]tmp3;
     reg[31:0]tmp4;
     always @ (posedge clk or negedge rst_n)begin
-        if(~rst_n)
+        if(~rst_n)begin
             tmp3     <= 'b0;
             tmp4     <= 'b0;
             score[i] <= 'b0;
-        else
+        end
+        else begin
             tmp3     <= (sum[i] << 10) + FixedCost[i];
             tmp4     <= (sse[i] << 8) + disto[i] * tlambda;;
             score[i] <= tmp3 * lambda_i4 + tmp4;
+        end
     end
 end
 
