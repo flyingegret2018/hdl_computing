@@ -82,7 +82,7 @@ Horizontal_Pred_UV U_HORIZONTAL_PRED_UV(
 
 reg         rec_start;
 wire        rec_done;
-(* max_fanout = "16" *)reg [1023:0]UVPred;
+reg [1023:0]UVPred;
 wire[1023:0]UVout;
 wire[2047:0]UVlevels;
 wire[  31:0]nz_i;

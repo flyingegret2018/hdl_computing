@@ -69,17 +69,16 @@ reg [  63:0]score[9:0];
 reg [  63:0]score_tmp;
 reg [   3:0]mode;
 reg [ 127:0]o_tmp;
-(* max_fanout = "16" *)reg [ 127:0]pred_r[9:0];
+reg [ 127:0]pred_r[9:0];
 wire[   3:0]bestmode;
 wire[  31:0]left_w;
 wire[   7:0]top_left_w;
 wire[  31:0]top_w;
 wire[  31:0]top_right_w;
 reg         load;
-reg [  31:0]D_tmp;
-reg [  31:0]SD_tmp;
-reg [  31:0]H_tmp;
-reg [  31:0]R_tmp;
+reg [  31:0]tmp0;
+reg [  31:0]tmp1;
+reg [  31:0]tmp2;
 
 assign FixedCost[0] = 'd40;
 assign FixedCost[1] = 'd1151;
@@ -375,12 +374,10 @@ always @ (posedge clk or negedge rst_n)begin
         pred_r[9]    <= 'b0;
         Score        <= 'b0;
         score_tmp    <= 'b0;
+        tmp0         <= 'b0;
+        tmp1         <= 'b0;
         mode         <= 'b0;
         o_tmp        <= 'b0;
-        D_tmp        <= 'b0;
-        SD_tmp       <= 'b0;
-        H_tmp        <= 'b0;
-        R_tmp        <= 'b0;
         nz           <= 'b0;
         load         <= 'b0;
         mode_i[ 0]   <= 'b0;
@@ -484,14 +481,12 @@ always @ (posedge clk or negedge rst_n)begin
                 o_tmp        <= dst[mode];
                 levels_i[i4] <= YLevels[mode];
                 nz[i4]       <= nz_i[mode];
-                D_tmp        <= sse[mode];
-                SD_tmp       <= disto[mode];
-                H_tmp        <= FixedCost[mode];
-                R_tmp        <= sum[mode];
+                tmp0         <= (sum[mode] << 10) + FixedCost[mode];
+                tmp1         <= sse[mode] << 8;
+                tmp2         <= disto[mode] * tlambda;
             end
             TOTAL:begin
-                score_tmp    <= ((R_tmp << 10) + H_tmp) * lambda_mode +
-                                (D_tmp << 8) + SD_tmp * tlambda;
+                score_tmp    <= tmp0 * lambda_mode + tmp1 + tmp2;
                 load         <= 1'b1;
             end
             ROTATE:begin
