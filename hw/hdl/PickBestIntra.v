@@ -55,7 +55,7 @@ module PickBestIntra#(
 wire[2047:0]pred[3:0];
 reg         rec_start;
 wire        rec_done;
-reg [2047:0]YPred;
+(* max_fanout = "16" *)reg [2047:0]YPred;
 wire[2047:0]Yout;
 wire[ 255:0]Y_dc_levels;
 wire[4095:0]Y_ac_levels;

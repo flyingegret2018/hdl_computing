@@ -69,7 +69,7 @@ reg [  63:0]score[9:0];
 reg [  63:0]score_tmp;
 reg [   3:0]mode;
 reg [ 127:0]o_tmp;
-reg [ 127:0]pred_r[9:0];
+(* max_fanout = "16" *)reg [ 127:0]pred_r[9:0];
 wire[   3:0]bestmode;
 wire[  31:0]left_w;
 wire[   7:0]top_left_w;
