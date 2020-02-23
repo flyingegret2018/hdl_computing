@@ -39,7 +39,7 @@ reg [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] iq1;
 reg [32 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] bias1;
 reg [32 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] zthresh1;
 reg [16 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] sharpen1;
-reg [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] YPred1
+reg [ 8 * BLOCK_SIZE * BLOCK_SIZE - 1 : 0] YPred1;
 
 always @ (posedge clk or negedge rst_n)begin
     if(~rst_n)begin
@@ -98,7 +98,7 @@ ITransform U_IDCT(
     .rst_n                          ( rst_n                         ),
     .start                          ( QB_done                       ),
     .src                            ( QB_Rout                       ),
-    .ref                            ( YPred1                         ),
+    .ref                            ( YPred1                        ),
     .out                            ( Yout                          ),
     .done                           ( done                          )
 );
