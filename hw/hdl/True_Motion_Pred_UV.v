@@ -42,9 +42,9 @@ for(j = 0; j < BLOCK_SIZE; j = j + 1)begin
         assign temp_v = top_v[i * BIT_WIDTH + 7 : i * BIT_WIDTH] + 
             left_v[j * BIT_WIDTH + 7 : j * BIT_WIDTH] - top_left_v;
         assign dst[(j * UV_SIZE + i) * BIT_WIDTH + 7 : (j * UV_SIZE + i) * BIT_WIDTH] = 
-            (temp_u > 'hff) ? 'hff : (temp_u < 'h0) ? 'h0 : temp_u;
+            (temp_u > $signed('hff)) ? 'hff : (temp_u < $signed('h0)) ? 'h0 : temp_u;
         assign dst[(j * UV_SIZE + i + 8) * BIT_WIDTH + 7 : (j * UV_SIZE + i + 8) * BIT_WIDTH] = 
-            (temp_v > 'hff) ? 'hff : (temp_v < 'h0) ? 'h0 : temp_v;
+            (temp_v > $signed('hff)) ? 'hff : (temp_v < $signed('h0)) ? 'h0 : temp_v;
     end
 end
 

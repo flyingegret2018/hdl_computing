@@ -111,10 +111,10 @@ for(i = 0; i < 4; i = i + 1)begin
             out_i[4 * i + 3] <= 'd0;
         end
         else begin
-            out_i[4 * i + 0] <=  (c0 > 'hff) ? 'hff : (c0 < 'h0) ? 'h0 : c0;
-            out_i[4 * i + 1] <=  (c1 > 'hff) ? 'hff : (c1 < 'h0) ? 'h0 : c1;
-            out_i[4 * i + 2] <=  (c2 > 'hff) ? 'hff : (c2 < 'h0) ? 'h0 : c2;
-            out_i[4 * i + 3] <=  (c3 > 'hff) ? 'hff : (c3 < 'h0) ? 'h0 : c3;
+            out_i[4 * i + 0] <=  (c0 > $signed('hff)) ? 'hff : (c0 < $signed('h0)) ? 'h0 : c0;
+            out_i[4 * i + 1] <=  (c1 > $signed('hff)) ? 'hff : (c1 < $signed('h0)) ? 'h0 : c1;
+            out_i[4 * i + 2] <=  (c2 > $signed('hff)) ? 'hff : (c2 < $signed('h0)) ? 'h0 : c2;
+            out_i[4 * i + 3] <=  (c3 > $signed('hff)) ? 'hff : (c3 < $signed('h0)) ? 'h0 : c3;
         end
     end
 end
