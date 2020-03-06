@@ -16803,7 +16803,7 @@ static int VP8EncTokenLoop(VP8Encoder* const enc, int card_no) {
 		for(x = 0; x < enc->mb_w_; x++){
 
 		  uint8_t* preds = it.preds_;
-		  DATA_O* output = ((DATA_O*)mem_out)[y * enc->mb_w_ + x];
+		  DATA_O* output = &(((DATA_O*)mem_out)[y * enc->mb_w_ + x]);
 
 		  if(output->mbtype == 1){
 			it.mb_->type_ = 1;

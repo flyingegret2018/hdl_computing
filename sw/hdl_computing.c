@@ -15521,7 +15521,7 @@ static void *WebPEncode(void *tid) {
 		for(x = 0; x < mb_w_; x++){
 
 		  uint8_t* preds = it->preds_;
-		  DATA_O* output = ((DATA_O*)mem_out)[y * mb_w_ + x];
+		  DATA_O* output = &(((DATA_O*)mem_out)[y * mb_w_ + x]);
 
 		  if(output->mbtype == 1){
 			it->mb_->type_ = 1;
