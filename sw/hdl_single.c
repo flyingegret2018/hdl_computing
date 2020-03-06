@@ -16640,7 +16640,7 @@ static int VP8EncTokenLoop(VP8Encoder* const enc, int card_no) {
   VP8EncIterator it;
   VP8EncProba* const proba = &enc->proba_;
   const VP8RDLevel rd_opt = enc->rd_opt_level_;
-  const uint64_t pixel_count = enc->mb_w_ * enc->mb_h_ * 384;
+  //const uint64_t pixel_count = enc->mb_w_ * enc->mb_h_ * 384;
   PassStats stats;
   int ok;
 
@@ -16656,7 +16656,7 @@ static int VP8EncTokenLoop(VP8Encoder* const enc, int card_no) {
   assert(rd_opt >= RD_OPT_BASIC);   // otherwise, token-buffer won't be useful
   assert(num_pass_left > 0);
 
-    uint64_t distortion = 0;
+    //uint64_t distortion = 0;
     VP8IteratorInit(enc, &it);
     SetLoopParams(enc, stats.q);
     ResetTokenStats(enc);
@@ -16730,7 +16730,8 @@ static int VP8EncTokenLoop(VP8Encoder* const enc, int card_no) {
 	char device[128];
 	struct snap_card *card = NULL;
 	struct snap_action *action = NULL;
-	snap_action_flag_t action_irq = 0;
+	snap_action_flag_t attach_flags = 0;
+	uint32_t timeout = 60;
 	
 	// Allocate the card that will be used
 	if(card_no == 0)
@@ -16751,13 +16752,6 @@ static int VP8EncTokenLoop(VP8Encoder* const enc, int card_no) {
 		goto out_error1;
 	}
 
-	int rc = 0;
-	struct timeval etime, stime;
-	unsigned long timeout = 60;
-
-	// Collect the timestamp BEFORE the call of the action
-	gettimeofday(&stime, NULL);
-
 	action_write(card, REG_SOURCE_ADDRESS_L, (uint32_t) (((uint64_t) mem_in) & 0xffffffff));
 	action_write(card, REG_SOURCE_ADDRESS_H, (uint32_t) ((((uint64_t) mem_in) >> 32) & 0xffffffff));
 	  
@@ -16768,6 +16762,11 @@ static int VP8EncTokenLoop(VP8Encoder* const enc, int card_no) {
 
 	action_write(card, REG_USER_CONTROL, 0x00000001);
 	  
+	struct timeval etime, stime;
+
+	// Collect the timestamp BEFORE the call of the action
+	gettimeofday(&stime, NULL);
+	
 	int rc = -1;
 	uint32_t cnt = 0;
     uint32_t reg_data;
