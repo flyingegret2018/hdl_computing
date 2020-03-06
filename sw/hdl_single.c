@@ -16640,7 +16640,7 @@ static int VP8EncTokenLoop(VP8Encoder* const enc, int card_no) {
   VP8EncIterator it;
   VP8EncProba* const proba = &enc->proba_;
   const VP8RDLevel rd_opt = enc->rd_opt_level_;
-  //const uint64_t pixel_count = enc->mb_w_ * enc->mb_h_ * 384;
+  const uint64_t pixel_count = enc->mb_w_ * enc->mb_h_ * 384;
   PassStats stats;
   int ok;
 
@@ -16656,7 +16656,7 @@ static int VP8EncTokenLoop(VP8Encoder* const enc, int card_no) {
   assert(rd_opt >= RD_OPT_BASIC);   // otherwise, token-buffer won't be useful
   assert(num_pass_left > 0);
 
-    //uint64_t distortion = 0;
+    uint64_t distortion = 0;
     VP8IteratorInit(enc, &it);
     SetLoopParams(enc, stats.q);
     ResetTokenStats(enc);
@@ -16843,7 +16843,7 @@ static int VP8EncTokenLoop(VP8Encoder* const enc, int card_no) {
 			it.preds_ += 4;
 		  }
 	  
-	      //distortion += output->info.D;
+	      distortion += output->info.D;
 		}
     }
 
