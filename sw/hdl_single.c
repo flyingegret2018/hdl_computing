@@ -16830,7 +16830,9 @@ static int VP8EncTokenLoop(VP8Encoder* const enc, int card_no) {
 	        WebPEncodingSetError(enc->pic_, VP8_ENC_ERROR_OUT_OF_MEMORY);
 	        break;
 	      }
-		
+		  
+		  StoreSideInfo(&it);
+		  
 		  if((x + 1) == enc->mb_w_){
 			it.preds_ = enc->preds_ + (y + 1) * 4 * enc->preds_w_;
 			it.nz_ = enc->nz_;
