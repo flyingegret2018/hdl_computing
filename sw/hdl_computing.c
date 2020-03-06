@@ -15400,8 +15400,6 @@ struct snap_action *action = NULL;
 uint32_t total_pic = 0;
 uint32_t fpga_pic = 0;
 uint32_t WebP_pic = 0;
-//pthread_mutex_t mut;
-
 
 struct timeval endtime, starttime;
 

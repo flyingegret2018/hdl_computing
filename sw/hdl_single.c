@@ -16511,15 +16511,13 @@ static int VP8EmitTokens(VP8TBuffer* const b, VP8BitWriter* const bw,
 #define MIN_COUNT 96  // minimum number of macroblocks before updating stats
 #define DEBUG_SEARCH 0    // useful to track search convergence
 
+uint64_t fpga_time = 0;
+
 static int VP8EncTokenLoop(VP8Encoder* const enc, int card_no) {
-  // Roughly refresh the proba eight times per pass
-  //int max_count = (enc->mb_w_ * enc->mb_h_) >> 3;
   int num_pass_left = enc->config_->pass;
-  //const int do_search = enc->do_search_;
   VP8EncIterator it;
   VP8EncProba* const proba = &enc->proba_;
   const VP8RDLevel rd_opt = enc->rd_opt_level_;
-  //const uint64_t pixel_count = enc->mb_w_ * enc->mb_h_ * 384;
   PassStats stats;
   int ok;
 
@@ -16527,15 +16525,12 @@ static int VP8EncTokenLoop(VP8Encoder* const enc, int card_no) {
   ok = PreLoopInitialize(enc);
   if (!ok) return 0;
 
-  //if (max_count < MIN_COUNT) max_count = MIN_COUNT;
-
   assert(enc->num_parts_ == 1);
   assert(enc->use_tokens_);
   assert(proba->use_skip_proba_ == 0);
   assert(rd_opt >= RD_OPT_BASIC);   // otherwise, token-buffer won't be useful
   assert(num_pass_left > 0);
 
-    //uint64_t distortion = 0;
     VP8IteratorInit(enc, &it);
     SetLoopParams(enc, stats.q);
     ResetTokenStats(enc);
@@ -16631,6 +16626,11 @@ static int VP8EncTokenLoop(VP8Encoder* const enc, int card_no) {
 		goto out_error1;
 	}
 
+	struct timeval etime, stime;
+
+	// Collect the timestamp BEFORE the call of the action
+	gettimeofday(&stime, NULL);
+
 	action_write(card, REG_SOURCE_ADDRESS_L, (uint32_t) (((uint64_t) mem_in) & 0xffffffff));
 	action_write(card, REG_SOURCE_ADDRESS_H, (uint32_t) ((((uint64_t) mem_in) >> 32) & 0xffffffff));
 	  
@@ -16641,11 +16641,6 @@ static int VP8EncTokenLoop(VP8Encoder* const enc, int card_no) {
 
 	action_write(card, REG_USER_CONTROL, 0x00000001);
 	  
-	struct timeval etime, stime;
-
-	// Collect the timestamp BEFORE the call of the action
-	gettimeofday(&stime, NULL);
-	
 	int rc = -1;
 	uint32_t cnt = 0;
     uint32_t reg_data;
@@ -16672,9 +16667,7 @@ static int VP8EncTokenLoop(VP8Encoder* const enc, int card_no) {
 	
 	// Collect the timestamp AFTER the call of the action
 	gettimeofday(&etime, NULL);
-	
-	// Display the time of the action call (MMIO registers filled + execution)
-	fprintf(stderr, "SNAP computing took %lld usec\n", (long long)timediff_usec(&etime, &stime));
+	fpga_time += timediff_usec(&etime, &stime);
 
 	for(y = 0; y < enc->mb_h_; y++){
 		for(x = 0; x < enc->mb_w_; x++){
@@ -17582,6 +17575,8 @@ int main(int argc, const char *argv[]) {
   sprintf(creat_dir, "%swebp/", in_dir);
   dir_len = strlen(creat_dir);
   mkdir(creat_dir, S_IRWXU);
+  
+  uint64_t total_time = 0;
 
   while((entry = readdir(dir)) != NULL){
   	if(entry->d_type == 8){	
@@ -17616,7 +17611,10 @@ int main(int argc, const char *argv[]) {
         const double read_time = StopwatchReadAndReset(&stop_watch);
         fprintf(stderr, "Time to read input: %.3fs\n", read_time);
       }
-    
+
+	  struct timeval endtime, starttime;
+	  gettimeofday(&starttime, NULL);
+	  
       // Open the output
       out = fopen(out_dir_file, "wb");
       if (out == NULL) {
@@ -17636,7 +17634,7 @@ int main(int argc, const char *argv[]) {
       if (verbose) {
         StopwatchReset(&stop_watch);
       }
-    
+
       if (!WebPEncode(&config, &picture, card_no)) {
         fprintf(stderr, "Error! Cannot encode picture as WebP\n");
         fprintf(stderr, "Error code: %d (%s)\n",
@@ -17645,6 +17643,7 @@ int main(int argc, const char *argv[]) {
         WebPPictureFree(&picture);
         return return_value;
       }
+
       if (verbose) {
         const double encode_time = StopwatchReadAndReset(&stop_watch);
         fprintf(stderr, "Time to encode picture: %.3f s\n", encode_time);
@@ -17663,8 +17662,15 @@ int main(int argc, const char *argv[]) {
       if (out != NULL && out != stdout) {
         fclose(out);
       }
+	  
+	  gettimeofday(&endtime, NULL);
+	  total_time += timediff_usec(&endtime, &starttime);
+	  
   	}
   }
+
+  fprintf(stdout, "YUV to WebP took %lld usec\n", total_time);
+  fprintf(stderr, "FPGA computing took %lld usec\n", fpga_time);
   
   closedir(dir); 
   
