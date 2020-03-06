@@ -16627,8 +16627,6 @@ static int VP8EncTokenLoop(VP8Encoder* const enc, int card_no) {
 	}
 
 	struct timeval etime, stime;
-
-	// Collect the timestamp BEFORE the call of the action
 	gettimeofday(&stime, NULL);
 
 	action_write(card, REG_SOURCE_ADDRESS_L, (uint32_t) (((uint64_t) mem_in) & 0xffffffff));
@@ -16665,7 +16663,6 @@ static int VP8EncTokenLoop(VP8Encoder* const enc, int card_no) {
 		goto out_error1;
 	}
 	
-	// Collect the timestamp AFTER the call of the action
 	gettimeofday(&etime, NULL);
 	fpga_time += timediff_usec(&etime, &stime);
 

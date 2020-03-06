@@ -15725,6 +15725,8 @@ int main(int argc, const char *argv[]) {
   dir_len = strlen(creat_dir);
   mkdir(creat_dir, S_IRWXU);
 
+  uint64_t picture_time = 0;
+
   gettimeofday(&starttime, NULL);
 
   while((entry = readdir(dir)) != NULL){
@@ -15757,6 +15759,9 @@ int main(int argc, const char *argv[]) {
 		fprintf(stderr, "Error! Version mismatch!\n");
 		return -1;
 	  }
+	  
+	  struct timeval etime, stime;
+	  gettimeofday(&stime, NULL);
 
       // Read the input.
       if (!ReadPicture(in_dir_file, picture, keep_alpha, NULL)) {
@@ -15766,6 +15771,9 @@ int main(int argc, const char *argv[]) {
 		return -1;
       }
       picture->progress_hook = NULL;
+	  
+	  gettimeofday(&etime, NULL);
+	  picture_time += timediff_usec(&etime, &stime);
 
       // Open the output
       out = fopen(out_dir_file, "wb");
@@ -15957,6 +15965,7 @@ int main(int argc, const char *argv[]) {
   }
     
   fprintf(stdout, "All picture coding took %lld usec\n", (long long)timediff_usec(&endtime, &starttime));
+  fprintf(stdout, "Picture to YUV took %ld usec\n", picture_time);
   
   snap_detach_action(action);	
   snap_card_free(card);
