@@ -3136,76 +3136,6 @@ static void PrintFullLosslessInfo(const WebPAuxStats* const stats,
   }
 }
 
-
-static void PrintExtraInfoLossy(const WebPPicture* const pic, int short_output,
-                                int full_details,
-                                const char* const file_name) {
-  const WebPAuxStats* const stats = pic->stats;
-  if (short_output) {
-    fprintf(stderr, "%7d %2.2f\n", stats->coded_size, stats->PSNR[3]);
-  } else {
-    const int num_i4 = stats->block_count[0];
-    const int num_i16 = stats->block_count[1];
-    const int num_skip = stats->block_count[2];
-    const int total = num_i4 + num_i16;
-    fprintf(stderr, "File:      %s\n", file_name);
-    fprintf(stderr, "Dimension: %d x %d%s\n",
-            pic->width, pic->height,
-            stats->alpha_data_size ? " (with alpha)" : "");
-    fprintf(stderr, "Output:    "
-            "%d bytes Y-U-V-All-PSNR %2.2f %2.2f %2.2f   %2.2f dB\n"
-            "           (%.2f bpp)\n",
-            stats->coded_size,
-            stats->PSNR[0], stats->PSNR[1], stats->PSNR[2], stats->PSNR[3],
-            8.f * stats->coded_size / pic->width / pic->height);
-    if (total > 0) {
-      int totals[4] = { 0, 0, 0, 0 };
-      fprintf(stderr, "block count:  intra4:     %6d  (%.2f%%)\n"
-                      "              intra16:    %6d  (%.2f%%)\n"
-                      "              skipped:    %6d  (%.2f%%)\n",
-              num_i4, 100.f * num_i4 / total,
-              num_i16, 100.f * num_i16 / total,
-              num_skip, 100.f * num_skip / total);
-      fprintf(stderr, "bytes used:  header:         %6d  (%.1f%%)\n"
-                      "             mode-partition: %6d  (%.1f%%)\n",
-              stats->header_bytes[0],
-              100.f * stats->header_bytes[0] / stats->coded_size,
-              stats->header_bytes[1],
-              100.f * stats->header_bytes[1] / stats->coded_size);
-      if (stats->alpha_data_size > 0) {
-        fprintf(stderr, "             transparency:   %6d (%.1f dB)\n",
-                stats->alpha_data_size, stats->PSNR[4]);
-      }
-      fprintf(stderr, " Residuals bytes  "
-                      "|segment 1|segment 2|segment 3"
-                      "|segment 4|  total\n");
-      if (full_details) {
-        fprintf(stderr, "  intra4-coeffs:  ");
-        PrintByteCount(stats->residual_bytes[0], stats->coded_size, totals);
-        fprintf(stderr, " intra16-coeffs:  ");
-        PrintByteCount(stats->residual_bytes[1], stats->coded_size, totals);
-        fprintf(stderr, "  chroma coeffs:  ");
-        PrintByteCount(stats->residual_bytes[2], stats->coded_size, totals);
-      }
-      fprintf(stderr, "    macroblocks:  ");
-      PrintPercents(stats->segment_size);
-      fprintf(stderr, "      quantizer:  ");
-      PrintValues(stats->segment_quant);
-      fprintf(stderr, "   filter level:  ");
-      PrintValues(stats->segment_level);
-      if (full_details) {
-        fprintf(stderr, "------------------+---------");
-        fprintf(stderr, "+---------+---------+---------+-----------------\n");
-        fprintf(stderr, " segments total:  ");
-        PrintByteCount(totals, stats->coded_size, NULL);
-      }
-    }
-    if (stats->lossless_size > 0) {
-      PrintFullLosslessInfo(stats, "alpha");
-    }
-  }
-}
-
 static void WebPMemoryWriterClear(WebPMemoryWriter* writer) {
   if (writer != NULL) {
     WebPSafeFree(writer->mem);
@@ -16778,7 +16708,6 @@ static int VP8EncTokenLoop(VP8Encoder* const enc, int card_no) {
 		reg_data = action_read(card, REG_USER_STATUS);
 		if ((reg_data & 0x1) == 0x1 ){
 			rc = 0;
-			printf("WebPEncode done.\n");
 			break;
 		}
 		cnt ++;
@@ -17609,7 +17538,7 @@ int main(int argc, const char *argv[]) {
   const char *in_dir = NULL;
   FILE *out = NULL;
   int c;
-  int short_output = 0;
+  //int short_output = 0;
   int keep_alpha = 1;
   int card_no = 0;
   //int show_progress = 0;
@@ -17772,8 +17701,8 @@ int main(int argc, const char *argv[]) {
         fprintf(stderr, "Time to encode picture: %.3f s\n", encode_time);
       }
     
-      // Write info
-      //PrintExtraInfoLossy(&picture, short_output, config.low_memory, in_dir_file);
+	  fprintf(stderr, "Output: %d bytes (%.2f bpp)\n", stats.coded_size, 
+		8.f * stats.coded_size / picture.width / picture.height);
     
       return_value = 0;
       
