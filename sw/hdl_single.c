@@ -16634,13 +16634,13 @@ static int VP8EmitTokens(VP8TBuffer* const b, VP8BitWriter* const bw,
 
 static int VP8EncTokenLoop(VP8Encoder* const enc, int card_no) {
   // Roughly refresh the proba eight times per pass
-  int max_count = (enc->mb_w_ * enc->mb_h_) >> 3;
+  //int max_count = (enc->mb_w_ * enc->mb_h_) >> 3;
   int num_pass_left = enc->config_->pass;
   //const int do_search = enc->do_search_;
   VP8EncIterator it;
   VP8EncProba* const proba = &enc->proba_;
   const VP8RDLevel rd_opt = enc->rd_opt_level_;
-  const uint64_t pixel_count = enc->mb_w_ * enc->mb_h_ * 384;
+  //const uint64_t pixel_count = enc->mb_w_ * enc->mb_h_ * 384;
   PassStats stats;
   int ok;
 
@@ -16648,7 +16648,7 @@ static int VP8EncTokenLoop(VP8Encoder* const enc, int card_no) {
   ok = PreLoopInitialize(enc);
   if (!ok) return 0;
 
-  if (max_count < MIN_COUNT) max_count = MIN_COUNT;
+  //if (max_count < MIN_COUNT) max_count = MIN_COUNT;
 
   assert(enc->num_parts_ == 1);
   assert(enc->use_tokens_);
@@ -16656,7 +16656,7 @@ static int VP8EncTokenLoop(VP8Encoder* const enc, int card_no) {
   assert(rd_opt >= RD_OPT_BASIC);   // otherwise, token-buffer won't be useful
   assert(num_pass_left > 0);
 
-    uint64_t distortion = 0;
+    //uint64_t distortion = 0;
     VP8IteratorInit(enc, &it);
     SetLoopParams(enc, stats.q);
     ResetTokenStats(enc);
@@ -16831,7 +16831,7 @@ static int VP8EncTokenLoop(VP8Encoder* const enc, int card_no) {
 	        break;
 	      }
 		  
-		  StoreSideInfo(&it);
+		  //StoreSideInfo(&it);
 		  
 		  if((x + 1) == enc->mb_w_){
 			it.preds_ = enc->preds_ + (y + 1) * 4 * enc->preds_w_;
@@ -16845,7 +16845,7 @@ static int VP8EncTokenLoop(VP8Encoder* const enc, int card_no) {
 			it.preds_ += 4;
 		  }
 	  
-	      distortion += output->info.D;
+	      //distortion += output->info.D;
 		}
     }
 
@@ -16864,7 +16864,7 @@ out_error4:
 	__free(mem_in);
 
     //compute and store PSNR
-    stats.value = GetPSNR(distortion, pixel_count);
+    //stats.value = GetPSNR(distortion, pixel_count);
 
 #if (DEBUG_SEARCH > 0)
     printf("#%2d metric:%.1lf -> %.1lf   last_q=%.2lf q=%.2lf dq=%.2lf\n",
@@ -17773,7 +17773,7 @@ int main(int argc, const char *argv[]) {
       }
     
       // Write info
-      PrintExtraInfoLossy(&picture, short_output, config.low_memory, in_dir_file);
+      //PrintExtraInfoLossy(&picture, short_output, config.low_memory, in_dir_file);
     
       return_value = 0;
       
