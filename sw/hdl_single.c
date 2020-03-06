@@ -17649,9 +17649,11 @@ int main(int argc, const char *argv[]) {
         const double encode_time = StopwatchReadAndReset(&stop_watch);
         fprintf(stderr, "Time to encode picture: %.3f s\n", encode_time);
       }
-    
+
+	  if (verbose) {
 	  fprintf(stderr, "Output: %d bytes (%.2f bpp)\n", stats.coded_size, 
 		8.f * stats.coded_size / picture.width / picture.height);
+	  }
     
       return_value = 0;
       

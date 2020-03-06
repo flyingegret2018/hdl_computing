@@ -15577,8 +15577,10 @@ static void *WebPEncode(void *tid) {
     ok = ok && VP8EncWrite(enc);
 	
     StoreStats(enc);
+	if (verbose) {
 	fprintf(stderr, "Output: %d bytes (%.2f bpp)\n", picture->stats->coded_size, 
 		8.f * picture->stats->coded_size / picture->width / picture->height);
+	}
 	
     if (!ok) {
 	  fprintf(stderr, "Encode error!\n");
