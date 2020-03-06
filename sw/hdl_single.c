@@ -3085,57 +3085,6 @@ static const char* const kErrorMessages[VP8_ENC_ERROR_LAST] = {
   "USER_ABORT: encoding abort requested by user"
 };
 
-static void PrintByteCount(const int bytes[4], int total_size,
-                           int* const totals) {
-  int s;
-  int total = 0;
-  for (s = 0; s < 4; ++s) {
-    fprintf(stderr, "| %7d ", bytes[s]);
-    total += bytes[s];
-    if (totals) totals[s] += bytes[s];
-  }
-  fprintf(stderr, "| %7d  (%.1f%%)\n", total, 100.f * total / total_size);
-}
-
-static void PrintPercents(const int counts[4]) {
-  int s;
-  const int total = counts[0] + counts[1] + counts[2] + counts[3];
-  for (s = 0; s < 4; ++s) {
-    fprintf(stderr, "|      %2d%%", (int)(100. * counts[s] / total + .5));
-  }
-  fprintf(stderr, "| %7d\n", total);
-}
-
-static void PrintValues(const int values[4]) {
-  int s;
-  for (s = 0; s < 4; ++s) {
-    fprintf(stderr, "| %7d ", values[s]);
-  }
-  fprintf(stderr, "|\n");
-}
-
-
-static void PrintFullLosslessInfo(const WebPAuxStats* const stats,
-                                  const char* const description) {
-  fprintf(stderr, "Lossless-%s compressed size: %d bytes\n",
-          description, stats->lossless_size);
-  fprintf(stderr, "  * Header size: %d bytes, image data size: %d\n",
-          stats->lossless_hdr_size, stats->lossless_data_size);
-  if (stats->lossless_features) {
-    fprintf(stderr, "  * Lossless features used:");
-    if (stats->lossless_features & 1) fprintf(stderr, " PREDICTION");
-    if (stats->lossless_features & 2) fprintf(stderr, " CROSS-COLOR-TRANSFORM");
-    if (stats->lossless_features & 4) fprintf(stderr, " SUBTRACT-GREEN");
-    if (stats->lossless_features & 8) fprintf(stderr, " PALETTE");
-    fprintf(stderr, "\n");
-  }
-  fprintf(stderr, "  * Precision Bits: histogram=%d transform=%d cache=%d\n",
-          stats->histogram_bits, stats->transform_bits, stats->cache_bits);
-  if (stats->palette_size > 0) {
-    fprintf(stderr, "  * Palette size:   %d\n", stats->palette_size);
-  }
-}
-
 static void WebPMemoryWriterClear(WebPMemoryWriter* writer) {
   if (writer != NULL) {
     WebPSafeFree(writer->mem);
