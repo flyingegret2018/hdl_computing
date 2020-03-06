@@ -17669,8 +17669,8 @@ int main(int argc, const char *argv[]) {
   	}
   }
 
-  fprintf(stdout, "YUV to WebP took %lld usec\n", total_time);
-  fprintf(stderr, "FPGA computing took %lld usec\n", fpga_time);
+  fprintf(stdout, "YUV to WebP took %d usec\n", total_time);
+  fprintf(stderr, "FPGA computing took %d usec\n", fpga_time);
   
   closedir(dir); 
   
