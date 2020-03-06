@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+	
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,14 +31,12 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <dirent.h>
-#include <pthread.h>
-#include <semaphore.h>
-
+	
 #include <libosnap.h>
 #include <libocxl.h>
 #include <osnap_tools.h>
 #include <osnap_global_regs.h>
-
+	
 #include "hdl_computing.h"
 
 static void* alloc_mem (uint32_t align, uint64_t bytes)
@@ -343,6 +341,12 @@ typedef struct WebPMemoryWriter {
 }WebPMemoryWriter;
 
 typedef struct timeval Stopwatch;
+
+static void WebPMemoryWriterInit(WebPMemoryWriter* writer) {
+  writer->mem = NULL;
+  writer->size = 0;
+  writer->max_size = 0;
+}
 
 #define WEBP_ABI_IS_INCOMPATIBLE(a, b) (((a) >> 8) != ((b) >> 8))
 #define WEBP_ENCODER_ABI_VERSION 0x020e    // MAJOR(8b) + MINOR(8b)
@@ -727,8 +731,6 @@ static int ImgIoUtilReadFile(const char* const file_name,
   if (in == NULL) {
     fprintf(stderr, "cannot open input file '%s'\n", file_name);
     return 0;
-  }else {
-    fprintf(stderr, "Input file '%s'\n", file_name);
   }
   fseek(in, 0, SEEK_END);
   file_size = ftell(in);
@@ -796,41 +798,6 @@ static WebPInputFileFormat WebPGuessImageType(const uint8_t* const data,
   return format;
 }
 
-#define METADATA_OFFSET(x) offsetof(Metadata, x)
-
-static int MetadataCopy(const char* metadata, size_t metadata_len,
-                 MetadataPayload* const payload) {
-  if (metadata == NULL || metadata_len == 0 || payload == NULL) return 0;
-  payload->bytes = (uint8_t*)malloc(metadata_len);
-  if (payload->bytes == NULL) return 0;
-  payload->size = metadata_len;
-  memcpy(payload->bytes, metadata, metadata_len);
-  return 1;
-}
-
-static void MetadataPayloadDelete(MetadataPayload* const payload) {
-  if (payload == NULL) return;
-  free(payload->bytes);
-  payload->bytes = NULL;
-  payload->size = 0;
-}
-
-static void MetadataFree(Metadata* const metadata) {
-  if (metadata == NULL) return;
-  MetadataPayloadDelete(&metadata->exif);
-  MetadataPayloadDelete(&metadata->iccp);
-  MetadataPayloadDelete(&metadata->xmp);
-}
-
-static int ImgIoUtilCheckSizeArgumentsOverflow(uint64_t nmemb, size_t size) {
-  const uint64_t total_size = nmemb * size;
-  int ok = (total_size == (size_t)total_size);
-#if defined(WEBP_MAX_IMAGE_SIZE)
-  ok = ok && (total_size <= (uint64_t)WEBP_MAX_IMAGE_SIZE);
-#endif
-  return ok;
-}
-
 typedef struct {
   struct jpeg_source_mgr pub;
   const uint8_t* data;
@@ -846,6 +813,20 @@ static void my_error_exit(j_common_ptr dinfo) {
   struct my_error_mgr* myerr = (struct my_error_mgr*)dinfo->err;
   dinfo->err->output_message(dinfo);
   longjmp(myerr->setjmp_buffer, 1);
+}
+
+static void MetadataPayloadDelete(MetadataPayload* const payload) {
+  if (payload == NULL) return;
+  free(payload->bytes);
+  payload->bytes = NULL;
+  payload->size = 0;
+}
+
+static void MetadataFree(Metadata* const metadata) {
+  if (metadata == NULL) return;
+  MetadataPayloadDelete(&metadata->exif);
+  MetadataPayloadDelete(&metadata->iccp);
+  MetadataPayloadDelete(&metadata->xmp);
 }
 
 static void ContextInit(j_decompress_ptr cinfo) {
@@ -886,6 +867,15 @@ static void ContextSetup(volatile struct jpeg_decompress_struct* const cinfo,
   ctx->pub.next_input_byte = NULL;
 }
 
+static int ImgIoUtilCheckSizeArgumentsOverflow(uint64_t nmemb, size_t size) {
+  const uint64_t total_size = nmemb * size;
+  int ok = (total_size == (size_t)total_size);
+#if defined(WEBP_MAX_IMAGE_SIZE)
+  ok = ok && (total_size <= (uint64_t)WEBP_MAX_IMAGE_SIZE);
+#endif
+  return ok;
+}
+
 #ifndef JPEG_APP1
 # define JPEG_APP1 (JPEG_APP0 + 1)
 #endif
@@ -898,6 +888,8 @@ static void SaveMetadataMarkers(j_decompress_ptr dinfo) {
   jpeg_save_markers(dinfo, JPEG_APP1, max_marker_length);  // Exif/XMP
   jpeg_save_markers(dinfo, JPEG_APP2, max_marker_length);  // ICC profile
 }
+
+#define METADATA_OFFSET(x) offsetof(Metadata, x)
 
 typedef struct {
   const uint8_t* data;
@@ -994,6 +986,16 @@ static int StoreICCP(j_decompress_ptr dinfo, MetadataPayload* const iccp) {
       offset += iccp_segments[i].data_length;
     }
   }
+  return 1;
+}
+
+static int MetadataCopy(const char* metadata, size_t metadata_len,
+                 MetadataPayload* const payload) {
+  if (metadata == NULL || metadata_len == 0 || payload == NULL) return 0;
+  payload->bytes = (uint8_t*)malloc(metadata_len);
+  if (payload->bytes == NULL) return 0;
+  payload->size = metadata_len;
+  memcpy(payload->bytes, metadata, metadata_len);
   return 1;
 }
 
@@ -3082,6 +3084,136 @@ static const char* const kErrorMessages[VP8_ENC_ERROR_LAST] = {
   "FILE_TOO_BIG: File would be too big to fit in 4G",
   "USER_ABORT: encoding abort requested by user"
 };
+
+static void PrintByteCount(const int bytes[4], int total_size,
+                           int* const totals) {
+  int s;
+  int total = 0;
+  for (s = 0; s < 4; ++s) {
+    fprintf(stderr, "| %7d ", bytes[s]);
+    total += bytes[s];
+    if (totals) totals[s] += bytes[s];
+  }
+  fprintf(stderr, "| %7d  (%.1f%%)\n", total, 100.f * total / total_size);
+}
+
+static void PrintPercents(const int counts[4]) {
+  int s;
+  const int total = counts[0] + counts[1] + counts[2] + counts[3];
+  for (s = 0; s < 4; ++s) {
+    fprintf(stderr, "|      %2d%%", (int)(100. * counts[s] / total + .5));
+  }
+  fprintf(stderr, "| %7d\n", total);
+}
+
+static void PrintValues(const int values[4]) {
+  int s;
+  for (s = 0; s < 4; ++s) {
+    fprintf(stderr, "| %7d ", values[s]);
+  }
+  fprintf(stderr, "|\n");
+}
+
+
+static void PrintFullLosslessInfo(const WebPAuxStats* const stats,
+                                  const char* const description) {
+  fprintf(stderr, "Lossless-%s compressed size: %d bytes\n",
+          description, stats->lossless_size);
+  fprintf(stderr, "  * Header size: %d bytes, image data size: %d\n",
+          stats->lossless_hdr_size, stats->lossless_data_size);
+  if (stats->lossless_features) {
+    fprintf(stderr, "  * Lossless features used:");
+    if (stats->lossless_features & 1) fprintf(stderr, " PREDICTION");
+    if (stats->lossless_features & 2) fprintf(stderr, " CROSS-COLOR-TRANSFORM");
+    if (stats->lossless_features & 4) fprintf(stderr, " SUBTRACT-GREEN");
+    if (stats->lossless_features & 8) fprintf(stderr, " PALETTE");
+    fprintf(stderr, "\n");
+  }
+  fprintf(stderr, "  * Precision Bits: histogram=%d transform=%d cache=%d\n",
+          stats->histogram_bits, stats->transform_bits, stats->cache_bits);
+  if (stats->palette_size > 0) {
+    fprintf(stderr, "  * Palette size:   %d\n", stats->palette_size);
+  }
+}
+
+
+static void PrintExtraInfoLossy(const WebPPicture* const pic, int short_output,
+                                int full_details,
+                                const char* const file_name) {
+  const WebPAuxStats* const stats = pic->stats;
+  if (short_output) {
+    fprintf(stderr, "%7d %2.2f\n", stats->coded_size, stats->PSNR[3]);
+  } else {
+    const int num_i4 = stats->block_count[0];
+    const int num_i16 = stats->block_count[1];
+    const int num_skip = stats->block_count[2];
+    const int total = num_i4 + num_i16;
+    fprintf(stderr, "File:      %s\n", file_name);
+    fprintf(stderr, "Dimension: %d x %d%s\n",
+            pic->width, pic->height,
+            stats->alpha_data_size ? " (with alpha)" : "");
+    fprintf(stderr, "Output:    "
+            "%d bytes Y-U-V-All-PSNR %2.2f %2.2f %2.2f   %2.2f dB\n"
+            "           (%.2f bpp)\n",
+            stats->coded_size,
+            stats->PSNR[0], stats->PSNR[1], stats->PSNR[2], stats->PSNR[3],
+            8.f * stats->coded_size / pic->width / pic->height);
+    if (total > 0) {
+      int totals[4] = { 0, 0, 0, 0 };
+      fprintf(stderr, "block count:  intra4:     %6d  (%.2f%%)\n"
+                      "              intra16:    %6d  (%.2f%%)\n"
+                      "              skipped:    %6d  (%.2f%%)\n",
+              num_i4, 100.f * num_i4 / total,
+              num_i16, 100.f * num_i16 / total,
+              num_skip, 100.f * num_skip / total);
+      fprintf(stderr, "bytes used:  header:         %6d  (%.1f%%)\n"
+                      "             mode-partition: %6d  (%.1f%%)\n",
+              stats->header_bytes[0],
+              100.f * stats->header_bytes[0] / stats->coded_size,
+              stats->header_bytes[1],
+              100.f * stats->header_bytes[1] / stats->coded_size);
+      if (stats->alpha_data_size > 0) {
+        fprintf(stderr, "             transparency:   %6d (%.1f dB)\n",
+                stats->alpha_data_size, stats->PSNR[4]);
+      }
+      fprintf(stderr, " Residuals bytes  "
+                      "|segment 1|segment 2|segment 3"
+                      "|segment 4|  total\n");
+      if (full_details) {
+        fprintf(stderr, "  intra4-coeffs:  ");
+        PrintByteCount(stats->residual_bytes[0], stats->coded_size, totals);
+        fprintf(stderr, " intra16-coeffs:  ");
+        PrintByteCount(stats->residual_bytes[1], stats->coded_size, totals);
+        fprintf(stderr, "  chroma coeffs:  ");
+        PrintByteCount(stats->residual_bytes[2], stats->coded_size, totals);
+      }
+      fprintf(stderr, "    macroblocks:  ");
+      PrintPercents(stats->segment_size);
+      fprintf(stderr, "      quantizer:  ");
+      PrintValues(stats->segment_quant);
+      fprintf(stderr, "   filter level:  ");
+      PrintValues(stats->segment_level);
+      if (full_details) {
+        fprintf(stderr, "------------------+---------");
+        fprintf(stderr, "+---------+---------+---------+-----------------\n");
+        fprintf(stderr, " segments total:  ");
+        PrintByteCount(totals, stats->coded_size, NULL);
+      }
+    }
+    if (stats->lossless_size > 0) {
+      PrintFullLosslessInfo(stats, "alpha");
+    }
+  }
+}
+
+static void WebPMemoryWriterClear(WebPMemoryWriter* writer) {
+  if (writer != NULL) {
+    WebPSafeFree(writer->mem);
+    writer->mem = NULL;
+    writer->size = 0;
+    writer->max_size = 0;
+  }
+}
 
 typedef struct {
   int simple_;             // filtering type: 0=complex, 1=simple
@@ -13905,14 +14037,329 @@ static void SetLoopParams(VP8Encoder* const enc, float q) {
   ResetSSE(enc);
 }
 
+// Init/Copy the common fields in score.
+static void InitScore(VP8ModeScore* const rd) {
+  rd->D  = 0;
+  rd->SD = 0;
+  rd->R  = 0;
+  rd->H  = 0;
+  rd->nz = 0;
+  rd->score = 1099511627776;
+}
+
+static void FTransformWHT_C(const int16_t* in, int16_t* out) {
+  // input is 12b signed
+  int32_t tmp[16];
+  int i;
+  for (i = 0; i < 4; ++i, in += 64) {
+    const int a0 = (in[0 * 16] + in[2 * 16]);  // 13b
+    const int a1 = (in[1 * 16] + in[3 * 16]);
+    const int a2 = (in[1 * 16] - in[3 * 16]);
+    const int a3 = (in[0 * 16] - in[2 * 16]);
+    tmp[0 + i * 4] = a0 + a1;   // 14b
+    tmp[1 + i * 4] = a3 + a2;
+    tmp[2 + i * 4] = a3 - a2;
+    tmp[3 + i * 4] = a0 - a1;
+  }
+  for (i = 0; i < 4; ++i) {
+    const int a0 = (tmp[0 + i] + tmp[8 + i]);  // 15b
+    const int a1 = (tmp[4 + i] + tmp[12+ i]);
+    const int a2 = (tmp[4 + i] - tmp[12+ i]);
+    const int a3 = (tmp[0 + i] - tmp[8 + i]);
+    const int b0 = a0 + a1;    // 16b
+    const int b1 = a3 + a2;
+    const int b2 = a3 - a2;
+    const int b3 = a0 - a1;
+    out[ 0 + i] = b0 >> 1;     // 15b
+    out[ 4 + i] = b1 >> 1;
+    out[ 8 + i] = b2 >> 1;
+    out[12 + i] = b3 >> 1;
+  }
+}
+
+static void FTransform2_C(const uint8_t* src, const uint8_t* ref,
+                          int16_t* out) {
+	FTransform_C(src, ref, out);
+	FTransform_C(src + 4, ref + 4, out + 16);
+}
+
+static const uint8_t kZigzag[16] = {
+  0, 1, 4, 8, 5, 2, 3, 6, 9, 12, 13, 10, 7, 11, 14, 15
+};
+
+static int QUANTDIV(uint32_t n, uint32_t iQ, uint32_t B) {
+  return (int)((n * iQ + B) >> QFIX);
+}
+
+// Simple quantization
+static int QuantizeBlock_C(int16_t in[16], int16_t out[16],
+                           const VP8Matrix* const mtx) {
+  int last = -1;
+  int n;
+  for (n = 0; n < 16; ++n) {
+    const int j = kZigzag[n];
+    const int sign = (in[j] < 0);
+    const uint32_t coeff = (sign ? -in[j] : in[j]) + mtx->sharpen_[j];
+    if (coeff > mtx->zthresh_[j]) {
+      const uint32_t Q = mtx->q_[j];
+      const uint32_t iQ = mtx->iq_[j];
+      const uint32_t B = mtx->bias_[j];
+      int level = QUANTDIV(coeff, iQ, B);
+      if (level > MAX_LEVEL) level = MAX_LEVEL;
+      if (sign) level = -level;
+      in[j] = level * (int)Q;
+      out[n] = level;
+      if (level) last = n;
+    } else {
+      out[n] = 0;
+      in[j] = 0;
+    }
+  }
+  return (last >= 0);
+}
+
+static int Quantize2Blocks_C(int16_t in[32], int16_t out[32],
+                             const VP8Matrix* const mtx) {
+  int nz;
+  nz  = QuantizeBlock_C(in + 0 * 16, out + 0 * 16, mtx) << 0;
+  nz |= QuantizeBlock_C(in + 1 * 16, out + 1 * 16, mtx) << 1;
+  return nz;
+}
+
+static void TransformWHT_C(const int16_t* in, int16_t* out) {
+  int tmp[16];
+  int i;
+  for (i = 0; i < 4; ++i) {
+    const int a0 = in[0 + i] + in[12 + i];
+    const int a1 = in[4 + i] + in[ 8 + i];
+    const int a2 = in[4 + i] - in[ 8 + i];
+    const int a3 = in[0 + i] - in[12 + i];
+    tmp[0  + i] = a0 + a1;
+    tmp[8  + i] = a0 - a1;
+    tmp[4  + i] = a3 + a2;
+    tmp[12 + i] = a3 - a2;
+  }
+  for (i = 0; i < 4; ++i) {
+    const int dc = tmp[0 + i * 4] + 3;    // w/ rounder
+    const int a0 = dc             + tmp[3 + i * 4];
+    const int a1 = tmp[1 + i * 4] + tmp[2 + i * 4];
+    const int a2 = tmp[1 + i * 4] - tmp[2 + i * 4];
+    const int a3 = dc             - tmp[3 + i * 4];
+    out[ 0] = (a0 + a1) >> 3;
+    out[16] = (a3 + a2) >> 3;
+    out[32] = (a0 - a1) >> 3;
+    out[48] = (a3 - a2) >> 3;
+    out += 64;
+  }
+}
+
 #define STORE(x, y, v) \
   dst[(x) + (y) * BPS] = clip_8b(ref[(x) + (y) * BPS] + ((v) >> 3))
 
+static const int kC1 = 20091 + (1 << 16);
+static const int kC2 = 35468;
 #define MUL(a, b) (((a) * (b)) >> 16)
+
+static void ITransformOne(const uint8_t* ref, const int16_t* in,
+                                      uint8_t* dst) {
+  int C[4 * 4], *tmp;
+  int i;
+  tmp = C;
+  for (i = 0; i < 4; ++i) {    // vertical pass
+    const int a = in[0] + in[8];
+    const int b = in[0] - in[8];
+    const int c = MUL(in[4], kC2) - MUL(in[12], kC1);
+    const int d = MUL(in[4], kC1) + MUL(in[12], kC2);
+    tmp[0] = a + d;
+    tmp[1] = b + c;
+    tmp[2] = b - c;
+    tmp[3] = a - d;
+    tmp += 4;
+    in++;
+  }
+
+  tmp = C;
+  for (i = 0; i < 4; ++i) {    // horizontal pass
+    const int dc = tmp[0] + 4;
+    const int a =  dc +  tmp[8];
+    const int b =  dc -  tmp[8];
+    const int c = MUL(tmp[4], kC2) - MUL(tmp[12], kC1);
+    const int d = MUL(tmp[4], kC1) + MUL(tmp[12], kC2);
+    STORE(0, i, a + d);
+    STORE(1, i, b + c);
+    STORE(2, i, b - c);
+    STORE(3, i, a - d);
+    tmp++;
+  }
+}
+
+static void ITransform_C(const uint8_t* ref, const int16_t* in, uint8_t* dst,
+                         int do_two) {
+  ITransformOne(ref, in, dst);
+  if (do_two) {
+    ITransformOne(ref + 4, in + 16, dst + 4);
+  }
+}
+
+static int ReconstructIntra16(VP8EncIterator* const it,
+                              VP8ModeScore* const rd,
+                              uint8_t* const yuv_out,
+                              int mode) {
+  const VP8Encoder* const enc = it->enc_;
+  const uint8_t* const ref = it->yuv_p_ + VP8I16ModeOffsets[mode];
+  const uint8_t* const src = it->yuv_in_ + Y_OFF_ENC;
+  const VP8SegmentInfo* const dqm = &enc->dqm_[it->mb_->segment_];
+  int nz = 0;
+  int n;
+  int16_t tmp[16][16], dc_tmp[16];
+
+  for (n = 0; n < 16; n += 2) {
+	  FTransform2_C(src + VP8Scan[n], ref + VP8Scan[n], tmp[n]);
+  }
+
+  FTransformWHT_C(tmp[0], dc_tmp);
+
+  nz |= QuantizeBlock_C(dc_tmp, rd->y_dc_levels, &dqm->y2_) << 24;
+
+  for (n = 0; n < 16; n += 2) {
+    // Zero-out the first coeff, so that: a) nz is correct below, and
+    // b) finding 'last' non-zero coeffs in SetResidualCoeffs() is simplified.
+    tmp[n][0] = tmp[n + 1][0] = 0;
+    nz |= Quantize2Blocks_C(tmp[n], rd->y_ac_levels[n], &dqm->y1_) << n;
+    assert(rd->y_ac_levels[n + 0][0] == 0);
+    assert(rd->y_ac_levels[n + 1][0] == 0);
+  }
+
+
+  // Transform back
+  TransformWHT_C(dc_tmp, tmp[0]);
+
+  for (n = 0; n < 16; n += 2) {
+	  ITransform_C(ref + VP8Scan[n], tmp[n], yuv_out + VP8Scan[n], 1);
+  }
+
+  return nz;
+}
+
+static int GetSSE(const uint8_t* a, const uint8_t* b,
+                              int w, int h) {
+  int count = 0;
+  int y, x;
+  for (y = 0; y < h; ++y) {
+    for (x = 0; x < w; ++x) {
+      const int diff = (int)a[x] - b[x];
+      count += diff * diff;
+    }
+    a += BPS;
+    b += BPS;
+  }
+  return count;
+}
+
+static int SSE16x16_C(const uint8_t* a, const uint8_t* b) {
+  return GetSSE(a, b, 16, 16);
+}
+static int SSE16x8_C(const uint8_t* a, const uint8_t* b) {
+  return GetSSE(a, b, 16, 8);
+}
+static int SSE8x8_C(const uint8_t* a, const uint8_t* b) {
+  return GetSSE(a, b, 8, 8);
+}
+static int SSE4x4_C(const uint8_t* a, const uint8_t* b) {
+  return GetSSE(a, b, 4, 4);
+}
 
 #define MULT_8B(a, b) (((a) * (b) + 128) >> 8)
 
+static int TTransform(const uint8_t* in, const uint16_t* w) {
+  int sum = 0;
+  int tmp[16];
+  int i;
+  // horizontal pass
+  for (i = 0; i < 4; ++i, in += BPS) {
+    const int a0 = in[0] + in[2];
+    const int a1 = in[1] + in[3];
+    const int a2 = in[1] - in[3];
+    const int a3 = in[0] - in[2];
+    tmp[0 + i * 4] = a0 + a1;
+    tmp[1 + i * 4] = a3 + a2;
+    tmp[2 + i * 4] = a3 - a2;
+    tmp[3 + i * 4] = a0 - a1;
+  }
+  // vertical pass
+  for (i = 0; i < 4; ++i, ++w) {
+    const int a0 = tmp[0 + i] + tmp[8 + i];
+    const int a1 = tmp[4 + i] + tmp[12+ i];
+    const int a2 = tmp[4 + i] - tmp[12+ i];
+    const int a3 = tmp[0 + i] - tmp[8 + i];
+    const int b0 = a0 + a1;
+    const int b1 = a3 + a2;
+    const int b2 = a3 - a2;
+    const int b3 = a0 - a1;
+
+    sum += w[ 0] * abs(b0);
+    sum += w[ 4] * abs(b1);
+    sum += w[ 8] * abs(b2);
+    sum += w[12] * abs(b3);
+  }
+  return sum;
+}
+
+static int Disto4x4_C(const uint8_t* const a, const uint8_t* const b,
+                      const uint16_t* const w) {
+  const int sum1 = TTransform(a, w);
+  const int sum2 = TTransform(b, w);
+  return abs(sum2 - sum1) >> 5;
+}
+
+static int Disto16x16_C(const uint8_t* const a, const uint8_t* const b,
+                        const uint16_t* const w) {
+  int D = 0;
+  int x, y;
+  for (y = 0; y < 16 * BPS; y += 4 * BPS) {
+    for (x = 0; x < 16; x += 4) {
+      D += Disto4x4_C(a + x + y, b + x + y, w);
+    }
+  }
+  return D;
+}
+
+static const uint16_t kWeightY[16] = {
+  38, 32, 20, 9, 32, 28, 17, 7, 20, 17, 10, 4, 9, 7, 4, 2
+};
+
 #define RD_DISTO_MULT      256  // distortion multiplier (equivalent of lambda)
+
+static void SetRDScore(int lambda, VP8ModeScore* const rd) {
+  rd->score = (rd->R + rd->H) * lambda + RD_DISTO_MULT * (rd->D + rd->SD);
+}
+
+static void SwapModeScore(VP8ModeScore** a, VP8ModeScore** b) {
+  VP8ModeScore* const tmp = *a;
+  *a = *b;
+  *b = tmp;
+}
+
+static void SwapPtr(uint8_t** a, uint8_t** b) {
+  uint8_t* const tmp = *a;
+  *a = *b;
+  *b = tmp;
+}
+
+static void SwapOut(VP8EncIterator* const it) {
+  SwapPtr(&it->yuv_out_, &it->yuv_out2_);
+}
+
+static void StoreMaxDelta(VP8SegmentInfo* const dqm, const int16_t DCs[16]) {
+  // We look at the first three AC coefficients to determine what is the average
+  // delta between each sub-4x4 block.
+  const int v0 = abs(DCs[1]);
+  const int v1 = abs(DCs[2]);
+  const int v2 = abs(DCs[4]);
+  int max_v = (v1 > v0) ? v1 : v0;
+  max_v = (v2 > max_v) ? v2 : max_v;
+  if (max_v > dqm->max_edge_) dqm->max_edge_ = max_v;
+}
 
 // These are the fixed probabilities (in the coding trees) turned into bit-cost
 // by calling VP8BitCost().
@@ -14022,6 +14469,418 @@ const uint16_t VP8FixedCostsI4[NUM_BMODES][NUM_BMODES][NUM_BMODES] = {
     {  305, 1167, 1358,  899, 1587, 1587,  987, 1988, 1332,  501 } }
 };
 
+static void PickBestIntra16(VP8EncIterator* const it, VP8ModeScore* rd) {
+  //const int kNumBlocks = 16;
+  VP8SegmentInfo* const dqm = &it->enc_->dqm_[it->mb_->segment_];
+  const int lambda = dqm->lambda_i16_;
+  const int tlambda = dqm->tlambda_;
+  const uint8_t* const src = it->yuv_in_ + Y_OFF_ENC;
+  VP8ModeScore rd_tmp;
+  VP8ModeScore* rd_cur = &rd_tmp;
+  VP8ModeScore* rd_best = rd;
+  int mode;
+
+  rd->mode_i16 = -1;
+  for (mode = 0; mode < NUM_PRED_MODES; ++mode) {
+    uint8_t* const tmp_dst = it->yuv_out2_ + Y_OFF_ENC;  // scratch buffer
+    rd_cur->mode_i16 = mode;
+
+    // Reconstruct
+    rd_cur->nz = ReconstructIntra16(it, rd_cur, tmp_dst, mode);
+
+    // Measure RD-score
+    rd_cur->D = SSE16x16_C(src, tmp_dst);
+    rd_cur->SD =
+        tlambda ? MULT_8B(tlambda, Disto16x16_C(src, tmp_dst, kWeightY)) : 0;
+    rd_cur->H = VP8FixedCostsI16[mode];
+    /*rd_cur->R = VP8GetCostLuma16(it, rd_cur);
+
+    if (mode > 0 &&
+        IsFlat(rd_cur->y_ac_levels[0], kNumBlocks, FLATNESS_LIMIT_I16)) {
+      // penalty to avoid flat area to be mispredicted by complex mode
+      rd_cur->R += FLATNESS_PENALTY * kNumBlocks;
+    }*/
+
+	int64_t test_R = 0;
+	int y, x;
+	for (y = 1; y < 16; ++y) {
+	  for (x = 1; x < 16; ++x) {
+	    test_R += rd_cur->y_ac_levels[y][x] * rd_cur->y_ac_levels[y][x];
+	  }
+	}
+	for (y = 0; y < 16; ++y) {
+	  test_R += rd_cur->y_dc_levels[y] * rd_cur->y_dc_levels[y];
+	}
+	rd_cur->R = test_R << 10;
+	//fprintf(stdout, "%llu:%llu\n", rd_cur->R, test_R);
+
+    // Since we always examine Intra16 first, we can overwrite *rd directly.
+    SetRDScore(lambda, rd_cur);
+
+    if (mode == 0 || rd_cur->score < rd_best->score) {
+      SwapModeScore(&rd_cur, &rd_best);
+      SwapOut(it);
+    }
+  }
+  if (rd_best != rd) {
+    memcpy(rd, rd_best, sizeof(*rd));
+  }
+  SetRDScore(dqm->lambda_mode_, rd);   // finalize score for mode decision.
+  VP8SetIntra16Mode(it, rd->mode_i16);
+
+  // we have a blocky macroblock (only DCs are non-zero) with fairly high
+  // distortion, record max delta so we can later adjust the minimal filtering
+  // strength needed to smooth these blocks out.
+  if ((rd->nz & 0x100ffff) == 0x1000000 && rd->D > dqm->min_disto_) {
+    StoreMaxDelta(dqm, rd->y_dc_levels);
+  }
+}
+
+static int ReconstructIntra4(VP8EncIterator* const it,
+                             int16_t levels[16],
+                             const uint8_t* const src,
+                             uint8_t* const yuv_out,
+                             int mode) {
+  const VP8Encoder* const enc = it->enc_;
+  const uint8_t* const ref = it->yuv_p_ + VP8I4ModeOffsets[mode];
+  const VP8SegmentInfo* const dqm = &enc->dqm_[it->mb_->segment_];
+  int nz = 0;
+  int16_t tmp[16];
+
+  FTransform_C(src, ref, tmp);
+
+  nz = QuantizeBlock_C(tmp, levels, &dqm->y1_);
+
+  ITransform_C(ref, tmp, yuv_out, 0);
+
+  return nz;
+}
+
+static void CopyScore(VP8ModeScore* const dst, const VP8ModeScore* const src) {
+  dst->D  = src->D;
+  dst->SD = src->SD;
+  dst->R  = src->R;
+  dst->H  = src->H;
+  dst->nz = src->nz;      // note that nz is not accumulated, but just copied.
+  dst->score = src->score;
+}
+
+static void AddScore(VP8ModeScore* const dst, const VP8ModeScore* const src) {
+  dst->D  += src->D;
+  dst->SD += src->SD;
+  dst->R  += src->R;
+  dst->H  += src->H;
+  dst->nz |= src->nz;     // here, new nz bits are accumulated.
+  dst->score += src->score;
+}
+
+static void Copy(const uint8_t* src, uint8_t* dst, int w, int h) {
+  int y;
+  for (y = 0; y < h; ++y) {
+    memcpy(dst, src, w);
+    src += BPS;
+    dst += BPS;
+  }
+}
+
+static void Copy4x4_C(const uint8_t* src, uint8_t* dst) {
+  Copy(src, dst, 4, 4);
+}
+
+static void Copy16x8_C(const uint8_t* src, uint8_t* dst) {
+  Copy(src, dst, 16, 8);
+}
+
+static int PickBestIntra4(VP8EncIterator* const it, VP8ModeScore* const rd) {
+  const VP8Encoder* const enc = it->enc_;
+  const VP8SegmentInfo* const dqm = &enc->dqm_[it->mb_->segment_];
+  const int lambda = dqm->lambda_i4_;
+  const int tlambda = dqm->tlambda_;
+  const uint8_t* const src0 = it->yuv_in_ + Y_OFF_ENC;
+  uint8_t* const best_blocks = it->yuv_out2_ + Y_OFF_ENC;
+  //int total_header_bits = 0;
+  VP8ModeScore rd_best;
+
+  if (enc->max_i4_header_bits_ == 0) {
+    return 0;
+  }
+
+  InitScore(&rd_best);
+  rd_best.H = 211;  // '211' is the value of VP8BitCost(0, 145)
+  SetRDScore(dqm->lambda_mode_, &rd_best);
+  VP8IteratorStartI4(it);
+  do {
+    //const int kNumBlocks = 1;
+    VP8ModeScore rd_i4;
+    int mode;
+    int best_mode = -1;
+    const uint8_t* const src = src0 + VP8Scan[it->i4_];
+    //const uint16_t* const mode_costs = GetCostModeI4(it, rd->modes_i4);
+    const uint16_t* const mode_costs = VP8FixedCostsI4[0][0];
+    uint8_t* best_block = best_blocks + VP8Scan[it->i4_];
+    uint8_t* tmp_dst = it->yuv_p_ + I4TMP;    // scratch buffer.
+
+    InitScore(&rd_i4);
+
+    VP8MakeIntra4Preds(it);
+
+    for (mode = 0; mode < NUM_BMODES; ++mode) {
+      VP8ModeScore rd_tmp;
+      int16_t tmp_levels[16];
+
+      // Reconstruct
+      rd_tmp.nz =
+          ReconstructIntra4(it, tmp_levels, src, tmp_dst, mode) << it->i4_;
+
+      // Compute RD-score
+      rd_tmp.D = SSE4x4_C(src, tmp_dst);
+      rd_tmp.SD =
+          tlambda ? MULT_8B(tlambda, Disto4x4_C(src, tmp_dst, kWeightY))
+                  : 0;
+      rd_tmp.H = mode_costs[mode];
+
+	  int64_t test_R = 0;
+	  int y;
+	  for (y = 0; y < 16; ++y) {
+		test_R += tmp_levels[y] * tmp_levels[y];
+	  }
+	  rd_tmp.R = test_R << 10;
+
+      /*// Add flatness penalty
+      if (mode > 0 && IsFlat(tmp_levels, kNumBlocks, FLATNESS_LIMIT_I4)) {
+        rd_tmp.R = FLATNESS_PENALTY * kNumBlocks;
+      } else {
+        rd_tmp.R = 0;
+      }
+
+      // early-out check
+      SetRDScore(lambda, &rd_tmp);
+      if (best_mode >= 0 && rd_tmp.score >= rd_i4.score) continue;
+
+      // finish computing score
+      rd_tmp.R += VP8GetCostLuma4(it, tmp_levels);*/
+      SetRDScore(lambda, &rd_tmp);
+
+      if (best_mode < 0 || rd_tmp.score < rd_i4.score) {
+        CopyScore(&rd_i4, &rd_tmp);
+        best_mode = mode;
+        SwapPtr(&tmp_dst, &best_block);
+        memcpy(rd_best.y_ac_levels[it->i4_], tmp_levels,
+               sizeof(rd_best.y_ac_levels[it->i4_]));
+      }
+    }
+    SetRDScore(dqm->lambda_mode_, &rd_i4);
+    AddScore(&rd_best, &rd_i4);
+    if (rd_best.score >= rd->score) {
+      return 0;
+    }
+    //total_header_bits += (int)rd_i4.H;   // <- equal to mode_costs[best_mode];
+    //if (total_header_bits > enc->max_i4_header_bits_) {
+    //  return 0;
+    //}
+    // Copy selected samples if not in the right place already.
+    if (best_block != best_blocks + VP8Scan[it->i4_]) {
+    	Copy4x4_C(best_block, best_blocks + VP8Scan[it->i4_]);
+    }
+    rd->modes_i4[it->i4_] = best_mode;
+    it->top_nz_[it->i4_ & 3] = it->left_nz_[it->i4_ >> 2] = (rd_i4.nz ? 1 : 0);
+  } while (VP8IteratorRotateI4(it, best_blocks));
+
+  // finalize state
+  CopyScore(rd, &rd_best);
+  VP8SetIntra4Mode(it, rd->modes_i4);
+  SwapOut(it);
+  memcpy(rd->y_ac_levels, rd_best.y_ac_levels, sizeof(rd->y_ac_levels));
+  return 1;   // select intra4x4 over intra16x16
+}
+
+static const uint16_t VP8ScanUV[4 + 4] = {
+  0 + 0 * BPS,   4 + 0 * BPS, 0 + 4 * BPS,  4 + 4 * BPS,    // U
+  8 + 0 * BPS,  12 + 0 * BPS, 8 + 4 * BPS, 12 + 4 * BPS     // V
+};
+
+#define C1 7    // fraction of error sent to the 4x4 block below
+#define C2 8    // fraction of error sent to the 4x4 block on the right
+#define DSHIFT 4
+#define DSCALE 1   // storage descaling, needed to make the error fit int8_t
+
+static int QuantizeSingle(int16_t* const v, const VP8Matrix* const mtx) {
+  int V = *v;
+  const int sign = (V < 0);
+  if (sign) V = -V;
+  if (V > (int)mtx->zthresh_[0]) {
+    const int qV = QUANTDIV(V, mtx->iq_[0], mtx->bias_[0]) * mtx->q_[0];
+    const int err = (V - qV);
+    *v = sign ? -qV : qV;
+    return (sign ? -err : err) >> DSCALE;
+  }
+  *v = 0;
+  return (sign ? -V : V) >> DSCALE;
+}
+
+static void CorrectDCValues(const VP8EncIterator* const it,
+                            const VP8Matrix* const mtx,
+                            int16_t tmp[][16], VP8ModeScore* const rd) {
+  //         | top[0] | top[1]
+  // --------+--------+---------
+  // left[0] | tmp[0]   tmp[1]  <->   err0 err1
+  // left[1] | tmp[2]   tmp[3]        err2 err3
+  //
+  // Final errors {err1,err2,err3} are preserved and later restored
+  // as top[]/left[] on the next block.
+  int ch;
+  for (ch = 0; ch <= 1; ++ch) {
+    const int8_t* const top = it->top_derr_[it->x_][ch];
+    const int8_t* const left = it->left_derr_[ch];
+    int16_t (* const c)[16] = &tmp[ch * 4];
+    int err0, err1, err2, err3;
+    c[0][0] += (C1 * top[0] + C2 * left[0]) >> (DSHIFT - DSCALE);
+    err0 = QuantizeSingle(&c[0][0], mtx);
+    c[1][0] += (C1 * top[1] + C2 * err0) >> (DSHIFT - DSCALE);
+    err1 = QuantizeSingle(&c[1][0], mtx);
+    c[2][0] += (C1 * err0 + C2 * left[1]) >> (DSHIFT - DSCALE);
+    err2 = QuantizeSingle(&c[2][0], mtx);
+    c[3][0] += (C1 * err1 + C2 * err2) >> (DSHIFT - DSCALE);
+    err3 = QuantizeSingle(&c[3][0], mtx);
+    // error 'err' is bounded by mtx->q_[0] which is 132 at max. Hence
+    // err >> DSCALE will fit in an int8_t type if DSCALE>=1.
+    assert(abs(err1) <= 127 && abs(err2) <= 127 && abs(err3) <= 127);
+    rd->derr[ch][0] = (int8_t)err1;
+    rd->derr[ch][1] = (int8_t)err2;
+    rd->derr[ch][2] = (int8_t)err3;
+  }
+}
+
+static void StoreDiffusionErrors(VP8EncIterator* const it,
+                                 const VP8ModeScore* const rd) {
+  int ch;
+  for (ch = 0; ch <= 1; ++ch) {
+    int8_t* const top = it->top_derr_[it->x_][ch];
+    int8_t* const left = it->left_derr_[ch];
+    left[0] = rd->derr[ch][0];            // restore err1
+    left[1] = 3 * rd->derr[ch][2] >> 2;   //     ... 3/4th of err3
+    top[0]  = rd->derr[ch][1];            //     ... err2
+    top[1]  = rd->derr[ch][2] - left[1];  //     ... 1/4th of err3.
+  }
+}
+
+#undef C1
+#undef C2
+#undef DSHIFT
+#undef DSCALE
+
+static int ReconstructUV(VP8EncIterator* const it, VP8ModeScore* const rd,
+                         uint8_t* const yuv_out, int mode) {
+  const VP8Encoder* const enc = it->enc_;
+  const uint8_t* const ref = it->yuv_p_ + VP8UVModeOffsets[mode];
+  const uint8_t* const src = it->yuv_in_ + U_OFF_ENC;
+  const VP8SegmentInfo* const dqm = &enc->dqm_[it->mb_->segment_];
+  int nz = 0;
+  int n;
+  int16_t tmp[8][16];
+
+  for (n = 0; n < 8; n += 2) {
+	  FTransform2_C(src + VP8ScanUV[n], ref + VP8ScanUV[n], tmp[n]);
+  }
+
+  if (it->top_derr_ != NULL) CorrectDCValues(it, &dqm->uv_, tmp, rd);
+
+  for (n = 0; n < 8; n += 2) {
+    nz |= Quantize2Blocks_C(tmp[n], rd->uv_levels[n], &dqm->uv_) << n;
+  }
+
+  for (n = 0; n < 8; n += 2) {
+	  ITransform_C(ref + VP8ScanUV[n], tmp[n], yuv_out + VP8ScanUV[n], 1);
+  }
+
+  return (nz << 16);
+}
+
+static void PickBestUV(VP8EncIterator* const it, VP8ModeScore* const rd) {
+  //const int kNumBlocks = 8;
+  const VP8SegmentInfo* const dqm = &it->enc_->dqm_[it->mb_->segment_];
+  const int lambda = dqm->lambda_uv_;
+  const uint8_t* const src = it->yuv_in_ + U_OFF_ENC;
+  uint8_t* tmp_dst = it->yuv_out2_ + U_OFF_ENC;  // scratch buffer
+  uint8_t* dst0 = it->yuv_out_ + U_OFF_ENC;
+  uint8_t* dst = dst0;
+  VP8ModeScore rd_best;
+  int mode;
+
+  rd->mode_uv = -1;
+  InitScore(&rd_best);
+  for (mode = 0; mode < NUM_PRED_MODES; ++mode) {
+    VP8ModeScore rd_uv;
+
+    // Reconstruct
+    rd_uv.nz = ReconstructUV(it, &rd_uv, tmp_dst, mode);
+
+    // Compute RD-score
+    rd_uv.D  = SSE16x8_C(src, tmp_dst);
+    rd_uv.SD = 0;    // not calling TDisto here: it tends to flatten areas.
+    rd_uv.H  = VP8FixedCostsUV[mode];
+
+	int64_t test_R = 0;
+	int x, y;
+	for (y = 0; y < 8; ++y) {
+	  for (x = 0; x < 16; ++x) {
+	    test_R += rd_uv.uv_levels[y][x] * rd_uv.uv_levels[y][x];
+	  }
+	}
+	rd_uv.R = test_R << 10;
+
+
+    /*rd_uv.R  = VP8GetCostUV(it, &rd_uv);
+    if (mode > 0 && IsFlat(rd_uv.uv_levels[0], kNumBlocks, FLATNESS_LIMIT_UV)) {
+      rd_uv.R += FLATNESS_PENALTY * kNumBlocks;
+    }*/
+
+    SetRDScore(lambda, &rd_uv);
+
+    if (mode == 0 || rd_uv.score < rd_best.score) {
+      CopyScore(&rd_best, &rd_uv);
+      rd->mode_uv = mode;
+      memcpy(rd->uv_levels, rd_uv.uv_levels, sizeof(rd->uv_levels));
+      if (it->top_derr_ != NULL) {
+        memcpy(rd->derr, rd_uv.derr, sizeof(rd_uv.derr));
+      }
+      SwapPtr(&dst, &tmp_dst);
+    }
+  }
+  VP8SetIntraUVMode(it, rd->mode_uv);
+  AddScore(rd, &rd_best);
+  if (dst != dst0) {   // copy 16x8 block if needed
+	  Copy16x8_C(dst, dst0);
+  }
+  if (it->top_derr_ != NULL) {  // store diffusion errors for next block
+    StoreDiffusionErrors(it, rd);
+  }
+}
+
+static int VP8Decimate(VP8EncIterator* const it, VP8ModeScore* const rd,
+                VP8RDLevel rd_opt) {
+  (void)rd_opt;
+  int is_skipped;
+  //const int method = it->enc_->method_;
+
+  InitScore(rd);
+
+  // We can perform predictions for Luma16x16 and Chroma8x8 already.
+  // Luma4x4 predictions needs to be done as-we-go.
+
+  VP8MakeLuma16Preds(it);
+
+  VP8MakeChroma8Preds(it);
+
+  PickBestIntra16(it, rd);
+  PickBestIntra4(it, rd);
+  PickBestUV(it, rd);
+
+  is_skipped = (rd->nz == 0);
+  VP8SetSkip(it, is_skipped);
+  return is_skipped;
+}
+
 // On-the-fly info about the current set of residuals. Handy to avoid
 // passing zillions of params.
 typedef struct VP8Residual VP8Residual;
@@ -14076,6 +14935,61 @@ static int VP8RecordStats(int bit, proba_t* const stats) {
 // We keep the table-free variant around for reference, in case.
 #define USE_LEVEL_CODE_TABLE
 
+// Simulate block coding, but only record statistics.
+// Note: no need to record the fixed probas.
+static int VP8RecordCoeffs(int ctx, const VP8Residual* const res) {
+  int n = res->first;
+  // should be stats[VP8EncBands[n]], but it's equivalent for n=0 or 1
+  proba_t* s = res->stats[n][ctx];
+  if (res->last  < 0) {
+    VP8RecordStats(0, s + 0);
+    return 0;
+  }
+  while (n <= res->last) {
+    int v;
+    VP8RecordStats(1, s + 0);  // order of record doesn't matter
+    while ((v = res->coeffs[n++]) == 0) {
+      VP8RecordStats(0, s + 1);
+      s = res->stats[VP8EncBands[n]][0];
+    }
+    VP8RecordStats(1, s + 1);
+    if (!VP8RecordStats(2u < (unsigned int)(v + 1), s + 2)) {  // v = -1 or 1
+      s = res->stats[VP8EncBands[n]][1];
+    } else {
+      v = abs(v);
+#if !defined(USE_LEVEL_CODE_TABLE)
+      if (!VP8RecordStats(v > 4, s + 3)) {
+        if (VP8RecordStats(v != 2, s + 4))
+          VP8RecordStats(v == 4, s + 5);
+      } else if (!VP8RecordStats(v > 10, s + 6)) {
+        VP8RecordStats(v > 6, s + 7);
+      } else if (!VP8RecordStats((v >= 3 + (8 << 2)), s + 8)) {
+        VP8RecordStats((v >= 3 + (8 << 1)), s + 9);
+      } else {
+        VP8RecordStats((v >= 3 + (8 << 3)), s + 10);
+      }
+#else
+      if (v > MAX_VARIABLE_LEVEL) {
+        v = MAX_VARIABLE_LEVEL;
+      }
+
+      {
+        const int bits = VP8LevelCodes[v - 1][1];
+        int pattern = VP8LevelCodes[v - 1][0];
+        int i;
+        for (i = 0; (pattern >>= 1) != 0; ++i) {
+          const int mask = 2 << i;
+          if (pattern & 1) VP8RecordStats(!!(bits & mask), s + 3 + i);
+        }
+      }
+#endif
+      s = res->stats[VP8EncBands[n]][2];
+    }
+  }
+  if (n < 16) VP8RecordStats(0, s + 0);
+  return 1;
+}
+
 static void VP8IteratorBytesToNz(VP8EncIterator* const it) {
   uint32_t nz = 0;
   const int* const top_nz = it->top_nz_;
@@ -14094,7 +15008,98 @@ static void VP8IteratorBytesToNz(VP8EncIterator* const it) {
   *it->nz_ = nz;
 }
 
+// Same as CodeResiduals, but doesn't actually write anything.
+// Instead, it just records the event distribution.
+static void RecordResiduals(VP8EncIterator* const it,
+                            const VP8ModeScore* const rd) {
+  int x, y, ch;
+  VP8Residual res;
+  VP8Encoder* const enc = it->enc_;
+
+  VP8IteratorNzToBytes(it);
+
+  if (it->mb_->type_ == 1) {   // i16x16
+    VP8InitResidual(0, 1, enc, &res);
+    SetResidualCoeffs_C(rd->y_dc_levels, &res);
+    it->top_nz_[8] = it->left_nz_[8] =
+      VP8RecordCoeffs(it->top_nz_[8] + it->left_nz_[8], &res);
+    VP8InitResidual(1, 0, enc, &res);
+  } else {
+    VP8InitResidual(0, 3, enc, &res);
+  }
+
+  // luma-AC
+  for (y = 0; y < 4; ++y) {
+    for (x = 0; x < 4; ++x) {
+      const int ctx = it->top_nz_[x] + it->left_nz_[y];
+      SetResidualCoeffs_C(rd->y_ac_levels[x + y * 4], &res);
+      it->top_nz_[x] = it->left_nz_[y] = VP8RecordCoeffs(ctx, &res);
+    }
+  }
+
+  // U/V
+  VP8InitResidual(0, 2, enc, &res);
+  for (ch = 0; ch <= 2; ch += 2) {
+    for (y = 0; y < 2; ++y) {
+      for (x = 0; x < 2; ++x) {
+        const int ctx = it->top_nz_[4 + ch + x] + it->left_nz_[4 + ch + y];
+        SetResidualCoeffs_C(rd->uv_levels[ch * 2 + x + y * 2], &res);
+        it->top_nz_[4 + ch + x] = it->left_nz_[4 + ch + y] =
+            VP8RecordCoeffs(ctx, &res);
+      }
+    }
+  }
+
+  VP8IteratorBytesToNz(it);
+}
+
+static void VP8IteratorSaveBoundary(VP8EncIterator* const it) {
+  VP8Encoder* const enc = it->enc_;
+  const int x = it->x_, y = it->y_;
+  const uint8_t* const ysrc = it->yuv_out_ + Y_OFF_ENC;
+  const uint8_t* const uvsrc = it->yuv_out_ + U_OFF_ENC;
+  if (x < enc->mb_w_ - 1) {   // left
+    int i;
+    for (i = 0; i < 16; ++i) {
+      it->y_left_[i] = ysrc[15 + i * BPS];
+    }
+    for (i = 0; i < 8; ++i) {
+      it->u_left_[i] = uvsrc[7 + i * BPS];
+      it->v_left_[i] = uvsrc[15 + i * BPS];
+    }
+    // top-left (before 'top'!)
+    it->y_left_[-1] = it->y_top_[15];
+    it->u_left_[-1] = it->uv_top_[0 + 7];
+    it->v_left_[-1] = it->uv_top_[8 + 7];
+  }
+  if (y < enc->mb_h_ - 1) {  // top
+    memcpy(it->y_top_, ysrc + 15 * BPS, 16);
+    memcpy(it->uv_top_, uvsrc + 7 * BPS, 8 + 8);
+  }
+}
+
 #define SKIP_PROBA_THRESHOLD 250  // value below which using skip_proba is OK.
+
+static int CalcSkipProba(uint64_t nb, uint64_t total) {
+  return (int)(total ? (total - nb) * 255 / total : 255);
+}
+
+// Returns the bit-cost for coding the skip probability.
+static int FinalizeSkipProba(VP8Encoder* const enc) {
+  VP8EncProba* const proba = &enc->proba_;
+  const int nb_mbs = enc->mb_w_ * enc->mb_h_;
+  const int nb_events = proba->nb_skip_;
+  int size;
+  proba->skip_proba_ = CalcSkipProba(nb_events, nb_mbs);
+  proba->use_skip_proba_ = (proba->skip_proba_ < SKIP_PROBA_THRESHOLD);
+  size = 256;   // 'use_skip_proba' bit
+  if (proba->use_skip_proba_) {
+    size +=  nb_events * VP8BitCost(1, proba->skip_proba_)
+         + (nb_mbs - nb_events) * VP8BitCost(0, proba->skip_proba_);
+    size += 8 * 256;   // cost of signaling the skip_proba_ itself.
+  }
+  return size;
+}
 
 const uint8_t
     VP8CoeffsUpdateProba[NUM_TYPES][NUM_BANDS][NUM_CTX][NUM_PROBAS] = {
@@ -14290,10 +15295,129 @@ static double GetPSNR(uint64_t mse, uint64_t size) {
   return (mse > 0 && size > 0) ? 10. * log10(255. * 255. * size / mse) : 99;
 }
 
+static uint64_t OneStatPass(VP8Encoder* const enc, VP8RDLevel rd_opt,
+                            int nb_mbs, int percent_delta,
+                            PassStats* const s) {
+  VP8EncIterator it;
+  uint64_t size = 0;
+  uint64_t size_p0 = 0;
+  uint64_t distortion = 0;
+  const uint64_t pixel_count = nb_mbs * 384;
+
+  VP8IteratorInit(enc, &it);
+  SetLoopParams(enc, s->q);
+  do {
+    VP8ModeScore info;
+    VP8IteratorImport(&it, NULL);
+    if (VP8Decimate(&it, &info, rd_opt)) {
+      // Just record the number of skips and act like skip_proba is not used.
+      ++enc->proba_.nb_skip_;
+    }
+    RecordResiduals(&it, &info);
+    size += info.R + info.H;
+    size_p0 += info.H;
+    distortion += info.D;
+    if (percent_delta && !VP8IteratorProgress(&it, percent_delta)) {
+      return 0;
+    }
+    VP8IteratorSaveBoundary(&it);
+  } while (VP8IteratorNext(&it) && --nb_mbs > 0);
+
+  size_p0 += enc->segment_hdr_.size_;
+  if (s->do_size_search) {
+    size += FinalizeSkipProba(enc);
+    size += FinalizeTokenProbas(&enc->proba_);
+    size = ((size + size_p0 + 1024) >> 11) + HEADER_SIZE_ESTIMATE;
+    s->value = (double)size;
+  } else {
+    s->value = GetPSNR(distortion, pixel_count);
+  }
+  return size_p0;
+}
+
 #define DQ_LIMIT 0.4  // convergence is considered reached if dq < DQ_LIMIT
 // we allow 2k of extra head-room in PARTITION0 limit.
 #define VP8_MAX_PARTITION0_SIZE (1 << 19)   // max size of mode partition
 #define PARTITION0_SIZE_LIMIT ((VP8_MAX_PARTITION0_SIZE - 2048ULL) << 11)
+
+static float ComputeNextQ(PassStats* const s) {
+  float dq;
+  if (s->is_first) {
+    dq = (s->value > s->target) ? -s->dq : s->dq;
+    s->is_first = 0;
+  } else if (s->value != s->last_value) {
+    const double slope = (s->target - s->value) / (s->last_value - s->value);
+    dq = (float)(slope * (s->last_q - s->q));
+  } else {
+    dq = 0.;  // we're done?!
+  }
+  // Limit variable to avoid large swings.
+  s->dq = Clamp(dq, -30.f, 30.f);
+  s->last_q = s->q;
+  s->last_value = s->value;
+  s->q = Clamp(s->q + s->dq, 0.f, 100.f);
+  return s->q;
+}
+
+static int StatLoop(VP8Encoder* const enc) {
+  const int method = enc->method_;
+  const int do_search = enc->do_search_;
+  const int fast_probe = ((method == 0 || method == 3) && !do_search);
+  int num_pass_left = enc->config_->pass;
+  const int task_percent = 20;
+  const int percent_per_pass =
+      (task_percent + num_pass_left / 2) / num_pass_left;
+  const int final_percent = enc->percent_ + task_percent;
+  const VP8RDLevel rd_opt =
+      (method >= 3 || do_search) ? RD_OPT_BASIC : RD_OPT_NONE;
+  int nb_mbs = enc->mb_w_ * enc->mb_h_;
+  PassStats stats;
+
+  InitPassStats(enc, &stats);
+  ResetTokenStats(enc);
+
+  // Fast mode: quick analysis pass over few mbs. Better than nothing.
+  if (fast_probe) {
+    if (method == 3) {  // we need more stats for method 3 to be reliable.
+      nb_mbs = (nb_mbs > 200) ? nb_mbs >> 1 : 100;
+    } else {
+      nb_mbs = (nb_mbs > 200) ? nb_mbs >> 2 : 50;
+    }
+  }
+
+  while (num_pass_left-- > 0) {
+    const int is_last_pass = (fabs(stats.dq) <= DQ_LIMIT) ||
+                             (num_pass_left == 0) ||
+                             (enc->max_i4_header_bits_ == 0);
+    const uint64_t size_p0 =
+        OneStatPass(enc, rd_opt, nb_mbs, percent_per_pass, &stats);
+    if (size_p0 == 0) return 0;
+#if (DEBUG_SEARCH > 0)
+    printf("#%d value:%.1lf -> %.1lf   q:%.2f -> %.2f\n",
+           num_pass_left, stats.last_value, stats.value, stats.last_q, stats.q);
+#endif
+    if (enc->max_i4_header_bits_ > 0 && size_p0 > PARTITION0_SIZE_LIMIT) {
+      ++num_pass_left;
+      enc->max_i4_header_bits_ >>= 1;  // strengthen header bit limitation...
+      continue;                        // ...and start over
+    }
+    if (is_last_pass) {
+      break;
+    }
+    // If no target size: just do several pass without changing 'q'
+    if (do_search) {
+      ComputeNextQ(&stats);
+      if (fabs(stats.dq) <= DQ_LIMIT) break;
+    }
+  }
+  if (!do_search || !stats.do_size_search) {
+    // Need to finalize probas now, since it wasn't done during the search.
+    FinalizeSkipProba(enc);
+    FinalizeTokenProbas(&enc->proba_);
+  }
+  VP8CalculateLevelCosts(&enc->proba_);  // finalize costs
+  return WebPReportProgress(enc->pic_, final_percent, &enc->percent_);
+}
 
 static void VP8InitFilter(VP8EncIterator* const it) {
 #if !defined(WEBP_REDUCE_SIZE)
@@ -14407,6 +15531,769 @@ static int VP8PutBitUniform(VP8BitWriter* const bw, int bit) {
   return bit;
 }
 
+static int PutCoeffs(VP8BitWriter* const bw, int ctx, const VP8Residual* res) {
+  int n = res->first;
+  // should be prob[VP8EncBands[n]], but it's equivalent for n=0 or 1
+  const uint8_t* p = res->prob[n][ctx];
+  if (!VP8PutBit(bw, res->last >= 0, p[0])) {
+    return 0;
+  }
+
+  while (n < 16) {
+    const int c = res->coeffs[n++];
+    const int sign = c < 0;
+    int v = sign ? -c : c;
+    if (!VP8PutBit(bw, v != 0, p[1])) {
+      p = res->prob[VP8EncBands[n]][0];
+      continue;
+    }
+    if (!VP8PutBit(bw, v > 1, p[2])) {
+      p = res->prob[VP8EncBands[n]][1];
+    } else {
+      if (!VP8PutBit(bw, v > 4, p[3])) {
+        if (VP8PutBit(bw, v != 2, p[4])) {
+          VP8PutBit(bw, v == 4, p[5]);
+        }
+      } else if (!VP8PutBit(bw, v > 10, p[6])) {
+        if (!VP8PutBit(bw, v > 6, p[7])) {
+          VP8PutBit(bw, v == 6, 159);
+        } else {
+          VP8PutBit(bw, v >= 9, 165);
+          VP8PutBit(bw, !(v & 1), 145);
+        }
+      } else {
+        int mask;
+        const uint8_t* tab;
+        if (v < 3 + (8 << 1)) {          // VP8Cat3  (3b)
+          VP8PutBit(bw, 0, p[8]);
+          VP8PutBit(bw, 0, p[9]);
+          v -= 3 + (8 << 0);
+          mask = 1 << 2;
+          tab = VP8Cat3;
+        } else if (v < 3 + (8 << 2)) {   // VP8Cat4  (4b)
+          VP8PutBit(bw, 0, p[8]);
+          VP8PutBit(bw, 1, p[9]);
+          v -= 3 + (8 << 1);
+          mask = 1 << 3;
+          tab = VP8Cat4;
+        } else if (v < 3 + (8 << 3)) {   // VP8Cat5  (5b)
+          VP8PutBit(bw, 1, p[8]);
+          VP8PutBit(bw, 0, p[10]);
+          v -= 3 + (8 << 2);
+          mask = 1 << 4;
+          tab = VP8Cat5;
+        } else {                         // VP8Cat6 (11b)
+          VP8PutBit(bw, 1, p[8]);
+          VP8PutBit(bw, 1, p[10]);
+          v -= 3 + (8 << 3);
+          mask = 1 << 10;
+          tab = VP8Cat6;
+        }
+        while (mask) {
+          VP8PutBit(bw, !!(v & mask), *tab++);
+          mask >>= 1;
+        }
+      }
+      p = res->prob[VP8EncBands[n]][2];
+    }
+    VP8PutBitUniform(bw, sign);
+    if (n == 16 || !VP8PutBit(bw, n <= res->last, p[0])) {
+      return 1;   // EOB
+    }
+  }
+  return 1;
+}
+
+static void CodeResiduals(VP8BitWriter* const bw, VP8EncIterator* const it,
+                          const VP8ModeScore* const rd) {
+  int x, y, ch;
+  VP8Residual res;
+  uint64_t pos1, pos2, pos3;
+  const int i16 = (it->mb_->type_ == 1);
+  const int segment = it->mb_->segment_;
+  VP8Encoder* const enc = it->enc_;
+
+  VP8IteratorNzToBytes(it);
+
+  pos1 = VP8BitWriterPos(bw);
+  if (i16) {
+    VP8InitResidual(0, 1, enc, &res);
+    SetResidualCoeffs_C(rd->y_dc_levels, &res);
+    it->top_nz_[8] = it->left_nz_[8] =
+      PutCoeffs(bw, it->top_nz_[8] + it->left_nz_[8], &res);
+    VP8InitResidual(1, 0, enc, &res);
+  } else {
+    VP8InitResidual(0, 3, enc, &res);
+  }
+
+  // luma-AC
+  for (y = 0; y < 4; ++y) {
+    for (x = 0; x < 4; ++x) {
+      const int ctx = it->top_nz_[x] + it->left_nz_[y];
+      SetResidualCoeffs_C(rd->y_ac_levels[x + y * 4], &res);
+      it->top_nz_[x] = it->left_nz_[y] = PutCoeffs(bw, ctx, &res);
+    }
+  }
+  pos2 = VP8BitWriterPos(bw);
+
+  // U/V
+  VP8InitResidual(0, 2, enc, &res);
+  for (ch = 0; ch <= 2; ch += 2) {
+    for (y = 0; y < 2; ++y) {
+      for (x = 0; x < 2; ++x) {
+        const int ctx = it->top_nz_[4 + ch + x] + it->left_nz_[4 + ch + y];
+        SetResidualCoeffs_C(rd->uv_levels[ch * 2 + x + y * 2], &res);
+        it->top_nz_[4 + ch + x] = it->left_nz_[4 + ch + y] =
+            PutCoeffs(bw, ctx, &res);
+      }
+    }
+  }
+  pos3 = VP8BitWriterPos(bw);
+  it->luma_bits_ = pos2 - pos1;
+  it->uv_bits_ = pos3 - pos2;
+  it->bit_count_[segment][i16] += it->luma_bits_;
+  it->bit_count_[segment][2] += it->uv_bits_;
+  VP8IteratorBytesToNz(it);
+}
+
+static void ResetAfterSkip(VP8EncIterator* const it) {
+  if (it->mb_->type_ == 1) {
+    *it->nz_ = 0;  // reset all predictors
+    it->left_nz_[8] = 0;
+  } else {
+    *it->nz_ &= (1 << 24);  // preserve the dc_nz bit
+  }
+}
+
+static void StoreSSE(const VP8EncIterator* const it) {
+  VP8Encoder* const enc = it->enc_;
+  const uint8_t* const in = it->yuv_in_;
+  const uint8_t* const out = it->yuv_out_;
+  // Note: not totally accurate at boundary. And doesn't include in-loop filter.
+  enc->sse_[0] += SSE16x16_C(in + Y_OFF_ENC, out + Y_OFF_ENC);
+  enc->sse_[1] += SSE8x8_C(in + U_OFF_ENC, out + U_OFF_ENC);
+  enc->sse_[2] += SSE8x8_C(in + V_OFF_ENC, out + V_OFF_ENC);
+  enc->sse_count_ += 16 * 16;
+}
+
+#define SEGMENT_VISU 0
+
+static void StoreSideInfo(const VP8EncIterator* const it) {
+  VP8Encoder* const enc = it->enc_;
+  const VP8MBInfo* const mb = it->mb_;
+  WebPPicture* const pic = enc->pic_;
+
+  if (pic->stats != NULL) {
+    StoreSSE(it);
+    enc->block_count_[0] += (mb->type_ == 0);
+    enc->block_count_[1] += (mb->type_ == 1);
+    enc->block_count_[2] += (mb->skip_ != 0);
+  }
+
+  if (pic->extra_info != NULL) {
+    uint8_t* const info = &pic->extra_info[it->x_ + it->y_ * enc->mb_w_];
+    switch (pic->extra_info_type) {
+      case 1: *info = mb->type_; break;
+      case 2: *info = mb->segment_; break;
+      case 3: *info = enc->dqm_[mb->segment_].quant_; break;
+      case 4: *info = (mb->type_ == 1) ? it->preds_[0] : 0xff; break;
+      case 5: *info = mb->uv_mode_; break;
+      case 6: {
+        const int b = (int)((it->luma_bits_ + it->uv_bits_ + 7) >> 3);
+        *info = (b > 255) ? 255 : b; break;
+      }
+      case 7: *info = mb->alpha_; break;
+      default: *info = 0; break;
+    }
+  }
+#if SEGMENT_VISU  // visualize segments and prediction modes
+  SetBlock(it->yuv_out_ + Y_OFF_ENC, mb->segment_ * 64, 16);
+  SetBlock(it->yuv_out_ + U_OFF_ENC, it->preds_[0] * 64, 8);
+  SetBlock(it->yuv_out_ + V_OFF_ENC, mb->uv_mode_ * 64, 8);
+#endif
+}
+
+#define VP8_SSIM_KERNEL 3   // total size of the kernel: 2 * VP8_SSIM_KERNEL + 1
+
+// struct for accumulating statistical moments
+typedef struct {
+  uint32_t w;              // sum(w_i) : sum of weights
+  uint32_t xm, ym;         // sum(w_i * x_i), sum(w_i * y_i)
+  uint32_t xxm, xym, yym;  // sum(w_i * x_i * x_i), etc.
+} VP8DistoStats;
+
+static double SSIMCalculation(
+    const VP8DistoStats* const stats, uint32_t N  /*num samples*/) {
+  const uint32_t w2 =  N * N;
+  const uint32_t C1 = 20 * w2;
+  const uint32_t C2 = 60 * w2;
+  const uint32_t C3 = 8 * 8 * w2;   // 'dark' limit ~= 6
+  const uint64_t xmxm = (uint64_t)stats->xm * stats->xm;
+  const uint64_t ymym = (uint64_t)stats->ym * stats->ym;
+  if (xmxm + ymym >= C3) {
+    const int64_t xmym = (int64_t)stats->xm * stats->ym;
+    const int64_t sxy = (int64_t)stats->xym * N - xmym;    // can be negative
+    const uint64_t sxx = (uint64_t)stats->xxm * N - xmxm;
+    const uint64_t syy = (uint64_t)stats->yym * N - ymym;
+    // we descale by 8 to prevent overflow during the fnum/fden multiply.
+    const uint64_t num_S = (2 * (uint64_t)(sxy < 0 ? 0 : sxy) + C2) >> 8;
+    const uint64_t den_S = (sxx + syy + C2) >> 8;
+    const uint64_t fnum = (2 * xmym + C1) * num_S;
+    const uint64_t fden = (xmxm + ymym + C1) * den_S;
+    const double r = (double)fnum / fden;
+    assert(r >= 0. && r <= 1.0);
+    return r;
+  }
+  return 1.;   // area is too dark to contribute meaningfully
+}
+
+static double VP8SSIMFromStatsClipped(const VP8DistoStats* const stats) {
+  return SSIMCalculation(stats, stats->w);
+}
+
+// hat-shaped filter. Sum of coefficients is equal to 16.
+static const uint32_t kWeight[2 * VP8_SSIM_KERNEL + 1] = {
+  1, 2, 3, 4, 3, 2, 1
+};
+
+static double SSIMGetClipped_C(const uint8_t* src1, int stride1,
+                               const uint8_t* src2, int stride2,
+                               int xo, int yo, int W, int H) {
+  VP8DistoStats stats = { 0, 0, 0, 0, 0, 0 };
+  const int ymin = (yo - VP8_SSIM_KERNEL < 0) ? 0 : yo - VP8_SSIM_KERNEL;
+  const int ymax = (yo + VP8_SSIM_KERNEL > H - 1) ? H - 1
+                                                  : yo + VP8_SSIM_KERNEL;
+  const int xmin = (xo - VP8_SSIM_KERNEL < 0) ? 0 : xo - VP8_SSIM_KERNEL;
+  const int xmax = (xo + VP8_SSIM_KERNEL > W - 1) ? W - 1
+                                                  : xo + VP8_SSIM_KERNEL;
+  int x, y;
+  src1 += ymin * stride1;
+  src2 += ymin * stride2;
+  for (y = ymin; y <= ymax; ++y, src1 += stride1, src2 += stride2) {
+    for (x = xmin; x <= xmax; ++x) {
+      const uint32_t w = kWeight[VP8_SSIM_KERNEL + x - xo]
+                       * kWeight[VP8_SSIM_KERNEL + y - yo];
+      const uint32_t s1 = src1[x];
+      const uint32_t s2 = src2[x];
+      stats.w   += w;
+      stats.xm  += w * s1;
+      stats.ym  += w * s2;
+      stats.xxm += w * s1 * s1;
+      stats.xym += w * s1 * s2;
+      stats.yym += w * s2 * s2;
+    }
+  }
+  return VP8SSIMFromStatsClipped(&stats);
+}
+
+static double GetMBSSIM(const uint8_t* yuv1, const uint8_t* yuv2) {
+  int x, y;
+  double sum = 0.;
+
+  // compute SSIM in a 10 x 10 window
+  for (y = VP8_SSIM_KERNEL; y < 16 - VP8_SSIM_KERNEL; y++) {
+    for (x = VP8_SSIM_KERNEL; x < 16 - VP8_SSIM_KERNEL; x++) {
+      sum += SSIMGetClipped_C(yuv1 + Y_OFF_ENC, BPS, yuv2 + Y_OFF_ENC, BPS,
+                               x, y, 16, 16);
+    }
+  }
+  for (x = 1; x < 7; x++) {
+    for (y = 1; y < 7; y++) {
+      sum += SSIMGetClipped_C(yuv1 + U_OFF_ENC, BPS, yuv2 + U_OFF_ENC, BPS,
+                               x, y, 8, 8);
+      sum += SSIMGetClipped_C(yuv1 + V_OFF_ENC, BPS, yuv2 + V_OFF_ENC, BPS,
+                               x, y, 8, 8);
+    }
+  }
+  return sum;
+}
+
+static int GetILevel(int sharpness, int level) {
+  if (sharpness > 0) {
+    if (sharpness > 4) {
+      level >>= 2;
+    } else {
+      level >>= 1;
+    }
+    if (level > 9 - sharpness) {
+      level = 9 - sharpness;
+    }
+  }
+  if (level < 1) level = 1;
+  return level;
+}
+
+static const uint8_t abs0[255 + 255 + 1] = {
+  0xff, 0xfe, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8, 0xf7, 0xf6, 0xf5, 0xf4,
+  0xf3, 0xf2, 0xf1, 0xf0, 0xef, 0xee, 0xed, 0xec, 0xeb, 0xea, 0xe9, 0xe8,
+  0xe7, 0xe6, 0xe5, 0xe4, 0xe3, 0xe2, 0xe1, 0xe0, 0xdf, 0xde, 0xdd, 0xdc,
+  0xdb, 0xda, 0xd9, 0xd8, 0xd7, 0xd6, 0xd5, 0xd4, 0xd3, 0xd2, 0xd1, 0xd0,
+  0xcf, 0xce, 0xcd, 0xcc, 0xcb, 0xca, 0xc9, 0xc8, 0xc7, 0xc6, 0xc5, 0xc4,
+  0xc3, 0xc2, 0xc1, 0xc0, 0xbf, 0xbe, 0xbd, 0xbc, 0xbb, 0xba, 0xb9, 0xb8,
+  0xb7, 0xb6, 0xb5, 0xb4, 0xb3, 0xb2, 0xb1, 0xb0, 0xaf, 0xae, 0xad, 0xac,
+  0xab, 0xaa, 0xa9, 0xa8, 0xa7, 0xa6, 0xa5, 0xa4, 0xa3, 0xa2, 0xa1, 0xa0,
+  0x9f, 0x9e, 0x9d, 0x9c, 0x9b, 0x9a, 0x99, 0x98, 0x97, 0x96, 0x95, 0x94,
+  0x93, 0x92, 0x91, 0x90, 0x8f, 0x8e, 0x8d, 0x8c, 0x8b, 0x8a, 0x89, 0x88,
+  0x87, 0x86, 0x85, 0x84, 0x83, 0x82, 0x81, 0x80, 0x7f, 0x7e, 0x7d, 0x7c,
+  0x7b, 0x7a, 0x79, 0x78, 0x77, 0x76, 0x75, 0x74, 0x73, 0x72, 0x71, 0x70,
+  0x6f, 0x6e, 0x6d, 0x6c, 0x6b, 0x6a, 0x69, 0x68, 0x67, 0x66, 0x65, 0x64,
+  0x63, 0x62, 0x61, 0x60, 0x5f, 0x5e, 0x5d, 0x5c, 0x5b, 0x5a, 0x59, 0x58,
+  0x57, 0x56, 0x55, 0x54, 0x53, 0x52, 0x51, 0x50, 0x4f, 0x4e, 0x4d, 0x4c,
+  0x4b, 0x4a, 0x49, 0x48, 0x47, 0x46, 0x45, 0x44, 0x43, 0x42, 0x41, 0x40,
+  0x3f, 0x3e, 0x3d, 0x3c, 0x3b, 0x3a, 0x39, 0x38, 0x37, 0x36, 0x35, 0x34,
+  0x33, 0x32, 0x31, 0x30, 0x2f, 0x2e, 0x2d, 0x2c, 0x2b, 0x2a, 0x29, 0x28,
+  0x27, 0x26, 0x25, 0x24, 0x23, 0x22, 0x21, 0x20, 0x1f, 0x1e, 0x1d, 0x1c,
+  0x1b, 0x1a, 0x19, 0x18, 0x17, 0x16, 0x15, 0x14, 0x13, 0x12, 0x11, 0x10,
+  0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a, 0x09, 0x08, 0x07, 0x06, 0x05, 0x04,
+  0x03, 0x02, 0x01, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+  0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14,
+  0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20,
+  0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c,
+  0x2d, 0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38,
+  0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f, 0x40, 0x41, 0x42, 0x43, 0x44,
+  0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f, 0x50,
+  0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5a, 0x5b, 0x5c,
+  0x5d, 0x5e, 0x5f, 0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68,
+  0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f, 0x70, 0x71, 0x72, 0x73, 0x74,
+  0x75, 0x76, 0x77, 0x78, 0x79, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f, 0x80,
+  0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8a, 0x8b, 0x8c,
+  0x8d, 0x8e, 0x8f, 0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98,
+  0x99, 0x9a, 0x9b, 0x9c, 0x9d, 0x9e, 0x9f, 0xa0, 0xa1, 0xa2, 0xa3, 0xa4,
+  0xa5, 0xa6, 0xa7, 0xa8, 0xa9, 0xaa, 0xab, 0xac, 0xad, 0xae, 0xaf, 0xb0,
+  0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6, 0xb7, 0xb8, 0xb9, 0xba, 0xbb, 0xbc,
+  0xbd, 0xbe, 0xbf, 0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0xc8,
+  0xc9, 0xca, 0xcb, 0xcc, 0xcd, 0xce, 0xcf, 0xd0, 0xd1, 0xd2, 0xd3, 0xd4,
+  0xd5, 0xd6, 0xd7, 0xd8, 0xd9, 0xda, 0xdb, 0xdc, 0xdd, 0xde, 0xdf, 0xe0,
+  0xe1, 0xe2, 0xe3, 0xe4, 0xe5, 0xe6, 0xe7, 0xe8, 0xe9, 0xea, 0xeb, 0xec,
+  0xed, 0xee, 0xef, 0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8,
+  0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff
+};
+
+const uint8_t* const VP8kabs0 = &abs0[255];
+
+static int NeedsFilter_C(const uint8_t* p, int step, int t) {
+  const int p1 = p[-2 * step], p0 = p[-step], q0 = p[0], q1 = p[step];
+  return ((4 * VP8kabs0[p0 - q0] + VP8kabs0[p1 - q1]) <= t);
+}
+
+static const uint8_t sclip1[1020 + 1020 + 1] = {
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80,
+  0x80, 0x80, 0x80, 0x80, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87,
+  0x88, 0x89, 0x8a, 0x8b, 0x8c, 0x8d, 0x8e, 0x8f, 0x90, 0x91, 0x92, 0x93,
+  0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x9a, 0x9b, 0x9c, 0x9d, 0x9e, 0x9f,
+  0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7, 0xa8, 0xa9, 0xaa, 0xab,
+  0xac, 0xad, 0xae, 0xaf, 0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6, 0xb7,
+  0xb8, 0xb9, 0xba, 0xbb, 0xbc, 0xbd, 0xbe, 0xbf, 0xc0, 0xc1, 0xc2, 0xc3,
+  0xc4, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9, 0xca, 0xcb, 0xcc, 0xcd, 0xce, 0xcf,
+  0xd0, 0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7, 0xd8, 0xd9, 0xda, 0xdb,
+  0xdc, 0xdd, 0xde, 0xdf, 0xe0, 0xe1, 0xe2, 0xe3, 0xe4, 0xe5, 0xe6, 0xe7,
+  0xe8, 0xe9, 0xea, 0xeb, 0xec, 0xed, 0xee, 0xef, 0xf0, 0xf1, 0xf2, 0xf3,
+  0xf4, 0xf5, 0xf6, 0xf7, 0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff,
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b,
+  0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+  0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23,
+  0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f,
+  0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3a, 0x3b,
+  0x3c, 0x3d, 0x3e, 0x3f, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,
+  0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f, 0x50, 0x51, 0x52, 0x53,
+  0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f,
+  0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6a, 0x6b,
+  0x6c, 0x6d, 0x6e, 0x6f, 0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77,
+  0x78, 0x79, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f
+};
+
+static const uint8_t sclip2[112 + 112 + 1] = {
+  0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0,
+  0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0,
+  0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0,
+  0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0,
+  0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0,
+  0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0,
+  0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0,
+  0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0,
+  0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8, 0xf9, 0xfa, 0xfb,
+  0xfc, 0xfd, 0xfe, 0xff, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f,
+  0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f,
+  0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f,
+  0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f,
+  0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f,
+  0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f,
+  0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f,
+  0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f,
+  0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f
+};
+
+const int8_t* const VP8ksclip1 = (const int8_t*)&sclip1[1020];
+const int8_t* const VP8ksclip2 = (const int8_t*)&sclip2[112];
+const uint8_t* const VP8kclip1 = &clip1[255];
+
+static void DoFilter2_C(uint8_t* p, int step) {
+  const int p1 = p[-2*step], p0 = p[-step], q0 = p[0], q1 = p[step];
+  const int a = 3 * (q0 - p0) + VP8ksclip1[p1 - q1];  // in [-893,892]
+  const int a1 = VP8ksclip2[(a + 4) >> 3];            // in [-16,15]
+  const int a2 = VP8ksclip2[(a + 3) >> 3];
+  p[-step] = VP8kclip1[p0 + a2];
+  p[    0] = VP8kclip1[q0 - a1];
+}
+
+static void SimpleHFilter16_C(uint8_t* p, int stride, int thresh) {
+  int i;
+  const int thresh2 = 2 * thresh + 1;
+  for (i = 0; i < 16; ++i) {
+    if (NeedsFilter_C(p + i * stride, 1, thresh2)) {
+      DoFilter2_C(p + i * stride, 1);
+    }
+  }
+}
+
+static void SimpleHFilter16i_C(uint8_t* p, int stride, int thresh) {
+  int k;
+  for (k = 3; k > 0; --k) {
+    p += 4;
+    SimpleHFilter16_C(p, stride, thresh);
+  }
+}
+
+static void SimpleVFilter16_C(uint8_t* p, int stride, int thresh) {
+  int i;
+  const int thresh2 = 2 * thresh + 1;
+  for (i = 0; i < 16; ++i) {
+    if (NeedsFilter_C(p + i, stride, thresh2)) {
+      DoFilter2_C(p + i, stride);
+    }
+  }
+}
+
+static void SimpleVFilter16i_C(uint8_t* p, int stride, int thresh) {
+  int k;
+  for (k = 3; k > 0; --k) {
+    p += 4 * stride;
+    SimpleVFilter16_C(p, stride, thresh);
+  }
+}
+
+static int Hev(const uint8_t* p, int step, int thresh) {
+  const int p1 = p[-2*step], p0 = p[-step], q0 = p[0], q1 = p[step];
+  return (VP8kabs0[p1 - p0] > thresh) || (VP8kabs0[q1 - q0] > thresh);
+}
+
+static int NeedsFilter2_C(const uint8_t* p,
+                                      int step, int t, int it) {
+  const int p3 = p[-4 * step], p2 = p[-3 * step], p1 = p[-2 * step];
+  const int p0 = p[-step], q0 = p[0];
+  const int q1 = p[step], q2 = p[2 * step], q3 = p[3 * step];
+  if ((4 * VP8kabs0[p0 - q0] + VP8kabs0[p1 - q1]) > t) return 0;
+  return VP8kabs0[p3 - p2] <= it && VP8kabs0[p2 - p1] <= it &&
+         VP8kabs0[p1 - p0] <= it && VP8kabs0[q3 - q2] <= it &&
+         VP8kabs0[q2 - q1] <= it && VP8kabs0[q1 - q0] <= it;
+}
+
+static void DoFilter4_C(uint8_t* p, int step) {
+  const int p1 = p[-2*step], p0 = p[-step], q0 = p[0], q1 = p[step];
+  const int a = 3 * (q0 - p0);
+  const int a1 = VP8ksclip2[(a + 4) >> 3];
+  const int a2 = VP8ksclip2[(a + 3) >> 3];
+  const int a3 = (a1 + 1) >> 1;
+  p[-2*step] = VP8kclip1[p1 + a3];
+  p[-  step] = VP8kclip1[p0 + a2];
+  p[      0] = VP8kclip1[q0 - a1];
+  p[   step] = VP8kclip1[q1 - a3];
+}
+
+static void FilterLoop24_C(uint8_t* p,
+                                       int hstride, int vstride, int size,
+                                       int thresh, int ithresh,
+                                       int hev_thresh) {
+  const int thresh2 = 2 * thresh + 1;
+  while (size-- > 0) {
+    if (NeedsFilter2_C(p, hstride, thresh2, ithresh)) {
+      if (Hev(p, hstride, hev_thresh)) {
+        DoFilter2_C(p, hstride);
+      } else {
+        DoFilter4_C(p, hstride);
+      }
+    }
+    p += vstride;
+  }
+}
+static void HFilter16i_C(uint8_t* p, int stride,
+                         int thresh, int ithresh, int hev_thresh) {
+  int k;
+  for (k = 3; k > 0; --k) {
+    p += 4;
+    FilterLoop24_C(p, 1, stride, 16, thresh, ithresh, hev_thresh);
+  }
+}
+
+static void HFilter8i_C(uint8_t* u, uint8_t* v, int stride,
+                        int thresh, int ithresh, int hev_thresh) {
+  FilterLoop24_C(u + 4, 1, stride, 8, thresh, ithresh, hev_thresh);
+  FilterLoop24_C(v + 4, 1, stride, 8, thresh, ithresh, hev_thresh);
+}
+
+static void VFilter16i_C(uint8_t* p, int stride,
+                         int thresh, int ithresh, int hev_thresh) {
+  int k;
+  for (k = 3; k > 0; --k) {
+    p += 4 * stride;
+    FilterLoop24_C(p, stride, 1, 16, thresh, ithresh, hev_thresh);
+  }
+}
+
+static void VFilter8i_C(uint8_t* u, uint8_t* v, int stride,
+                        int thresh, int ithresh, int hev_thresh) {
+  FilterLoop24_C(u + 4 * stride, stride, 1, 8, thresh, ithresh, hev_thresh);
+  FilterLoop24_C(v + 4 * stride, stride, 1, 8, thresh, ithresh, hev_thresh);
+}
+
+static void DoFilter(const VP8EncIterator* const it, int level) {
+  const VP8Encoder* const enc = it->enc_;
+  const int ilevel = GetILevel(enc->config_->filter_sharpness, level);
+  const int limit = 2 * level + ilevel;
+
+  uint8_t* const y_dst = it->yuv_out2_ + Y_OFF_ENC;
+  uint8_t* const u_dst = it->yuv_out2_ + U_OFF_ENC;
+  uint8_t* const v_dst = it->yuv_out2_ + V_OFF_ENC;
+
+  // copy current block to yuv_out2_
+  memcpy(y_dst, it->yuv_out_, YUV_SIZE_ENC * sizeof(uint8_t));
+
+  if (enc->filter_hdr_.simple_ == 1) {   // simple
+	  SimpleHFilter16i_C(y_dst, BPS, limit);
+	  SimpleVFilter16i_C(y_dst, BPS, limit);
+  } else {    // complex
+    const int hev_thresh = (level >= 40) ? 2 : (level >= 15) ? 1 : 0;
+    HFilter16i_C(y_dst, BPS, limit, ilevel, hev_thresh);
+    HFilter8i_C(u_dst, v_dst, BPS, limit, ilevel, hev_thresh);
+    VFilter16i_C(y_dst, BPS, limit, ilevel, hev_thresh);
+    VFilter8i_C(u_dst, v_dst, BPS, limit, ilevel, hev_thresh);
+  }
+}
+
+static void VP8StoreFilterStats(VP8EncIterator* const it) {
+#if !defined(WEBP_REDUCE_SIZE)
+  int d;
+  VP8Encoder* const enc = it->enc_;
+  const int s = it->mb_->segment_;
+  const int level0 = enc->dqm_[s].fstrength_;
+
+  // explore +/-quant range of values around level0
+  const int delta_min = -enc->dqm_[s].quant_;
+  const int delta_max = enc->dqm_[s].quant_;
+  const int step_size = (delta_max - delta_min >= 4) ? 4 : 1;
+
+  if (it->lf_stats_ == NULL) return;
+
+  // NOTE: Currently we are applying filter only across the sublock edges
+  // There are two reasons for that.
+  // 1. Applying filter on macro block edges will change the pixels in
+  // the left and top macro blocks. That will be hard to restore
+  // 2. Macro Blocks on the bottom and right are not yet compressed. So we
+  // cannot apply filter on the right and bottom macro block edges.
+  if (it->mb_->type_ == 1 && it->mb_->skip_) return;
+
+  // Always try filter level  zero
+  (*it->lf_stats_)[s][0] += GetMBSSIM(it->yuv_in_, it->yuv_out_);
+
+  for (d = delta_min; d <= delta_max; d += step_size) {
+    const int level = level0 + d;
+    if (level <= 0 || level >= MAX_LF_LEVELS) {
+      continue;
+    }
+    DoFilter(it, level);
+    (*it->lf_stats_)[s][level] += GetMBSSIM(it->yuv_in_, it->yuv_out2_);
+  }
+#else  // defined(WEBP_REDUCE_SIZE)
+  (void)it;
+#endif  // !defined(WEBP_REDUCE_SIZE)
+}
+
+static void ExportBlock(const uint8_t* src, uint8_t* dst, int dst_stride,
+                        int w, int h) {
+  while (h-- > 0) {
+    memcpy(dst, src, w);
+    dst += dst_stride;
+    src += BPS;
+  }
+}
+
+static void VP8IteratorExport(const VP8EncIterator* const it) {
+  const VP8Encoder* const enc = it->enc_;
+  if (enc->config_->show_compressed) {
+    const int x = it->x_, y = it->y_;
+    const uint8_t* const ysrc = it->yuv_out_ + Y_OFF_ENC;
+    const uint8_t* const usrc = it->yuv_out_ + U_OFF_ENC;
+    const uint8_t* const vsrc = it->yuv_out_ + V_OFF_ENC;
+    const WebPPicture* const pic = enc->pic_;
+    uint8_t* const ydst = pic->y + (y * pic->y_stride + x) * 16;
+    uint8_t* const udst = pic->u + (y * pic->uv_stride + x) * 8;
+    uint8_t* const vdst = pic->v + (y * pic->uv_stride + x) * 8;
+    int w = (pic->width - x * 16);
+    int h = (pic->height - y * 16);
+
+    if (w > 16) w = 16;
+    if (h > 16) h = 16;
+
+    // Luma plane
+    ExportBlock(ysrc, ydst, pic->y_stride, w, h);
+
+    {   // U/V planes
+      const int uv_w = (w + 1) >> 1;
+      const int uv_h = (h + 1) >> 1;
+      ExportBlock(usrc, udst, pic->uv_stride, uv_w, uv_h);
+      ExportBlock(vsrc, vdst, pic->uv_stride, uv_w, uv_h);
+    }
+  }
+}
+
 static void VP8PutBits(VP8BitWriter* const bw, uint32_t value, int nb_bits) {
   uint32_t mask;
   assert(nb_bits > 0 && nb_bits < 32);
@@ -14490,6 +16377,38 @@ static int PostLoopFinalize(VP8EncIterator* const it, int ok) {
     VP8EncFreeBitWriters(enc);
   }
   return ok;
+}
+
+static int VP8EncLoop(VP8Encoder* const enc) {
+  VP8EncIterator it;
+  int ok = PreLoopInitialize(enc);
+  if (!ok) return 0;
+
+  StatLoop(enc);  // stats-collection loop
+
+  VP8IteratorInit(enc, &it);
+  VP8InitFilter(&it);
+  do {
+    VP8ModeScore info;
+    const int dont_use_skip = !enc->proba_.use_skip_proba_;
+    const VP8RDLevel rd_opt = enc->rd_opt_level_;
+
+    VP8IteratorImport(&it, NULL);
+    // Warning! order is important: first call VP8Decimate() and
+    // *then* decide how to code the skip decision if there's one.
+    if (!VP8Decimate(&it, &info, rd_opt) || dont_use_skip) {
+      CodeResiduals(it.bw_, &it, &info);
+    } else {   // reset predictors after a skip
+      ResetAfterSkip(&it);
+    }
+    StoreSideInfo(&it);
+    VP8StoreFilterStats(&it);
+    VP8IteratorExport(&it);
+    ok = VP8IteratorProgress(&it, 20);
+    VP8IteratorSaveBoundary(&it);
+  } while (ok && VP8IteratorNext(&it));
+
+  return PostLoopFinalize(&it, ok);
 }
 
 static void VP8TBufferClear(VP8TBuffer* const b) {
@@ -14712,6 +16631,254 @@ static int VP8EmitTokens(VP8TBuffer* const b, VP8BitWriter* const bw,
 
 #define MIN_COUNT 96  // minimum number of macroblocks before updating stats
 #define DEBUG_SEARCH 0    // useful to track search convergence
+
+static int VP8EncTokenLoop(VP8Encoder* const enc, int card_no) {
+  // Roughly refresh the proba eight times per pass
+  int max_count = (enc->mb_w_ * enc->mb_h_) >> 3;
+  int num_pass_left = enc->config_->pass;
+  //const int do_search = enc->do_search_;
+  VP8EncIterator it;
+  VP8EncProba* const proba = &enc->proba_;
+  const VP8RDLevel rd_opt = enc->rd_opt_level_;
+  const uint64_t pixel_count = enc->mb_w_ * enc->mb_h_ * 384;
+  PassStats stats;
+  int ok;
+
+  InitPassStats(enc, &stats);
+  ok = PreLoopInitialize(enc);
+  if (!ok) return 0;
+
+  if (max_count < MIN_COUNT) max_count = MIN_COUNT;
+
+  assert(enc->num_parts_ == 1);
+  assert(enc->use_tokens_);
+  assert(proba->use_skip_proba_ == 0);
+  assert(rd_opt >= RD_OPT_BASIC);   // otherwise, token-buffer won't be useful
+  assert(num_pass_left > 0);
+
+    uint64_t distortion = 0;
+    VP8IteratorInit(enc, &it);
+    SetLoopParams(enc, stats.q);
+    ResetTokenStats(enc);
+    VP8InitFilter(&it);
+    VP8TBufferClear(&enc->tokens_);
+
+	int x, y, i, j;
+	const WebPPicture* const pic = enc->pic_;
+	int mb_w_ = enc->mb_w_;
+	int mb_h_ = enc->mb_h_;
+	
+	uint8_t * mem_in = NULL;
+	mem_in = (uint8_t*)alloc_mem(4096, 384 * mb_w_ * mb_h_ + 128);
+	if(mem_in == NULL)goto out_error4;
+
+	VP8SegmentInfo * dqm = &enc->dqm_[0];
+	memcpy(mem_in, dqm->y1_.q_, 4);
+	memcpy(mem_in + 4, dqm->y1_.iq_, 4);
+	memcpy(mem_in + 8, dqm->y1_.bias_, 8);
+	memcpy(mem_in + 16, dqm->y1_.zthresh_, 8);
+	memcpy(mem_in + 24, dqm->y1_.sharpen_, 32);
+	memcpy(mem_in + 56, dqm->y2_.q_, 4);
+	memcpy(mem_in + 60, dqm->y2_.iq_, 4);
+	memcpy(mem_in + 64, dqm->y2_.bias_, 8);
+	memcpy(mem_in + 72, dqm->y2_.zthresh_, 8);
+	memcpy(mem_in + 80, dqm->uv_.q_, 4);
+	memcpy(mem_in + 84, dqm->uv_.iq_, 4);
+	memcpy(mem_in + 88, dqm->uv_.bias_, 8);
+	memcpy(mem_in + 96, dqm->uv_.zthresh_, 8);
+	memcpy(mem_in + 104, &dqm->min_disto_, 4);
+	memcpy(mem_in + 108, &dqm->lambda_i16_, 4);
+	memcpy(mem_in + 112, &dqm->lambda_i4_, 4);
+	memcpy(mem_in + 116, &dqm->lambda_uv_, 4);
+	memcpy(mem_in + 120, &dqm->lambda_mode_, 4); 
+	memcpy(mem_in + 124, &dqm->tlambda_, 4);
+	
+	for(y = 0; y < mb_h_; y++){
+		for(x = 0; x < mb_w_; x++){
+			const int w = MinSize(pic->width - x * 16, 16);
+			const int h = MinSize(pic->height - y * 16, 16);
+			const int uv_w = (w + 1) >> 1;
+			const int uv_h = (h + 1) >> 1;
+			for(i = 0; i < h; i++){
+				memcpy(mem_in + 128 + (y * mb_w_ + x) * 384 + i * 16, pic->y + (y * pic->y_stride + x) * 16 + i * pic->y_stride, w);
+				if(w < 16){
+					memset(mem_in + 128 + (y * mb_w_ + x) * 384 + i * 16 + w, (mem_in + 128 + (y * mb_w_ + x) * 384 + i * 16)[w - 1], 16 - w);
+				}
+			}
+			for (i = h; i < 16; ++i) {
+				memcpy(mem_in + 128 + (y * mb_w_ + x) * 384 + i * 16, mem_in + 128 + (y * mb_w_ + x) * 384 + i * 16 - 16, 16);
+			}
+			for(i = 0; i < uv_h; i++){
+				memcpy(mem_in + 128 + 256 + (y * mb_w_ + x) * 384 + i * 16, pic->u + (y * pic->uv_stride + x) * 8 + i * pic->uv_stride, uv_w);
+				memcpy(mem_in + 128 + 264 + (y * mb_w_ + x) * 384 + i * 16, pic->v + (y * pic->uv_stride + x) * 8 + i * pic->uv_stride, uv_w);
+				if(uv_w < 8){
+					memset(mem_in + 128 + 256 + (y * mb_w_ + x) * 384 + i * 16 + uv_w, (mem_in + 128 + 256 + (y * mb_w_ + x) * 384 + i * 16)[uv_w - 1], 8 - uv_w);
+					memset(mem_in + 128 + 264 + (y * mb_w_ + x) * 384 + i * 16 + uv_w, (mem_in + 128 + 264 + (y * mb_w_ + x) * 384 + i * 16)[uv_w - 1], 8 - uv_w);
+				}
+			}
+			for (i = uv_h; i < 8; ++i) {
+				memcpy(mem_in + 128 + 256 + (y * mb_w_ + x) * 384 + i * 16, mem_in + 128 + 256 + (y * mb_w_ + x) * 384 + i * 16 - 16, 16);
+			}
+		}
+	}
+
+	uint8_t * mem_out = NULL;
+	mem_out = (uint8_t*)alloc_mem(4096,sizeof(DATA_O) * mb_w_ * mb_h_);
+	if(mem_out == NULL)goto out_error3;
+	memset(mem_out, 0, sizeof(DATA_O) * mb_w_ * mb_h_);
+	
+	char device[128];
+	struct snap_card *card = NULL;
+	struct snap_action *action = NULL;
+	snap_action_flag_t action_irq = 0;
+	
+	// Allocate the card that will be used
+	if(card_no == 0)
+	  snprintf(device, sizeof(device)-1, "IBM,oc-snap");
+	else
+	  snprintf(device, sizeof(device)-1, "/dev/ocxl/IBM,oc-snap.000%d:00:00.1.0", card_no);
+	
+	card = snap_card_alloc_dev (device, SNAP_VENDOR_ID_IBM, SNAP_DEVICE_ID_SNAP);  
+	if (card == NULL) {
+		fprintf(stderr, "ERROR: snap_card_alloc_dev(%s)\n", device);
+		goto out_error2;
+	}
+	
+	// Attach the action that will be used on the allocated card
+	action = snap_attach_action(card, ACTION_TYPE_HDL_COMPUTING, attach_flags, timeout);
+	if (action == NULL) {
+		fprintf(stderr, "Error: Can not attach Action: %x\n", ACTION_TYPE_HDL_COMPUTING);
+		goto out_error1;
+	}
+
+	int rc = 0;
+	struct timeval etime, stime;
+	unsigned long timeout = 60;
+
+	// Collect the timestamp BEFORE the call of the action
+	gettimeofday(&stime, NULL);
+
+	action_write(card, REG_SOURCE_ADDRESS_L, (uint32_t) (((uint64_t) mem_in) & 0xffffffff));
+	action_write(card, REG_SOURCE_ADDRESS_H, (uint32_t) ((((uint64_t) mem_in) >> 32) & 0xffffffff));
+	  
+	action_write(card, REG_TARGET_ADDRESS_L, (uint32_t) (((uint64_t) mem_out) & 0xffffffff));
+	action_write(card, REG_TARGET_ADDRESS_H, (uint32_t) ((((uint64_t) mem_out) >> 32) & 0xffffffff));
+	  
+	action_write(card, REG_MB_WIDTH_HEIGHT, (mb_w_ | (mb_h_ << 16)));
+
+	action_write(card, REG_USER_CONTROL, 0x00000001);
+	  
+	int rc = -1;
+	uint32_t cnt = 0;
+    uint32_t reg_data;
+	struct timespec ts;
+	ts.tv_sec = 0;
+	ts.tv_nsec = 1000;
+	
+	do { 
+		reg_data = action_read(card, REG_USER_STATUS);
+		if ((reg_data & 0x1) == 0x1 ){
+			rc = 0;
+			printf("WebPEncode done.\n");
+			break;
+		}
+		cnt ++;
+		nanosleep(&ts, &ts);
+	} while (cnt < timeout * 1000);
+
+	action_write(card, REG_SOFT_RESET, 0x00000001);
+	
+	if (rc != 0) {
+  		fprintf(stderr, "err: job execution %d: %s!\n", rc, strerror(errno));
+		goto out_error1;
+	}
+	
+	// Collect the timestamp AFTER the call of the action
+	gettimeofday(&etime, NULL);
+	
+	// Display the time of the action call (MMIO registers filled + execution)
+	fprintf(stderr, "SNAP computing took %lld usec\n", (long long)timediff_usec(&etime, &stime));
+
+	for(y = 0; y < enc->mb_h_; y++){
+		for(x = 0; x < enc->mb_w_; x++){
+
+		  uint8_t* preds = it.preds_;
+		  DATA_O* output = ((DATA_O*)mem_out)[y * enc->mb_w_ + x];
+
+		  if(output->mbtype == 1){
+			it.mb_->type_ = 1;
+			for(j = 0; j < 4; ++j){
+			  for(i = 0; i < 4; ++i){
+				preds[i] = output->info.mode_i16;
+			  }
+			  preds += enc->preds_w_;
+			}
+		  }
+		  else{
+			it.mb_->type_ = 0;
+			for(j = 0; j < 4; ++j){
+			  for(i = 0; i < 4; ++i){
+				preds[i] = output->info.modes_i4[j*4+i];
+			  }
+			  preds += enc->preds_w_;
+			}
+		  }
+		  it.mb_->uv_mode_ = output->info.mode_uv;
+		  it.mb_->skip_ = output->is_skipped;
+		  
+	      ok = RecordTokens(&it, &output->info, &enc->tokens_);
+	      if (!ok) {
+	        WebPEncodingSetError(enc->pic_, VP8_ENC_ERROR_OUT_OF_MEMORY);
+	        break;
+	      }
+		
+		  if((x + 1) == enc->mb_w_){
+			it.preds_ = enc->preds_ + (y + 1) * 4 * enc->preds_w_;
+			it.nz_ = enc->nz_;
+			it.mb_ = enc->mb_info_ + (y + 1) * enc->mb_w_;
+			it.left_nz_[8] = 0;
+		  }
+		  else{
+			it.nz_ = it.nz_ + 1;
+			it.mb_ += 1;
+			it.preds_ += 4;
+		  }
+	  
+	      //distortion += output->info.D;
+		}
+    }
+
+	enc->dqm_[0].max_edge_ = ((DATA_O*)mem_out)[enc->mb_w_ * enc->mb_h_ - 1].max_edge_;	
+	
+out_error1:
+	snap_detach_action(action);
+	
+out_error2:
+	snap_card_free(card);
+	
+out_error3:
+	__free(mem_out);
+	
+out_error4:
+	__free(mem_in);
+
+    //compute and store PSNR
+    //stats.value = GetPSNR(distortion, pixel_count);
+
+#if (DEBUG_SEARCH > 0)
+    printf("#%2d metric:%.1lf -> %.1lf   last_q=%.2lf q=%.2lf dq=%.2lf\n",
+           num_pass_left, stats.last_value, stats.value,
+           stats.last_q, stats.q, stats.dq);
+#endif
+
+  if (ok) {
+    FinalizeTokenProbas(&enc->proba_);
+    ok = VP8EmitTokens(&enc->tokens_, enc->parts_ + 0, (const uint8_t*)proba->coeffs_, 1);
+  }
+
+  return PostLoopFinalize(&it, ok);
+
+}
 
 static int VP8EncFinishAlpha(VP8Encoder* const enc) {
   if (enc->has_alpha_) {
@@ -15380,228 +17547,60 @@ static int DeleteVP8Encoder(VP8Encoder* enc) {
   return ok;
 }
 
-#define BUFFER_LEN 256
-VP8Encoder* enc_g[BUFFER_LEN];
-VP8EncIterator* it_g[BUFFER_LEN];
-WebPPicture* picture_g[BUFFER_LEN];
-uint8_t* mem_out_g[BUFFER_LEN];
-uint8_t* mem_in_g[BUFFER_LEN];
-
-int card_no = 0;
-uint32_t timeout = 60;
-snap_action_flag_t attach_flags = 0;
-sem_t binSem;
-sem_t FPGASem;
-
-char device[64];
-struct snap_card *card = NULL;
-struct snap_action *action = NULL;
-
-uint32_t total_pic = 0;
-uint32_t fpga_pic = 0;
-uint32_t WebP_pic = 0;
-//pthread_mutex_t mut;
-
-
-struct timeval endtime, starttime;
-
-static void *FPGAEncode(void *tid) {
-	
-  int buffer_cnt = 0;
- 
-  // Allocate the card that will be used
-  if(card_no == 0)
-	snprintf(device, sizeof(device)-1, "IBM,oc-snap");
-  else
-	snprintf(device, sizeof(device)-1, "/dev/ocxl/IBM,oc-snap.000%d:00:00.1.0", card_no);
-  
-  card = snap_card_alloc_dev (device, SNAP_VENDOR_ID_IBM, SNAP_DEVICE_ID_SNAP);  
-  if (card == NULL) {
-	  fprintf(stderr, "ERROR: snap_card_alloc_dev(%s)\n", device);
-	  return tid;
-  }
-  
-  // Attach the action that will be used on the allocated card
-  action = snap_attach_action(card, ACTION_TYPE_HDL_COMPUTING, attach_flags, timeout);
-  if (action == NULL) {
-	  fprintf(stderr, "Error: Can not attach Action: %x\n", ACTION_TYPE_HDL_COMPUTING);
-	  return tid;
-  }
-
-  while(1){
-	sem_wait(&FPGASem);
-
-	VP8Encoder* enc = enc_g[buffer_cnt];
-	VP8EncIterator* it = it_g[buffer_cnt];
-	WebPPicture* picture = picture_g[buffer_cnt];
-	uint8_t* mem_in = mem_in_g[buffer_cnt];
-	uint8_t* mem_out = mem_out_g[buffer_cnt];
-	FILE *out = enc->pic_->custom_ptr;
-	int mb_w_ = enc->mb_w_;
-	int mb_h_ = enc->mb_h_; 
-
-	action_write(card, REG_SOURCE_ADDRESS_L, (uint32_t) (((uint64_t) mem_in) & 0xffffffff));
-	action_write(card, REG_SOURCE_ADDRESS_H, (uint32_t) ((((uint64_t) mem_in) >> 32) & 0xffffffff));
-	  
-	action_write(card, REG_TARGET_ADDRESS_L, (uint32_t) (((uint64_t) mem_out) & 0xffffffff));
-	action_write(card, REG_TARGET_ADDRESS_H, (uint32_t) ((((uint64_t) mem_out) >> 32) & 0xffffffff));
-	  
-	action_write(card, REG_MB_WIDTH_HEIGHT, (mb_w_ | (mb_h_ << 16)));
-
-	action_write(card, REG_USER_CONTROL, 0x00000001);
-	  
-	int rc = -1;
-	uint32_t cnt = 0;
-    uint32_t reg_data;
-	struct timespec ts;
-	ts.tv_sec = 0;
-	ts.tv_nsec = 1000;
-	
-	do { 
-		reg_data = action_read(card, REG_USER_STATUS);
-		if ((reg_data & 0x1) == 0x1 ){
-			rc = 0;
-			printf("WebPEncode done.\n");
-			break;
-		}
-		cnt ++;
-		nanosleep(&ts, &ts);
-	} while (cnt < timeout * 1000);
-
-	action_write(card, REG_SOFT_RESET, 0x00000001);
-	
-	if (rc != 0) {
-  		fprintf(stderr, "time out %d: %s!\n", rc, strerror(errno));
-		WebPPictureFree(picture);
-		WebPSafeFree(picture);
-		DeleteVP8Encoder(enc);
-		WebPSafeFree(it);
-		__free(mem_out); 
-        __free(mem_in);
-		fclose(out);
-		return tid;
-	}
-	
-	sem_post(&binSem);
-	__free(mem_in);
-
-	fpga_pic++;	
-	if(buffer_cnt >= BUFFER_LEN - 1) buffer_cnt = 0;
-	else buffer_cnt++;
-
-  }
-  
-  return tid;
-}
-
-static void *WebPEncode(void *tid) {
+static int WebPEncode(const WebPConfig* config, WebPPicture* pic, int card_no) {
   int ok = 0;
-  int buffer_cnt = 0;
-  
-  while(1){
-  	sem_wait(&binSem);
+  if (pic == NULL) return 0;
 
-	VP8Encoder* enc = enc_g[buffer_cnt];
-	VP8EncIterator* it = it_g[buffer_cnt];
-	WebPPicture* picture = picture_g[buffer_cnt];
-	uint8_t* mem_out = mem_out_g[buffer_cnt];
-	int mb_w_ = enc->mb_w_;
-	int mb_h_ = enc->mb_h_; 
-	int preds_w_ = enc->preds_w_;
-	VP8TBuffer* tokens_ = &enc->tokens_;
-	uint8_t* preds_ = enc->preds_;
-	VP8MBInfo* mb_info_ = enc->mb_info_;
-	uint32_t* nz_ = enc->nz_;
-	FILE *out = enc->pic_->custom_ptr;
-	VP8EncProba* proba_ = &enc->proba_;
-	VP8BitWriter* parts_ = enc->parts_;
-	int x, y, i, j;
+  WebPEncodingSetError(pic, VP8_ENC_OK);  // all ok so far
+  if (config == NULL) {  // bad params
+    return WebPEncodingSetError(pic, VP8_ENC_ERROR_NULL_PARAMETER);
+  }
+  if (!WebPValidateConfig(config)) {
+    return WebPEncodingSetError(pic, VP8_ENC_ERROR_INVALID_CONFIGURATION);
+  }
+  if (pic->width <= 0 || pic->height <= 0) {
+    return WebPEncodingSetError(pic, VP8_ENC_ERROR_BAD_DIMENSION);
+  }
+  if (pic->width > WEBP_MAX_DIMENSION || pic->height > WEBP_MAX_DIMENSION) {
+    return WebPEncodingSetError(pic, VP8_ENC_ERROR_BAD_DIMENSION);
+  }
 
-	for(y = 0; y < mb_h_; y++){
-		for(x = 0; x < mb_w_; x++){
+  if (pic->stats != NULL) memset(pic->stats, 0, sizeof(*pic->stats));
 
-		  uint8_t* preds = it->preds_;
-		  DATA_O* output = ((DATA_O*)mem_out)[y * mb_w_ + x];
+    VP8Encoder* enc = NULL;
 
-		  if(output->mbtype == 1){
-			it->mb_->type_ = 1;
-			for(j = 0; j < 4; ++j){
-			  for(i = 0; i < 4; ++i){
-				preds[i] = output->info.mode_i16;
-			  }
-			  preds += preds_w_;
-			}
-		  }
-		  else{
-			it->mb_->type_ = 0;
-			for(j = 0; j < 4; ++j){
-			  for(i = 0; i < 4; ++i){
-				preds[i] = output->info.modes_i4[j*4+i];
-			  }
-			  preds += preds_w_;
-			}
-		  }
-		  
-		  it->mb_->uv_mode_ = output->info.mode_uv;
-		  it->mb_->skip_ = output->is_skipped;
-		  
-	      ok = RecordTokens(it, &output->info, tokens_);
-	      if (!ok) {
-	        fprintf(stderr, "VP8_ENC_ERROR_OUT_OF_MEMORY\n");
-	      }
-		
-		  if((x + 1) == mb_w_){
-			it->preds_ = preds_ + (y + 1) * 4 * preds_w_;
-			it->nz_ = nz_;
-			it->mb_ = mb_info_ + (y + 1) * mb_w_;
-			it->left_nz_[8] = 0;
-		  }
-		  else{
-			it->nz_ = it->nz_ + 1;
-			it->mb_ += 1;
-			it->preds_ += 4;
-		  }    
-		}
+    if (!config->exact) {
+      WebPCleanupTransparentArea(pic);
     }
 
-	enc->dqm_[0].max_edge_ = ((DATA_O*)mem_out)[mb_w_ * mb_h_ - 1].max_edge_;
-	
-	if (ok) {
-	  FinalizeTokenProbas(proba_);
-	  ok = VP8EmitTokens(tokens_, parts_ + 0, (const uint8_t*)proba_->coeffs_, 1);
-	}
-	
-	ok = ok && PostLoopFinalize(it, ok);
+//	struct timespec time_start={0, 0},time_end={0, 0};
+//	clock_gettime(CLOCK_REALTIME, &time_start);
 
+    enc = InitVP8Encoder(config, pic);
+    if (enc == NULL) return 0;  // pic->error is already set.
+    // Note: each of the tasks below account for 20% in the progress report.
+    ok = VP8EncAnalyze(enc);
+
+    // Analysis is done, proceed to actual coding.
+    ok = ok && VP8EncStartAlpha(enc);   // possibly done in parallel
+    if (!enc->use_tokens_) {
+      ok = ok && VP8EncLoop(enc);
+    } else {
+      ok = ok && VP8EncTokenLoop(enc, card_no);
+    }
     ok = ok && VP8EncFinishAlpha(enc);
 
     ok = ok && VP8EncWrite(enc);
-	
     StoreStats(enc);
-	
     if (!ok) {
-	  fprintf(stderr, "Encode error!\n");
       VP8EncFreeBitWriters(enc);
     }
-	
     ok &= DeleteVP8Encoder(enc);  // must always be called, even if !ok
-    if (!ok) {
-	  fprintf(stderr, "DeleteVP8Encoder error!\n");
-    }
 
-	WebPPictureFree(picture);
-	WebPSafeFree(picture);
-	WebPSafeFree(it);
-	__free(mem_out);
-	fclose(out);
+//	clock_gettime(CLOCK_REALTIME, &time_end);
+//	fprintf(stdout, "%lluns\n", (long long)((double)((time_end.tv_sec-time_start.tv_sec)*1000000000+(time_end.tv_nsec-time_start.tv_nsec))));
 
-	WebP_pic++;
-	if(WebP_pic >= total_pic)gettimeofday(&endtime, NULL);
-	
-    if(buffer_cnt >= BUFFER_LEN - 1) buffer_cnt = 0;
-	else buffer_cnt++;
-  }
-  return tid;
+  return ok;
 }
 
 int main(int argc, const char *argv[]) {
@@ -15609,12 +17608,19 @@ int main(int argc, const char *argv[]) {
   const char *in_dir = NULL;
   FILE *out = NULL;
   int c;
+  int short_output = 0;
   int keep_alpha = 1;
+  int card_no = 0;
+  //int show_progress = 0;
+  WebPPicture picture;
   WebPConfig config;
   WebPAuxStats stats;
+  WebPMemoryWriter memory_writer;
   Stopwatch stop_watch;
-  
-  if (!WebPConfigInit(&config)) {
+
+  WebPMemoryWriterInit(&memory_writer);
+  if (!WebPPictureInit(&picture) ||
+      !WebPConfigInit(&config)) {
     fprintf(stderr, "Error! Version mismatch!\n");
     return -1;
   }
@@ -15634,6 +17640,18 @@ int main(int argc, const char *argv[]) {
       return 0;
     } else if (!strcmp(argv[c], "-i") && c < argc - 1) {
       in_dir = argv[++c];
+    } else if (!strcmp(argv[c], "-C") && c < argc - 1) {
+      card_no = ExUtilGetInt(argv[++c], 0, &parse_error);
+    } else if (!strcmp(argv[c], "-s") && c < argc - 2) {
+      picture.width = ExUtilGetInt(argv[++c], 0, &parse_error);
+      picture.height = ExUtilGetInt(argv[++c], 0, &parse_error);
+      if (picture.width > WEBP_MAX_DIMENSION || picture.width < 0 ||
+          picture.height > WEBP_MAX_DIMENSION ||  picture.height < 0) {
+        fprintf(stderr,
+                "Specified dimension (%d x %d) is out of range.\n",
+                picture.width, picture.height);
+        return return_value;
+      }
     } else if (!strcmp(argv[c], "-q") && c < argc - 1) {
       config.quality = ExUtilGetFloat(argv[++c], &parse_error);
     } else if (!strcmp(argv[c], "-version")) {
@@ -15643,12 +17661,6 @@ int main(int argc, const char *argv[]) {
       return 0;
     } else if (!strcmp(argv[c], "-v")) {
       verbose = 1;
-    } else if (!strcmp(argv[c], "-C") && c < argc - 1) {
-      card_no = ExUtilGetInt(argv[++c], 0, &parse_error);
-    } else if (!strcmp(argv[c], "-t") && c < argc - 1) {
-      timeout = ExUtilGetInt(argv[++c], 0, &parse_error);
-    } else if (!strcmp(argv[c], "-I") && c < argc - 1) {
-      attach_flags = SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ;
     } else if (argv[c][0] == '-') {
       fprintf(stderr, "Error! Unknown option '%s'\n", argv[c]);
       HelpLong();
@@ -15685,38 +17697,6 @@ int main(int argc, const char *argv[]) {
     HelpShort();
     return return_value;
   }
-
-  //initialize semaphore
-  int res = 0;
-  res = sem_init(&binSem, 0, 0);
-  if(res){
-	printf("binSem initialization failed!!/n");
-	return return_value;
-  }
-  res = sem_init(&FPGASem, 0, 0);
-  if(res){
-	printf("FPGASem initialization failed!!/n");
-	return return_value;
-  }
-
-  //creat thread
-  pthread_t threads_code;
-  pthread_t threads_fpga;
-  int status;
-  status=pthread_create(&threads_code, NULL, WebPEncode, NULL);
-  if(status!=0)
-  {
-	printf("pthread_create return error code%d", status);
-	return return_value;
-  }
-  status=pthread_create(&threads_fpga, NULL, FPGAEncode, NULL);
-  if(status!=0)
-  {
-	printf("pthread_create return error code%d", status);
-	return return_value;
-  }
-
-  int buffer_cnt = 0;
   
   char creat_dir[256] = {0};
   int dir_len;
@@ -15724,17 +17704,11 @@ int main(int argc, const char *argv[]) {
   dir_len = strlen(creat_dir);
   mkdir(creat_dir, S_IRWXU);
 
-  gettimeofday(&starttime, NULL);
-
   while((entry = readdir(dir)) != NULL){
   	if(entry->d_type == 8){	
       char* dot;
 	  char in_dir_file[256] = {0};
 	  char out_dir_file[256] = {0};
-
-      if (verbose) {
-        StopwatchReset(&stop_watch);
-      }	  
 	  
 	  //input file 
 	  sprintf(in_dir_file, "%s%s", in_dir, entry->d_name);
@@ -15744,224 +17718,74 @@ int main(int argc, const char *argv[]) {
 	  memcpy(out_dir_file, creat_dir, dir_len);
 	  memcpy(out_dir_file + dir_len, entry->d_name, strlen(entry->d_name)-strlen(dot));
 	  strcat(out_dir_file, ".webp");
-
-	  WebPPicture* picture = NULL;
-	  picture = picture_g[buffer_cnt] = (WebPPicture*)WebPSafeMalloc(1, sizeof(WebPPicture));
-	  if (picture == NULL) {
-	  	fprintf(stderr, "picture malloc failed!\n");
-	  	return -1;
-	  }
-  
-	  if (!WebPPictureInit(picture)) {
-		fprintf(stderr, "Error! Version mismatch!\n");
-		return -1;
-	  }
+	  
+	  WebPPictureInit(&picture);
 
       // Read the input.
-      if (!ReadPicture(in_dir_file, picture, keep_alpha, NULL)) {
-        fprintf(stderr, "Error! Cannot read input picture file '%s'\n", in_dir_file);
-		WebPPictureFree(picture);
-		WebPSafeFree(picture);
-		return -1;
+      if (verbose) {
+        StopwatchReset(&stop_watch);
       }
-      picture->progress_hook = NULL;
-
+      if (!ReadPicture(in_dir_file, &picture, keep_alpha, NULL)) {
+        fprintf(stderr, "Error! Cannot read input picture file '%s'\n", in_dir_file);
+		WebPMemoryWriterClear(&memory_writer);
+        WebPPictureFree(&picture);
+        return return_value;
+      }
+      picture.progress_hook = NULL;
+    
+      if (verbose) {
+        const double read_time = StopwatchReadAndReset(&stop_watch);
+        fprintf(stderr, "Time to read input: %.3fs\n", read_time);
+      }
+    
       // Open the output
       out = fopen(out_dir_file, "wb");
       if (out == NULL) {
-        fprintf(stderr, "Error! Cannot open output file '%s'\n", out_dir_file);		
-		WebPPictureFree(picture);
-		WebPSafeFree(picture);
-		return -1;
+        fprintf(stderr, "Error! Cannot open output file '%s'\n", out_dir_file);
+		WebPMemoryWriterClear(&memory_writer);
+        WebPPictureFree(&picture);
+        return return_value;
       } else {
         fprintf(stderr, "Saving file '%s'\n", out_dir_file);
       }
-      picture->writer = MyWriter;
-      picture->custom_ptr = (void*)out;
-      picture->stats = &stats;
-      picture->user_data = (void*)in_dir_file;
+      picture.writer = MyWriter;
+      picture.custom_ptr = (void*)out;
+      picture.stats = &stats;
+      picture.user_data = (void*)in_dir_file;
     
       // Compress.
-	  int ok = 0;
-
-      WebPEncodingSetError(picture, VP8_ENC_OK);  // all ok so far
-	  if (!WebPValidateConfig(&config)) {
-	    WebPEncodingSetError(picture, VP8_ENC_ERROR_INVALID_CONFIGURATION);
-	  }
-	  if (picture->width <= 0 || picture->height <= 0) {
-	    WebPEncodingSetError(picture, VP8_ENC_ERROR_BAD_DIMENSION);
-	  }
-	  if (picture->width > WEBP_MAX_DIMENSION || picture->height > WEBP_MAX_DIMENSION) {
-	    WebPEncodingSetError(picture, VP8_ENC_ERROR_BAD_DIMENSION);
-	  }
- 
-	  if (picture->stats != NULL) memset(picture->stats, 0, sizeof(WebPAuxStats));
-	  
-	  if (!config.exact) {
-		WebPCleanupTransparentArea(picture);
-	  }
-
-	  VP8Encoder* enc = NULL;
-	  enc = enc_g[buffer_cnt] = InitVP8Encoder(&config, picture);
-	  if (enc == NULL) {
-	  	fprintf(stderr, "enc malloc failed!\n");
-	  	fclose(out);	
-		WebPPictureFree(picture);
-		WebPSafeFree(picture);
-	  	return -1;
-	  }
-	  
-      // Note: each of the tasks below account for 20% in the progress report.
-      ok = VP8EncAnalyze(enc);
-	  
-	  // Analysis is done, proceed to actual coding.
-	  ok = ok && VP8EncStartAlpha(enc);   // possibly done in parallel
-
-	  VP8EncIterator* it = NULL;
-	  it = it_g[buffer_cnt] = (VP8EncIterator*)WebPSafeMalloc(1, sizeof(VP8EncIterator));
-	  if (it == NULL) {
-	  	fprintf(stderr, "it malloc failed!\n");
-	  	fclose(out);
-		WebPPictureFree(picture);
-		WebPSafeFree(picture);
-		DeleteVP8Encoder(enc);
-		return -1;
-	  }
-	  
-	  PassStats stats;
-	  
-	  InitPassStats(enc, &stats);
-	  ok = ok && PreLoopInitialize(enc);
-      if (!ok) {
-	  	fprintf(stderr, "PreLoopInitialize failed!\n");
-        fprintf(stderr, "Error code: %d (%s)\n", picture->error_code, kErrorMessages[picture->error_code]);
-	  	fclose(out);
-		WebPPictureFree(picture);
-		WebPSafeFree(picture);
-		DeleteVP8Encoder(enc);
-	  	WebPSafeFree(it);
-		return -1;
+      if (verbose) {
+        StopwatchReset(&stop_watch);
       }
-	  
-	  VP8IteratorInit(enc, it);
-	  SetLoopParams(enc, stats.q);
-	  ResetTokenStats(enc);
-	  VP8InitFilter(it);
-	  VP8TBufferClear(&enc->tokens_);
-
-	  int x, y, i;
-	  const WebPPicture* const pic = enc->pic_;
-	  int mb_w_ = enc->mb_w_;
-	  int mb_h_ = enc->mb_h_;
-	  
-	  uint8_t * mem_in = NULL;
-	  mem_in = mem_in_g[buffer_cnt] = (uint8_t*)alloc_mem(4096, 384 * mb_w_ * mb_h_ + 128);
-	  if (mem_in == NULL){
-	  	fprintf(stderr, "mem_in malloc failed!\n");
-		WebPPictureFree(picture);
-		WebPSafeFree(picture);
-		DeleteVP8Encoder(enc);
-	  	WebPSafeFree(it);
-		__free(mem_in);
-	  	fclose(out);
-		return -1;
-	  }
-
-	  VP8SegmentInfo * dqm = &enc->dqm_[0];
-	  memcpy(mem_in, dqm->y1_.q_, 4);
-	  memcpy(mem_in + 4, dqm->y1_.iq_, 4);
-	  memcpy(mem_in + 8, dqm->y1_.bias_, 8);
-	  memcpy(mem_in + 16, dqm->y1_.zthresh_, 8);
-	  memcpy(mem_in + 24, dqm->y1_.sharpen_, 32);
-	  memcpy(mem_in + 56, dqm->y2_.q_, 4);
-	  memcpy(mem_in + 60, dqm->y2_.iq_, 4);
-	  memcpy(mem_in + 64, dqm->y2_.bias_, 8);
-	  memcpy(mem_in + 72, dqm->y2_.zthresh_, 8);
-	  memcpy(mem_in + 80, dqm->uv_.q_, 4);
-	  memcpy(mem_in + 84, dqm->uv_.iq_, 4);
-	  memcpy(mem_in + 88, dqm->uv_.bias_, 8);
-	  memcpy(mem_in + 96, dqm->uv_.zthresh_, 8);
-	  memcpy(mem_in + 104, &dqm->min_disto_, 4);
-	  memcpy(mem_in + 108, &dqm->lambda_i16_, 4);
-	  memcpy(mem_in + 112, &dqm->lambda_i4_, 4);
-	  memcpy(mem_in + 116, &dqm->lambda_uv_, 4);
-	  memcpy(mem_in + 120, &dqm->lambda_mode_, 4); 
-	  memcpy(mem_in + 124, &dqm->tlambda_, 4);
-	  
-	  for(y = 0; y < mb_h_; y++){
-		  for(x = 0; x < mb_w_; x++){
-			  const int w = MinSize(pic->width - x * 16, 16);
-			  const int h = MinSize(pic->height - y * 16, 16);
-			  const int uv_w = (w + 1) >> 1;
-			  const int uv_h = (h + 1) >> 1;
-			  for(i = 0; i < h; i++){
-				  memcpy(mem_in + 128 + (y * mb_w_ + x) * 384 + i * 16, pic->y + (y * pic->y_stride	+ x) * 16 + i * pic->y_stride, w);
-				  if(w < 16){
-					  memset(mem_in + 128 + (y * mb_w_ + x) * 384 + i * 16 + w, (mem_in + 128 + (y * mb_w_ + x) * 384 + i * 16)[w - 1], 16 - w);
-				  }
-			  }
-			  for (i = h; i < 16; ++i) {
-				  memcpy(mem_in + 128 + (y * mb_w_ + x) * 384 + i * 16, mem_in + 128 + (y * mb_w_ + x) * 384 + i * 16 - 16, 16);
-			  }
-			  for(i = 0; i < uv_h; i++){
-				  memcpy(mem_in + 128 + 256 + (y * mb_w_ + x) * 384 + i * 16, pic->u + (y * pic->uv_stride + x) * 8 + i * pic->uv_stride, uv_w);
-				  memcpy(mem_in + 128 + 264 + (y * mb_w_ + x) * 384 + i * 16, pic->v + (y * pic->uv_stride + x) * 8 + i * pic->uv_stride, uv_w);
-				  if(uv_w < 8){
-					  memset(mem_in + 128 + 256 + (y * mb_w_ + x) * 384 + i * 16 + uv_w, (mem_in + 128 + 256 + (y * mb_w_ + x) * 384 + i * 16)[uv_w - 1], 8 - uv_w);
-					  memset(mem_in + 128 + 264 + (y * mb_w_ + x) * 384 + i * 16 + uv_w, (mem_in + 128 + 264 + (y * mb_w_ + x) * 384 + i * 16)[uv_w - 1], 8 - uv_w);
-				  }
-			  }
-			  for (i = uv_h; i < 8; ++i) {
-				  memcpy(mem_in + 128 + 256 + (y * mb_w_ + x) * 384 + i * 16, mem_in + 128 + 256 + (y * mb_w_ + x) * 384 + i * 16 - 16, 16);
-			  }
-		  }
-	  }
-	  
-	  uint8_t * mem_out = NULL;
-	  mem_out = mem_out_g[buffer_cnt] = (uint8_t*)alloc_mem(4096,sizeof(DATA_O) * mb_w_ * mb_h_);
-	  if (mem_out == NULL){
-	  	fprintf(stderr, "mem_out malloc failed!\n");
-		WebPPictureFree(picture);
-		WebPSafeFree(picture);
-		DeleteVP8Encoder(enc);
-	  	WebPSafeFree(it);
-		__free(mem_in);
-		__free(mem_out);
-		fclose(out);
-		return -1;
-	  }
-	  memset(mem_out, 0, sizeof(DATA_O) * mb_w_ * mb_h_);
-
-	  sem_post(&FPGASem);
-	  
-	  if (verbose) {
-		const double encode_time = StopwatchReadAndReset(&stop_watch);
-		fprintf(stderr, "FPGA prepare took: %.3fs\n", encode_time);
-	  }
-	  
+    
+      if (!WebPEncode(&config, &picture, card_no)) {
+        fprintf(stderr, "Error! Cannot encode picture as WebP\n");
+        fprintf(stderr, "Error code: %d (%s)\n",
+                picture.error_code, kErrorMessages[picture.error_code]);
+		WebPMemoryWriterClear(&memory_writer);
+        WebPPictureFree(&picture);
+        return return_value;
+      }
+      if (verbose) {
+        const double encode_time = StopwatchReadAndReset(&stop_watch);
+        fprintf(stderr, "Time to encode picture: %.3f s\n", encode_time);
+      }
+    
+      // Write info
+      PrintExtraInfoLossy(&picture, short_output, config.low_memory, in_dir_file);
+    
       return_value = 0;
-	  total_pic ++;
-	  if(buffer_cnt >= BUFFER_LEN - 1) buffer_cnt = 0;
-	  else buffer_cnt++;
-
+      
+      WebPMemoryWriterClear(&memory_writer);
+      WebPPictureFree(&picture);
+    
+      if (out != NULL && out != stdout) {
+        fclose(out);
+      }
   	}
   }
-
-  closedir(dir); 
-
-  while(1){
-	if(fpga_pic >= total_pic && WebP_pic >= total_pic)
-		break;
-	sleep(1);
-  }
-    
-  fprintf(stdout, "All picture coding took %lld usec\n", (long long)timediff_usec(&endtime, &starttime));
   
-  snap_detach_action(action);	
-  snap_card_free(card);
-			
-  sem_destroy(&binSem);
-  sem_destroy(&FPGASem);
+  closedir(dir); 
   
   return return_value;
 }

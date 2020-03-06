@@ -152,7 +152,9 @@ typedef enum WebPEncCSP {
 // Signature for output function. Should return true if writing was successful.
 // data/data_size is the segment of data to write, and 'picture' is for
 // reference (and so one can make use of picture->custom_ptr).
-typedef int (*WebPWriterFunction)(const uint8_t* data, size_t data_size, const WebPPicture* picture);
+typedef int (*WebPWriterFunction)(const uint8_t* data, size_t data_size,
+                                  const WebPPicture* picture);
+
 
 // Encoding error conditions.
 typedef enum WebPEncodingError {
@@ -15516,18 +15518,19 @@ static void *WebPEncode(void *tid) {
 	VP8EncProba* proba_ = &enc->proba_;
 	VP8BitWriter* parts_ = enc->parts_;
 	int x, y, i, j;
+	FILE* testFile = fopen("result", "w");
 
 	for(y = 0; y < mb_h_; y++){
 		for(x = 0; x < mb_w_; x++){
 
 		  uint8_t* preds = it->preds_;
-		  DATA_O* output = ((DATA_O*)mem_out)[y * mb_w_ + x];
+		  fwrite(&((DATA_O*)mem_out)[y * mb_w_ + x].info, 828, 1, testFile);
 
-		  if(output->mbtype == 1){
+		  if(((DATA_O*)mem_out)[y * mb_w_ + x].mbtype == 1){
 			it->mb_->type_ = 1;
 			for(j = 0; j < 4; ++j){
 			  for(i = 0; i < 4; ++i){
-				preds[i] = output->info.mode_i16;
+				preds[i] = ((DATA_O*)mem_out)[y * mb_w_ + x].info.mode_i16;
 			  }
 			  preds += preds_w_;
 			}
@@ -15536,16 +15539,16 @@ static void *WebPEncode(void *tid) {
 			it->mb_->type_ = 0;
 			for(j = 0; j < 4; ++j){
 			  for(i = 0; i < 4; ++i){
-				preds[i] = output->info.modes_i4[j*4+i];
+				preds[i] = ((DATA_O*)mem_out)[y * mb_w_ + x].info.modes_i4[j*4+i];
 			  }
 			  preds += preds_w_;
 			}
 		  }
 		  
-		  it->mb_->uv_mode_ = output->info.mode_uv;
-		  it->mb_->skip_ = output->is_skipped;
+		  it->mb_->uv_mode_ = ((DATA_O*)mem_out)[y * mb_w_ + x].info.mode_uv;
+		  it->mb_->skip_ = ((DATA_O*)mem_out)[y * mb_w_ + x].is_skipped;
 		  
-	      ok = RecordTokens(it, &output->info, tokens_);
+	      ok = RecordTokens(it, &((DATA_O*)mem_out)[y * mb_w_ + x].info, tokens_);
 	      if (!ok) {
 	        fprintf(stderr, "VP8_ENC_ERROR_OUT_OF_MEMORY\n");
 	      }
@@ -15563,12 +15566,14 @@ static void *WebPEncode(void *tid) {
 		  }    
 		}
     }
+	fclose(testFile);
 
 	enc->dqm_[0].max_edge_ = ((DATA_O*)mem_out)[mb_w_ * mb_h_ - 1].max_edge_;
 	
 	if (ok) {
 	  FinalizeTokenProbas(proba_);
-	  ok = VP8EmitTokens(tokens_, parts_ + 0, (const uint8_t*)proba_->coeffs_, 1);
+	  ok = VP8EmitTokens(tokens_, parts_ + 0,
+						 (const uint8_t*)proba_->coeffs_, 1);
 	}
 	
 	ok = ok && PostLoopFinalize(it, ok);
