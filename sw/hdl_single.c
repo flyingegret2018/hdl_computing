@@ -16862,7 +16862,7 @@ out_error4:
 	__free(mem_in);
 
     //compute and store PSNR
-    //stats.value = GetPSNR(distortion, pixel_count);
+    stats.value = GetPSNR(distortion, pixel_count);
 
 #if (DEBUG_SEARCH > 0)
     printf("#%2d metric:%.1lf -> %.1lf   last_q=%.2lf q=%.2lf dq=%.2lf\n",
