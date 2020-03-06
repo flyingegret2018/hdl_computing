@@ -727,8 +727,6 @@ static int ImgIoUtilReadFile(const char* const file_name,
   if (in == NULL) {
     fprintf(stderr, "cannot open input file '%s'\n", file_name);
     return 0;
-  }else {
-    fprintf(stderr, "Input file '%s'\n", file_name);
   }
   fseek(in, 0, SEEK_END);
   file_size = ftell(in);
