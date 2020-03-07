@@ -38,7 +38,7 @@ $(error Please make sure that $$SNAP_ROOT is set up correctly.)
 endif
 endif
 
-CPPFLAGS+= -g
+CPPFLAGS+= -Os #-g
 CXX=gcc
 LDLIBS += -lm -ljpeg -lpng -lpthread
 
